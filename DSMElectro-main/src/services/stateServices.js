@@ -40,14 +40,24 @@ export default class StateService {
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const filter = {};
+    if (query.countryId) {
+      filter.countryId = query.countryId;
+    }
+    if (query.disable !== undefined) {
+      filter.disable = query.disable === "true";
+    } else {
+      filter.disable = false; // Only active states by default
+    }
+
     const data = await stateModel
-      .find()
+      .find(filter)
       .populate("countryId", "name")
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await stateModel.countDocuments();
+    const total = await stateModel.countDocuments(filter);
 
     return {
       data,

@@ -48,10 +48,14 @@ export default class OrderController {
   static async getOrders(req, res) {
     return handleApiRequest(req, res, async () => {
       const { page = 1, limit = 10, status } = req.query;
+      const role = req.user.role;
+      const isAdmin = role && (role.name === "Super Admin" || role.isSystemRole === true);
+
       const data = await OrderService.getOrders(req.user._id, {
         page: parseInt(page),
         limit: parseInt(limit),
         status,
+        isAdmin,
       });
       return [{ data }, "Orders fetched"];
     });

@@ -40,7 +40,6 @@ router.patch(
 // GET ALL
 router.get(
   "/states",
-  authUser,
   StateController.getAllStates
 );
 

@@ -88,6 +88,14 @@ const orderSchema = new Schema(
       required: true,
     },
 
+    // Snapshot of customer info at order time (survives user deletion)
+    customerSnapshot: {
+      firstName: { type: String, default: null },
+      lastName: { type: String, default: null },
+      email: { type: String, default: null },
+      phone: { type: String, default: null },
+    },
+
     product: {
       type: [orderItemSchema],
       validate: [

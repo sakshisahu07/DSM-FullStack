@@ -47,7 +47,7 @@ export const setShippingConfig = async (req, res) => {
 export const getShippingConfig = async (req, res) => {
   try {
     const config = await ShippingConfig.findOne().lean();
-    res.json({ success: true, data: config ?? {} });x
+    res.json({ success: true, data: config ?? {} });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -120,9 +120,20 @@ function ProductsAll() {
 
   const onCreate = () => { setEditing(null); setDrawerOpen(true); };
   const onEdit = (p: Product) => { setEditing(p); setDrawerOpen(true); };
-  const onDelete = (p: Product) => {
-    setItems((prev) => prev.filter((x) => x.id !== p.id));
-    toast.success(`Deleted ${p.name}`);
+  const onDelete = async (p: Product) => {
+    const toastId = toast.loading(`Deleting ${p.name}...`);
+    try {
+      const res = await apiFetch(`${API_BASE}/product/${p.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.message || `Server error ${res.status}`);
+      }
+      setItems((prev) => prev.filter((x) => x.id !== p.id));
+      setTotal((prev) => prev - 1);
+      toast.success(`Deleted ${p.name}`, { id: toastId });
+    } catch (err: any) {
+      toast.error(`Failed to delete: ${err.message}`, { id: toastId });
+    }
   };
   const onDuplicate = (p: Product) => {
     setItems((prev) => [{ ...p, id: `PRD-${Date.now()}`, name: p.name + " (copy)" }, ...prev]);
@@ -132,11 +143,27 @@ function ProductsAll() {
   const columns: Column<Product>[] = [
     {
       key: "img", header: "Image", className: "w-14",
-      cell: () => (
-        <div className="h-10 w-10 rounded-md bg-muted grid place-items-center text-muted-foreground">
-          <ImageIcon className="h-4 w-4" />
-        </div>
-      ),
+      cell: (p) => {
+        const imgSrc = (p as any).image || (p as any).raw?.images?.[0] || (p as any).raw?.icon || null;
+        return imgSrc ? (
+          <div className="h-10 w-10 rounded-md bg-muted overflow-hidden border">
+            <img
+              src={imgSrc}
+              alt={(p as any).name}
+              className="h-full w-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+                (e.target as HTMLImageElement).parentElement!.innerHTML =
+                  '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 m-auto mt-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
+              }}
+            />
+          </div>
+        ) : (
+          <div className="h-10 w-10 rounded-md bg-muted grid place-items-center text-muted-foreground">
+            <ImageIcon className="h-4 w-4" />
+          </div>
+        );
+      },
     },
     {
       key: "name", header: "Product", cell: (p) => (
@@ -251,9 +278,17 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
   const [isTrending, setIsTrending] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [variants, setVariants] = useState<any[]>([]);
+  const [specs, setSpecs] = useState<{ title: string; points: string }[]>([]);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDesc, setMetaDesc] = useState("");
+  const [keywords, setKeywords] = useState("");
 
   const [icon, setIcon] = useState<File | null>(null);
   const [images, setImages] = useState<FileList | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingIcon, setExistingIcon] = useState<string | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const [categories, setCategories] = useState<any[]>([]);
   const [subCategories, setSubCategories] = useState<any[]>([]);
@@ -333,10 +368,30 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
       
       setIcon(null);
       setImages(null);
+      setIconPreview(null);
+      setImagePreviews([]);
+      const raw2 = (product as any)?.raw;
+      setExistingIcon(raw2?.icon || raw2?.mainImage || raw2?.thumbnail || null);
+      const existImgs = raw2?.images || raw2?.productImages || [];
+      setExistingImages(Array.isArray(existImgs) ? existImgs : []);
       
       setCategoryId(raw?.category?._id ?? raw?.categoryId ?? "");
       setSubCategoryId(raw?.subCategory?._id ?? raw?.subCategoryId ?? "");
       setBrandId(raw?.brand?._id ?? raw?.brandId ?? "");
+
+      const rawSpecs = raw?.specification || [];
+      if (Array.isArray(rawSpecs) && rawSpecs.length > 0) {
+        setSpecs(rawSpecs.map((s: any) => ({
+          title: s.title || "",
+          points: Array.isArray(s.points) ? s.points.join(", ") : (s.points || "")
+        })));
+      } else {
+        setSpecs([]);
+      }
+
+      setMetaTitle(raw?.metaTitle || "");
+      setMetaDesc(raw?.metaDescription || "");
+      setKeywords(raw?.keywords || "");
     }
   }, [open, product]);
 
@@ -375,6 +430,18 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
     if (images) {
       Array.from(images).forEach((file) => fd.append("images", file));
     }
+
+    const validSpecs = specs
+      .filter((s) => s.title.trim() !== "")
+      .map((s) => ({
+        title: s.title.trim(),
+        points: s.points.split(",").map((p) => p.trim()).filter((p) => p !== "")
+      }));
+    fd.append("specification", JSON.stringify(validSpecs));
+
+    fd.append("metaTitle", metaTitle);
+    fd.append("metaDescription", metaDesc);
+    fd.append("keywords", keywords);
 
     onSave(fd);
   };
@@ -496,19 +563,19 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">MRP (₹)</Label>
-                    <Input className="h-8" type="number" value={v.mrp} onChange={e => { const nv = [...variants]; nv[idx].mrp = +e.target.value; setVariants(nv); }} />
+                    <Input className="h-8" type="number" value={v.mrp === 0 ? "" : v.mrp} onChange={e => { const nv = [...variants]; nv[idx].mrp = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Discount (%)</Label>
-                    <Input className="h-8" type="number" value={v.discount} onChange={e => { const nv = [...variants]; nv[idx].discount = +e.target.value; setVariants(nv); }} />
+                    <Input className="h-8" type="number" value={v.discount === 0 ? "" : v.discount} onChange={e => { const nv = [...variants]; nv[idx].discount = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Stock</Label>
-                    <Input className="h-8" type="number" value={v.stock} onChange={e => { const nv = [...variants]; nv[idx].stock = +e.target.value; setVariants(nv); }} />
+                    <Input className="h-8" type="number" value={v.stock === 0 ? "" : v.stock} onChange={e => { const nv = [...variants]; nv[idx].stock = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Weight (g)</Label>
-                    <Input className="h-8" type="number" value={v.weight} onChange={e => { const nv = [...variants]; nv[idx].weight = +e.target.value; setVariants(nv); }} />
+                    <Input className="h-8" type="number" value={v.weight === 0 ? "" : v.weight} onChange={e => { const nv = [...variants]; nv[idx].weight = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
                 </div>
               ))}
@@ -519,26 +586,142 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="specs" className="mt-5">
-            <div className="rounded-md border p-6 text-sm text-muted-foreground text-center">Key-value specifications editor.</div>
+          <TabsContent value="specs" className="mt-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">Manage key-value product specifications</div>
+              <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setSpecs([...specs, { title: "", points: "" }]); }}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add Specification
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              {specs.map((s, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border rounded-xl relative">
+                  <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-6 w-6 text-destructive" onClick={(e) => { e.preventDefault(); setSpecs(specs.filter((_, i) => i !== idx)); }}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Specification Title</Label>
+                    <Input className="h-8" value={s.title} onChange={e => { const ns = [...specs]; ns[idx].title = e.target.value; setSpecs(ns); }} placeholder="e.g. Dimensions" />
+                  </div>
+                  <div className="space-y-1.5 pr-6 md:pr-0">
+                    <Label className="text-xs">Points (comma separated)</Label>
+                    <Input className="h-8" value={s.points} onChange={e => { const ns = [...specs]; ns[idx].points = e.target.value; setSpecs(ns); }} placeholder="e.g. 10x10x10 cm, Light weight" />
+                  </div>
+                </div>
+              ))}
+              {specs.length === 0 && (
+                <div className="rounded-md border p-6 text-sm text-muted-foreground text-center">
+                  No specifications added yet. Add custom product technical details above.
+                </div>
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="seo" className="mt-5 space-y-3">
-            <div className="space-y-2"><Label>Meta title</Label><Input /></div>
-            <div className="space-y-2"><Label>Meta description</Label><Textarea rows={3} /></div>
-            <div className="space-y-2"><Label>Keywords</Label><Input placeholder="comma, separated" /></div>
+            <div className="space-y-2"><Label>Meta title</Label><Input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Meta description</Label><Textarea rows={3} value={metaDesc} onChange={e => setMetaDesc(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Keywords</Label><Input placeholder="comma, separated" value={keywords} onChange={e => setKeywords(e.target.value)} /></div>
           </TabsContent>
-          <TabsContent value="images" className="mt-5 space-y-4">
+          <TabsContent value="images" className="mt-5 space-y-5">
+            {/* Main Icon */}
             <div className="space-y-2">
               <Label>Main Icon (Single File)</Label>
-              <Input type="file" onChange={(e) => setIcon(e.target.files?.[0] || null)} />
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setIcon(file);
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setIconPreview(url);
+                  } else {
+                    setIconPreview(null);
+                  }
+                }}
+              />
+              {/* Icon Preview */}
+              {(iconPreview || existingIcon) && (
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="relative h-20 w-20 rounded-lg border overflow-hidden bg-muted">
+                    <img
+                      src={iconPreview || existingIcon!}
+                      alt="Icon preview"
+                      className="h-full w-full object-contain"
+                    />
+                    {iconPreview && (
+                      <span className="absolute top-1 left-1 text-[9px] bg-green-500 text-white px-1 rounded">NEW</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {iconPreview ? (
+                      <span className="text-green-600 font-medium">✓ New icon selected</span>
+                    ) : (
+                      <span>Current icon</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Product Images */}
             <div className="space-y-2">
               <Label>Product Images (Multiple)</Label>
-              <Input type="file" multiple onChange={(e) => setImages(e.target.files)} />
+              <Input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  setImages(files);
+                  if (files && files.length > 0) {
+                    const previews: string[] = [];
+                    Array.from(files).forEach((file) => {
+                      previews.push(URL.createObjectURL(file));
+                    });
+                    setImagePreviews(previews);
+                  } else {
+                    setImagePreviews([]);
+                  }
+                }}
+              />
             </div>
-            <div className="rounded-md border-2 border-dashed p-6 text-center text-muted-foreground">
-              {images ? `${images.length} files selected` : "No extra images selected"}
-            </div>
+
+            {/* New Images Preview */}
+            {imagePreviews.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-green-600">✓ {imagePreviews.length} new image(s) selected</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="relative h-20 rounded-lg border overflow-hidden bg-muted">
+                      <img src={src} alt={`New ${i + 1}`} className="h-full w-full object-contain" />
+                      <span className="absolute top-1 left-1 text-[9px] bg-green-500 text-white px-1 rounded">NEW</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Existing Images */}
+            {existingImages.length > 0 && imagePreviews.length === 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Current product images ({existingImages.length})</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {existingImages.map((src, i) => (
+                    <div key={i} className="h-20 rounded-lg border overflow-hidden bg-muted">
+                      <img src={src} alt={`Image ${i + 1}`} className="h-full w-full object-contain" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {imagePreviews.length === 0 && existingImages.length === 0 && (
+              <div className="rounded-md border-2 border-dashed p-6 text-center text-muted-foreground text-sm">
+                No images selected. Upload images above.
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 

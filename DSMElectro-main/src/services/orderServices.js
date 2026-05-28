@@ -6,6 +6,7 @@ import variantModel from "../model/variant.model.js";
 import comboModel from "../model/combo.model.js";
 import transactionModel from "../model/transaction.model.js";
 import addressModel from "../model/address.model.js";
+import userModel from "../model/user.model.js";
 import redisClient from "../config/redis.js";
 import { razorpay } from "../config/razorpay.js";
 import { AppError } from "../utils/apiResponse.js";
@@ -130,11 +131,21 @@ export default class OrderService {
         referral = await ReferralService.resolveToken(refToken);
       }
 
-      // ── 5. Create order ─────────────────────────────────────
+      // ── 5. Snapshot customer info (survives user deletion) ──
+      const customerUser = await userModel.findById(userId).select("firstName lastName email number").lean();
+      const customerSnapshot = {
+        firstName: customerUser?.firstName || null,
+        lastName: customerUser?.lastName || null,
+        email: customerUser?.email || null,
+        phone: customerUser?.number || null,
+      };
+
+      // ── 6. Create order ─────────────────────────────────────
       const order = await orderModel.create(
         [
           {
             customerId: userId,
+            customerSnapshot,
             product: orderProducts,
             orderTotal: grandTotal,
             shippingCharge,
@@ -407,8 +418,9 @@ export default class OrderService {
 
   
   // ─── GET ORDERS ───────────────────────────────────────────────────────────
-  static async getOrders(userId, { page = 1, limit = 10, status = null } = {}) {
-    const cacheKey = `orders:${userId}:${page}:${limit}:${status || "all"}`;
+  static async getOrders(userId, { page = 1, limit = 10, status = null, isAdmin = false } = {}) {
+    const scope = isAdmin ? "admin" : userId;
+    const cacheKey = `orders:${scope}:${page}:${limit}:${status || "all"}`;
 
     try {
       const cached = await redisClient.get(cacheKey);
@@ -417,7 +429,8 @@ export default class OrderService {
       console.error("Redis error in getOrders:", err.message);
     }
 
-    const query = { customerId: userId };
+    // Admin sees ALL orders; regular user sees only their own
+    const query = isAdmin ? {} : { customerId: userId };
     if (status) query.status = status;
 
     const skip = (page - 1) * limit;
@@ -425,6 +438,7 @@ export default class OrderService {
     const [orders, totalOrders] = await Promise.all([
       orderModel
         .find(query)
+        .populate("customerId", "firstName lastName email number")
         .populate("product.productId")
         .populate("product.variantId")
         .populate("product.comboId")
@@ -434,6 +448,19 @@ export default class OrderService {
         .lean(),
       orderModel.countDocuments(query),
     ]);
+
+    // Merge customerSnapshot fallback when the user document has been deleted
+    for (const o of orders) {
+      if (!o.customerId && o.customerSnapshot) {
+        o.customerId = {
+          _id: null,
+          firstName: o.customerSnapshot.firstName,
+          lastName: o.customerSnapshot.lastName,
+          email: o.customerSnapshot.email,
+          number: o.customerSnapshot.phone,
+        };
+      }
+    }
 
     const result = {
       orders,

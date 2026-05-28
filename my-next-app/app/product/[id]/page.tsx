@@ -79,7 +79,7 @@ const ProductDetailPage = () => {
     };
 
     const handleAddToCart = async () => {
-        const vId = currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
+        const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
         if (vId) {
             try {
                 const action = await dispatch(addToCart({ variantId: vId, quantity }));
@@ -100,8 +100,8 @@ const ProductDetailPage = () => {
     };
 
     const toggleWishlist = () => {
-        const pId = currentProduct?._id;
-        const vId = currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
+        const pId = currentProduct?.product?._id || currentProduct?._id;
+        const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
         
         const isInWishlist = wishlistItems.some((item: any) => 
             (item.variant === vId) || (item.variant?._id === vId) || (item.product?._id === pId)
@@ -115,8 +115,8 @@ const ProductDetailPage = () => {
     };
 
     const isInWishlist = wishlistItems.some((item: any) => {
-        const pId = currentProduct?._id;
-        const vId = currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
+        const pId = currentProduct?.product?._id || currentProduct?._id;
+        const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
         return (item.variant === vId) || (item.variant?._id === vId) || (item.product?._id === pId);
     });
 
@@ -124,36 +124,115 @@ const ProductDetailPage = () => {
         return <DetailSkeleton />;
     }
 
-    // Fallback if currentProduct is not yet available but loading is false
-    const productData = currentProduct || {
-        name: "BLUETOOTH HC-05 WIRELESS UART MODULE",
-        category: "Bluetooth Module",
-        availability: "Only 2 in Stock",
-        sku: "1484",
-        rating: 4.5,
-        reviews: 2,
-        weight: "20g",
-        deliveryDate: "30 July",
-        mrp: 473,
-        discount: "50% Off",
-        price: 273,
-        images: ["/bt.png", "/bt.png", "/bt.png", "/bt.png", "/bt.png"],
-        features: [
-            { label: "Bluetooth 2.0 Support", desc: "Compatible with most Bluetooth devices." },
-            { label: "Serial Communication", desc: "Easy UART interface for microcontrollers." },
-            { label: "Wide Voltage Range", desc: "Works with 3.3V-5V systems." },
-            { label: "Master/Slave Modes", desc: "Flexible connection options." },
-            { label: "Stable Wireless Link", desc: "Reliable short-range data transfer." }
-        ]
-    };
+    const rawProduct = currentProduct?.product || currentProduct;
+    const rawVariant = currentProduct?.variants?.[0] || {};
 
-    const product = {
-        ...productData,
-        name: productData.name || productData.title || "Product",
-        images: productData.images && productData.images.length > 0 ? productData.images : (productData.image ? [productData.image] : ["/bt.png"]),
-        price: productData.price || 0,
-        mrp: productData.mrp || productData.oldPrice || productData.price || 0,
-    };
+    const product = currentProduct
+        ? {
+            ...rawProduct,
+            name: rawProduct.name || rawProduct.title || "Product",
+            category: rawProduct.categoryId?.title || rawProduct.category || "Electronics",
+            availability: rawVariant.stock > 0 
+                ? `${rawVariant.stock} in Stock` 
+                : "Out of Stock",
+            sku: rawVariant.sku || rawProduct.sku || (rawProduct._id ? `SKU-${rawProduct._id.slice(-4).toUpperCase()}` : "N/A"),
+            rating: rawProduct.avgRating || rawProduct.rating || 5,
+            reviews: rawProduct.totalRatings || rawProduct.reviews || 0,
+            weight: rawVariant.weight?.value 
+                ? `${rawVariant.weight.value}${rawVariant.weight.unit || 'g'}`
+                : "N/A",
+            deliveryDate: rawProduct.expectedDelivery || "3-5 Days",
+            mrp: rawVariant.mrp || rawProduct.mrp || 0,
+            discount: rawVariant.discount 
+                ? `${rawVariant.discount}% Off` 
+                : "",
+            price: rawVariant.finalPrice || rawProduct.price || 0,
+            images: rawProduct.images && rawProduct.images.length > 0 
+                ? rawProduct.images 
+                : (rawProduct.icon ? [rawProduct.icon] : ["/bt.png"]),
+            features: rawProduct.keyFeatures?.map((s: any) => ({
+                label: s.title,
+                desc: Array.isArray(s.points) ? s.points.join(", ") : s.points
+            })) || rawProduct.specification?.map((s: any) => ({
+                label: s.title,
+                desc: Array.isArray(s.points) ? s.points.join(", ") : s.points
+            })) || [],
+            description: rawProduct.description || "No description available.",
+            keyFeaturesList: rawProduct.keyFeatures?.map((s: any) => ({
+                label: s.title,
+                desc: Array.isArray(s.points) ? s.points.join(", ") : s.points
+            })) || [],
+            specificationsList: rawProduct.specification || [],
+            applicationsList: rawProduct.applications || []
+          }
+        : {
+            name: "BLUETOOTH HC-05 WIRELESS UART MODULE",
+            category: "Bluetooth Module",
+            availability: "Only 2 in Stock",
+            sku: "1484",
+            rating: 4.5,
+            reviews: 2,
+            weight: "20g",
+            deliveryDate: "30 July",
+            mrp: 473,
+            discount: "50% Off",
+            price: 273,
+            images: ["/bt.png", "/bt.png", "/bt.png", "/bt.png", "/bt.png"],
+            features: [
+                { label: "Bluetooth 2.0 Support", desc: "Compatible with most Bluetooth devices." },
+                { label: "Serial Communication", desc: "Easy UART interface for microcontrollers." },
+                { label: "Wide Voltage Range", desc: "Works with 3.3V-5V systems." },
+                { label: "Master/Slave Modes", desc: "Flexible connection options." },
+                { label: "Stable Wireless Link", desc: "Reliable short-range data transfer." }
+            ],
+            description: "The Bluetooth HC-05 Wireless UART Module is a popular and versatile device that allows you to connect your microcontroller or other serial devices to a Bluetooth network. It provides a simple and cost-effective way to add wireless communication capabilities to your projects.",
+            keyFeaturesList: [
+                { label: "Bluetooth 2.0 Compatibility", desc: "Ensures compatibility with a wide range of Bluetooth devices." },
+                { label: "UART Interface", desc: "Provides a serial communication interface for easy integration with microcontrollers and other devices." },
+                { label: "Master-Slave Mode", desc: "Can operate in both master and slave modes, allowing for flexible communication scenarios." },
+                { label: "AT Commands", desc: "Supports AT commands for configuration and control." },
+                { label: "Low Power Consumption", desc: "Ideal for battery-powered applications." },
+                { label: "Compact Design", desc: "Small and lightweight, making it easy to incorporate into your projects." }
+            ],
+            applicationsList: [
+                "Wireless Serial Communication: Connecting microcontrollers, sensors, and other devices to a Bluetooth network.",
+                "Remote Control: Controlling devices or systems from a distance using a smartphone or tablet.",
+                "Data Transmission: Sending and receiving data wirelessly between devices.",
+                "IoT Projects: Adding wireless connectivity to Internet of Things applications."
+            ],
+            specificationsList: [
+                { label: "Brand", value: "Specification" },
+                { label: "Bluetooth Version", value: "Bluetooth 2.0 + EDR" },
+                { label: "Model", value: "HC-05 Bluetooth Module" },
+                { label: "Shape", value: "Rectangular PCB Module" },
+                { label: "Frequency Band", value: "2.4 GHz ISM Band" },
+                { label: "Communication Interface", value: "UART (Serial)" },
+                { label: "Operating Voltage", value: "3.3V - 5V DC" },
+                { label: "Logic Level", value: "3.3V TTL" },
+                { label: "Baud Rate Range", value: "1200 - 1382400 bps (configurable)" },
+                { label: "Output Type", value: "Serial Data (TX/RX)" },
+                { label: "Material", value: "PCB with electronic components" },
+                { label: "Dimensions", value: "Approx. 27 × 13 × 2 mm" },
+                { label: "Weight", value: "Approx. 3-5 grams" }
+            ],
+            dataSheetFeatures: [
+                "Bluetooth Protocol: Bluetooth V2.0+EDR (Enhanced Data Rate)",
+                "Frequency: 2.4 GHz ISM band",
+                "Modulation: GFSK (Gaussian Frequency Shift Keying)",
+                "Transmission Speed: Asynchronous: 2.1 Mbps (Max) / 160 kbps; Synchronous: 1 Mbps/1 Mbps",
+                "Power Consumption: Low power operation with a typical current of 30 mA",
+                "Operating Voltage: 3.3V DC",
+                "Communication: UART interface with programmable baud rate",
+                "Security: Authentication and encryption features"
+            ],
+            pinConfiguration: [
+                "Enable (EN): Enables the module when pulled high",
+                "VCC: Power supply pin (3.3V)",
+                "Ground (GND): Ground connection",
+                "TXD: Transmitter pin",
+                "RXD: Receiver pin"
+            ]
+        };
 
     const socialIcons = [
         { src: "/facebook1.png", alt: "Facebook" },
@@ -443,130 +522,99 @@ const ProductDetailPage = () => {
                         {activeTab === 'Description' && (
                             <div className="space-y-10">
                                 <p className="text-[#191919] leading-relaxed text-md">
-                                    The Bluetooth HC-05 Wireless UART Module is a popular and versatile device that allows you to connect
-                                    your microcontroller or other serial devices to a Bluetooth network. It provides a simple and
-                                    cost-effective way to add wireless communication capabilities to your projects.
+                                    {product.description}
                                 </p>
 
-                                <div className="space-y-4 md:space-y-2">
-                                    <h3 className="text-[#EE9C24] font-medium text-xl">Key Features:</h3>
-                                    <ul className="space-y-4 md:space-y-2 p-2 md:p-4">
-                                        {[
-                                            { label: "Bluetooth 2.0 Compatibility", desc: "Ensures compatibility with a wide range of Bluetooth devices." },
-                                            { label: "UART Interface", desc: "Provides a serial communication interface for easy integration with microcontrollers and other devices." },
-                                            { label: "Master-Slave Mode", desc: "Can operate in both master and slave modes, allowing for flexible communication scenarios." },
-                                            { label: "AT Commands", desc: "Supports AT commands for configuration and control." },
-                                            { label: "Low Power Consumption", desc: "Ideal for battery-powered applications." },
-                                            { label: "Compact Design", desc: "Small and lightweight, making it easy to incorporate into your projects." }
-                                        ].map((item, idx) => (
-                                            <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
-                                                <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-gray-900 mt-1.5 md:mt-2.5 shrink-0" />
-                                                <span className="text-sm md:text-base">
-                                                    <span className="font-semibold md:font-medium text-[#191919]">{item.label}:</span> {item.desc}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                {product.keyFeaturesList && product.keyFeaturesList.length > 0 && (
+                                    <div className="space-y-4 md:space-y-2">
+                                        <h3 className="text-[#EE9C24] font-medium text-xl">Key Features:</h3>
+                                        <ul className="space-y-4 md:space-y-2 p-2 md:p-4">
+                                            {product.keyFeaturesList.map((item: any, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
+                                                    <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-gray-900 mt-1.5 md:mt-2.5 shrink-0" />
+                                                    <span className="text-sm md:text-base">
+                                                        <span className="font-semibold md:font-medium text-[#191919]">{item.label || item.title}:</span> {item.desc || (Array.isArray(item.points) ? item.points.join(", ") : item.points)}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
 
-                                <div className="space-y-4 md:space-y-4">
-                                    <h3 className="text-[#EE9C24] font-medium text-xl">Applications:</h3>
-                                    <ul className="space-y-4 md:space-y-2 p-2 md:p-0">
-                                        {[
-                                            "Wireless Serial Communication: Connecting microcontrollers, sensors, and other devices to a Bluetooth network.",
-                                            "Remote Control: Controlling devices or systems from a distance using a smartphone or tablet.",
-                                            "Data Transmission: Sending and receiving data wirelessly between devices.",
-                                            "IoT Projects: Adding wireless connectivity to Internet of Things applications."
-                                        ].map((item, idx) => (
-                                            <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
-                                                <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-gray-900 mt-1.5 md:mt-2.5 shrink-0" />
-                                                <span className="text-sm md:text-base">{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                {product.applicationsList && product.applicationsList.length > 0 && (
+                                    <div className="space-y-4 md:space-y-4">
+                                        <h3 className="text-[#EE9C24] font-medium text-xl">Applications:</h3>
+                                        <ul className="space-y-4 md:space-y-2 p-2 md:p-0">
+                                            {product.applicationsList.map((item: any, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
+                                                    <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-gray-900 mt-1.5 md:mt-2.5 shrink-0" />
+                                                    <span className="text-sm md:text-base">{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {activeTab === 'Specification' && (
                             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full min-w-[500px] text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-[#D9D9D933] border-b border-gray-200">
-                                                    <th className="px-4 md:px-8 py-3 md:py-4 text-gray-900 font-bold text-base md:text-lg w-[40%] md:w-1/3">Specification</th>
-                                                    <th className="px-4 md:px-8 py-3 md:py-4 text-gray-900 font-bold text-base md:text-lg">Details</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {[
-                                                    { label: "Brand", value: "Specification" },
-                                                    { label: "Bluetooth Version", value: "Bluetooth 2.0 + EDR" },
-                                                    { label: "Model", value: "HC-05 Bluetooth Module" },
-                                                    { label: "Shape", value: "Rectangular PCB Module" },
-                                                    { label: "Frequency Band", value: "2.4 GHz ISM Band" },
-                                                    { label: "Communication Interface", value: "UART (Serial)" },
-                                                    { label: "Operating Voltage", value: "3.3V - 5V DC" },
-                                                    { label: "Logic Level", value: "3.3V TTL" },
-                                                    { label: "Baud Rate Range", value: "1200 - 1382400 bps (configurable)" },
-                                                    { label: "Output Type", value: "Serial Data (TX/RX)" },
-                                                    { label: "Material", value: "PCB with electronic components" },
-                                                    { label: "Dimensions", value: "Approx. 27 × 13 × 2 mm" },
-                                                    { label: "Weight", value: "Approx. 3-5 grams" }
-                                                ].map((spec, idx) => (
-                                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-4 md:px-8 py-3 md:py-3.5 font-medium text-gray-700 text-sm md:text-base">{spec.label}</td>
-                                                        <td className="px-4 md:px-8 py-3 md:py-3.5 text-gray-600 text-sm md:text-base">{spec.value}</td>
+                                {product.specificationsList && product.specificationsList.length > 0 && (
+                                    <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[500px] text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-[#D9D9D933] border-b border-gray-200">
+                                                        <th className="px-4 md:px-8 py-3 md:py-4 text-gray-900 font-bold text-base md:text-lg w-[40%] md:w-1/3">Specification</th>
+                                                        <th className="px-4 md:px-8 py-3 md:py-4 text-gray-900 font-bold text-base md:text-lg">Details</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-200">
+                                                    {product.specificationsList.map((spec: any, idx: number) => (
+                                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-4 md:px-8 py-3 md:py-3.5 font-medium text-gray-700 text-sm md:text-base">
+                                                                {spec.label || spec.title}
+                                                            </td>
+                                                            <td className="px-4 md:px-8 py-3 md:py-3.5 text-gray-600 text-sm md:text-base">
+                                                                {spec.value || (Array.isArray(spec.points) ? spec.points.join(", ") : spec.points)}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="space-y-8 mt-12">
-                                    <h3 className="text-[#EE9C24] font-bold text-xl uppercase tracking-wider">DATA SHEET AND USECASE</h3>
-                                    <div className="space-y-6">
-                                        <div className="space-y-3">
-                                            <h4 className="text-[#EE9C24] font-bold text-lg">Key Features:</h4>
-                                            <ul className="space-y-4 md:space-y-2 pl-2 md:pl-4">
-                                                {[
-                                                    "Bluetooth Protocol: Bluetooth V2.0+EDR (Enhanced Data Rate)",
-                                                    "Frequency: 2.4 GHz ISM band",
-                                                    "Modulation: GFSK (Gaussian Frequency Shift Keying)",
-                                                    "Transmission Speed: Asynchronous: 2.1 Mbps (Max) / 160 kbps; Synchronous: 1 Mbps/1 Mbps",
-                                                    "Power Consumption: Low power operation with a typical current of 30 mA",
-                                                    "Operating Voltage: 3.3V DC",
-                                                    "Communication: UART interface with programmable baud rate",
-                                                    "Security: Authentication and encryption features"
-                                                ].map((feature, idx) => (
-                                                    <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
-                                                        <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-[#EE9C24] md:bg-gray-400 mt-1.5 md:mt-2.5 shrink-0" />
-                                                        <span className="text-sm md:text-base">{feature}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <h4 className="text-[#EE9C24] font-bold text-lg">Pin Configuration:</h4>
-                                            <ul className="space-y-4 md:space-y-2 pl-2 md:pl-4">
-                                                {[
-                                                    "Enable (EN): Enables the module when pulled high",
-                                                    "VCC: Power supply pin (3.3V)",
-                                                    "Ground (GND): Ground connection",
-                                                    "TXD: Transmitter pin",
-                                                    "RXD: Receiver pin"
-                                                ].map((pin, idx) => (
-                                                    <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
-                                                        <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-[#EE9C24] md:bg-gray-400 mt-1.5 md:mt-2.5 shrink-0" />
-                                                        <span className="text-sm md:text-base">{pin}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                {!currentProduct && (
+                                    <div className="space-y-8 mt-12">
+                                        <h3 className="text-[#EE9C24] font-bold text-xl uppercase tracking-wider">DATA SHEET AND USECASE</h3>
+                                        <div className="space-y-6">
+                                            <div className="space-y-3">
+                                                <h4 className="text-[#EE9C24] font-bold text-lg">Key Features:</h4>
+                                                <ul className="space-y-4 md:space-y-2 pl-2 md:pl-4">
+                                                    {product.dataSheetFeatures?.map((feature: string, idx: number) => (
+                                                        <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
+                                                            <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-[#EE9C24] md:bg-gray-400 mt-1.5 md:mt-2.5 shrink-0" />
+                                                            <span className="text-sm md:text-base">{feature}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <h4 className="text-[#EE9C24] font-bold text-lg">Pin Configuration:</h4>
+                                                <ul className="space-y-4 md:space-y-2 pl-2 md:pl-4">
+                                                    {product.pinConfiguration?.map((pin: string, idx: number) => (
+                                                        <li key={idx} className="flex items-start gap-3 text-gray-700 leading-relaxed">
+                                                            <div className="w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-[#EE9C24] md:bg-gray-400 mt-1.5 md:mt-2.5 shrink-0" />
+                                                            <span className="text-sm md:text-base">{pin}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
 

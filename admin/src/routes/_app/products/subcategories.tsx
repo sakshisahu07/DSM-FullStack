@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -53,8 +53,16 @@ function SubcategoriesPage() {
         fetch(`${API_BASE}/categories`, { headers: getAuthHeaders() }),
       ]);
       const [subJson, catJson] = await Promise.all([subRes.json(), catRes.json()]);
-      if (subJson.success) setItems(subJson.data);
-      if (catJson.success) setCategories(catJson.data);
+
+      // Handle various API response shapes
+      if (subJson.success !== false) {
+        const subData = subJson.data?.subCategories || subJson.data?.subcategories || subJson.data;
+        setItems(Array.isArray(subData) ? subData : []);
+      }
+      if (catJson.success !== false) {
+        const catData = catJson.data?.categories || catJson.data;
+        setCategories(Array.isArray(catData) ? catData : []);
+      }
     } catch (err) {
       toast.error("Failed to load data");
     } finally {
@@ -165,6 +173,7 @@ function SubCategoryDialog({ open, onOpenChange, subCategory, categories, onSucc
   const [categoryId, setCategoryId] = useState("");
   const [icon, setIcon] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -176,6 +185,8 @@ function SubCategoryDialog({ open, onOpenChange, subCategory, categories, onSucc
   }, [open, subCategory]);
 
   const onSubmit = async () => {
+    if (!title.trim()) { toast.error("Title is required"); return; }
+    if (!categoryId) { toast.error("Please select a parent category"); return; }
     try {
       setSubmitting(true);
       const formData = new FormData();
@@ -183,7 +194,7 @@ function SubCategoryDialog({ open, onOpenChange, subCategory, categories, onSucc
       formData.append("category", categoryId);
       if (icon) formData.append("icon", icon);
 
-      const url = subCategory ? `${API_BASE}/sub-category/${subCategory._id}` : `${API_BASE}/create/sub-category`;
+      const url = subCategory ? `${API_BASE}/sub-category/${subCategory._id}` : `${API_BASE}/sub-category`;
       const method = subCategory ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -193,14 +204,14 @@ function SubCategoryDialog({ open, onOpenChange, subCategory, categories, onSucc
       });
 
       const json = await res.json();
-      if (json.success) {
-        toast.success(json.message);
+      if (json.success || res.ok) {
+        toast.success(json.message || (subCategory ? "Updated successfully" : "Sub-category created!"));
         onSuccess();
       } else {
-        toast.error(json.message);
+        toast.error(json.message || `Error ${res.status}`);
       }
-    } catch (err) {
-      toast.error("Submission failed");
+    } catch (err: any) {
+      toast.error(`Submission failed: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -234,25 +245,46 @@ function SubCategoryDialog({ open, onOpenChange, subCategory, categories, onSucc
           </div>
           <div className="space-y-1.5">
             <Label>Icon</Label>
-            <div className="relative h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/50 cursor-pointer hover:bg-muted transition-colors overflow-hidden">
-              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => setIcon(e.target.files?.[0] || null)} />
+            {/* Hidden file input - triggered via ref */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setIcon(e.target.files?.[0] || null)}
+            />
+            <div
+              className="h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/50 cursor-pointer hover:bg-muted transition-colors overflow-hidden"
+              onClick={() => fileInputRef.current?.click()}
+            >
               {icon ? (
-                <div className="absolute inset-0 bg-background flex flex-col items-center justify-center p-1">
-                  <img src={URL.createObjectURL(icon)} className="h-10 w-10 object-contain mb-1" />
-                  <span className="text-[8px] truncate w-full text-center">{icon.name}</span>
+                <div className="flex flex-col items-center justify-center gap-1 p-2">
+                  <img src={URL.createObjectURL(icon)} className="h-12 w-12 object-contain rounded" />
+                  <span className="text-[9px] text-muted-foreground truncate max-w-[140px] text-center">{icon.name}</span>
+                  <span className="text-[9px] text-green-600 font-medium">✓ New icon selected</span>
                 </div>
               ) : subCategory?.icon ? (
-                <div className="absolute inset-0 bg-background/50 flex flex-col items-center justify-center p-1">
-                  <img src={subCategory.icon} className="h-10 w-10 object-contain mb-1" />
-                  <span className="text-[8px] text-muted-foreground">Current Icon</span>
+                <div className="flex flex-col items-center justify-center gap-1 p-2">
+                  <img src={subCategory.icon} className="h-12 w-12 object-contain rounded" />
+                  <span className="text-[9px] text-muted-foreground">Current icon — click to change</span>
                 </div>
               ) : (
-                <>
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-[10px] mt-1">Upload Icon</span>
-                </>
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground mt-1">Click to upload icon</span>
+                  <span className="text-[10px] text-muted-foreground/60">PNG, JPG, SVG</span>
+                </div>
               )}
             </div>
+            {icon && (
+              <button
+                type="button"
+                className="text-[10px] text-destructive hover:underline"
+                onClick={() => { setIcon(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+              >
+                Remove selected file
+              </button>
+            )}
           </div>
         </div>
         <DialogFooter>

@@ -91,7 +91,6 @@ const CheckoutPage = () => {
     const { addresses } = useSelector((state: RootState) => state.address);
     const { currentOrder, loading: orderLoading } = useSelector((state: RootState) => state.order);
 
-    // Contact form state
     const [contactData, setContactData] = useState({
         street: '',
         city: '',
@@ -101,9 +100,58 @@ const CheckoutPage = () => {
         phone: '',
         firstName: '',
         lastName: '',
-        email: ''
+        email: '',
+        gstNumber: '',
+        companyName: ''
     });
     const [saveAddress, setSaveAddress] = useState(true);
+    const [loginPhone, setLoginPhone] = useState("");
+
+    // Dynamic Country & State lookup states
+    const [countries, setCountries] = useState<any[]>([]);
+    const [states, setStates] = useState<any[]>([]);
+
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5050/api/v1';
+
+    // Fetch Countries on Mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/countries?limit=100`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && Array.isArray(data.data.data)) {
+                        setCountries(data.data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching countries:", err);
+            }
+        };
+        fetchCountries();
+    }, [BASE_URL]);
+
+    // Fetch States when selected country changes
+    useEffect(() => {
+        if (!contactData.country) {
+            setStates([]);
+            return;
+        }
+        const fetchStates = async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/states?countryId=${contactData.country}&limit=100`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && Array.isArray(data.data.data)) {
+                        setStates(data.data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching states:", err);
+            }
+        };
+        fetchStates();
+    }, [contactData.country, BASE_URL]);
 
     useEffect(() => {
         if (token) {
@@ -130,11 +178,165 @@ const CheckoutPage = () => {
         }
     }, [token]);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
+        if (currentStep === 0 && !token) {
+            if (loginPhone.replace(/\D/g, '').length !== 10) {
+                toast.error("Please enter a valid 10-digit phone number.");
+                return;
+            }
+        }
+
+        if (currentStep === 1) {
+            if (!contactData.firstName?.trim()) {
+                toast.error("First Name is required");
+                return;
+            }
+            if (!contactData.lastName?.trim()) {
+                toast.error("Last Name is required");
+                return;
+            }
+            if (!contactData.phone?.trim()) {
+                toast.error("Phone Number is required");
+                return;
+            }
+            if (contactData.phone.replace(/\D/g, '').length !== 10) {
+                toast.error("Phone Number must be exactly 10 digits");
+                return;
+            }
+            if (!contactData.email?.trim()) {
+                toast.error("Email Address is required");
+                return;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(contactData.email.trim())) {
+                toast.error("Please enter a valid email address");
+                return;
+            }
+            if (!contactData.street?.trim()) {
+                toast.error("Address/Street is required");
+                return;
+            }
+            if (!contactData.country?.trim()) {
+                toast.error("Country is required");
+                return;
+            }
+            if (!contactData.state?.trim()) {
+                toast.error("State is required");
+                return;
+            }
+            if (!contactData.city?.trim()) {
+                toast.error("City is required");
+                return;
+            }
+            if (!contactData.pincode?.trim()) {
+                toast.error("Zip Code is required");
+                return;
+            }
+            if (contactData.pincode.replace(/\D/g, '').length !== 6) {
+                toast.error("Zip Code must be exactly 6 digits");
+                return;
+            }
+        }
+
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         } else if (currentStep === steps.length - 1) {
-            setIsSuccess(true);
+            // ── Place Order Flow ──
+            if (!token) {
+                toast.error("Please log in to place an order.");
+                return;
+            }
+
+            // Map frontend payment option to backend paymentMethod
+            const paymentMethodMap: Record<string, string> = {
+                upi: 'ONLINE',
+                cards: 'ONLINE',
+                cod: 'COD',
+                wallet: 'WALLET',
+            };
+            const paymentMethod = paymentMethodMap[selectedPayment] || 'COD';
+            const shippingMode = selectedShipping === 'air' ? 'air' : 'road';
+
+            try {
+                // 1. Create address from contact data
+                const addressPayload: any = {
+                    street: contactData.street,
+                    city: contactData.city,
+                    pincode: contactData.pincode,
+                };
+                // Send country/state as IDs if they look like MongoDB ObjectIds, else as strings
+                if (contactData.country) addressPayload.country = contactData.country;
+                if (contactData.state) addressPayload.state = contactData.state;
+
+                const addressResult = await dispatch(createAddress(addressPayload)).unwrap();
+                const addressId = addressResult?._id || addressResult;
+
+                if (!addressId) {
+                    toast.error("Failed to save address. Please try again.");
+                    return;
+                }
+
+                // 2. Create order
+                const orderPayload = {
+                    paymentMethod,
+                    address: { _id: addressId },
+                    shippingMode,
+                };
+
+                const orderResult = await dispatch(createOrder(orderPayload)).unwrap();
+
+                if (!orderResult) {
+                    toast.error("Failed to create order. Please try again.");
+                    return;
+                }
+
+                // 3. Handle payment
+                if (paymentMethod === 'ONLINE' && orderResult.razorpayOrderId) {
+                    // Open Razorpay checkout
+                    const options = {
+                        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+                        amount: Math.round((orderResult.orderTotal || orderResult.amount) * 100),
+                        currency: 'INR',
+                        name: 'DSM Electro',
+                        description: 'Order Payment',
+                        order_id: orderResult.razorpayOrderId,
+                        handler: async (response: any) => {
+                            try {
+                                await dispatch(verifyPayment({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    orderId: orderResult._id,
+                                })).unwrap();
+                                toast.success("Payment successful! Order placed.");
+                                setIsSuccess(true);
+                            } catch (err: any) {
+                                toast.error(err || "Payment verification failed.");
+                            }
+                        },
+                        prefill: {
+                            name: `${contactData.firstName} ${contactData.lastName}`,
+                            email: contactData.email,
+                            contact: contactData.phone,
+                        },
+                        theme: { color: '#EE9C24' },
+                        modal: {
+                            ondismiss: () => {
+                                toast.error("Payment cancelled.");
+                            },
+                        },
+                    };
+
+                    const razorpay = new (window as any).Razorpay(options);
+                    razorpay.open();
+                } else {
+                    // COD or WALLET — order already placed
+                    toast.success("Order placed successfully!");
+                    setIsSuccess(true);
+                }
+            } catch (err: any) {
+                toast.error(err || "Something went wrong. Please try again.");
+            }
         }
     };
 
@@ -148,11 +350,13 @@ const CheckoutPage = () => {
         }
     };
 
-    const subtotal = cartItems?.reduce((acc, item: any) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0;
-    const itemsMRP = cartItems?.reduce((acc, item: any) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0) || 0;
-    const totalSaving = itemsMRP - subtotal;
-    const totalQuantity = cartItems?.reduce((acc, item: any) => acc + (Number(item.quantity) || 0), 0) || 0;
-    const shippingFee = cartItems?.length > 0 ? (selectedShipping === 'air' ? 250 : 150) : 0;
+    const itemsMRP = summary?.totalMRP || cartItems?.reduce((acc, item: any) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0) || 0;
+    const subtotal = (summary?.subTotal !== undefined && summary?.subTotal !== null) ? summary.subTotal : (cartItems?.reduce((acc, item: any) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0);
+    const couponDiscount = summary?.couponDiscount || 0;
+    const productSaving = summary?.totalProductSaving || (itemsMRP - (cartItems?.reduce((acc, item: any) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0));
+    const totalSaving = productSaving + couponDiscount;
+    const totalQuantity = summary?.totalQuantity || cartItems?.reduce((acc, item: any) => acc + (Number(item.quantity) || 0), 0) || 0;
+    const shippingFee = cartItems?.length > 0 ? (selectedShipping === 'air' ? (summary?.shipping?.air?.charge ?? 250) : (summary?.shipping?.road?.charge ?? 150)) : 0;
     const grandTotal = subtotal + shippingFee;
 
     return (
@@ -182,6 +386,10 @@ const CheckoutPage = () => {
                 setContactData={setContactData}
                 saveAddress={saveAddress}
                 setSaveAddress={setSaveAddress}
+                loginPhone={loginPhone}
+                setLoginPhone={setLoginPhone}
+                countries={countries}
+                states={states}
             />
 
             {/* Desktop View */}
@@ -261,7 +469,9 @@ const CheckoutPage = () => {
                                                 <div className="flex items-center justify-between py-2">
                                                     <input
                                                         type="text"
-                                                        defaultValue="Enter Your Number"
+                                                        placeholder="Enter Your Phone Number"
+                                                        value={loginPhone}
+                                                        onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                                                         className="bg-transparent border-none outline-none text-gray-500 font-medium w-full text-sm sm:text-base"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
@@ -327,7 +537,13 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">GST Number(If Applicable)</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#999999] font-medium w-full text-[1rem]" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter Your GST Number" 
+                                                        value={contactData.gstNumber} 
+                                                        onChange={(e) => setContactData({ ...contactData, gstNumber: e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15) })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]" 
+                                                    />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
                                             </fieldset>
@@ -338,7 +554,13 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Company Name</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Company name" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter Your Company Name" 
+                                                        value={contactData.companyName} 
+                                                        onChange={(e) => setContactData({ ...contactData, companyName: e.target.value })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]" 
+                                                    />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
                                             </fieldset>
@@ -350,7 +572,13 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">First Name</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Enter Your First Name" 
+                                                            value={contactData.firstName} 
+                                                            onChange={(e) => setContactData({ ...contactData, firstName: e.target.value })} 
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        />
                                                     </div>
                                                 </fieldset>
                                             </div>
@@ -358,7 +586,13 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">Last Name</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Enter Your Last Name" 
+                                                            value={contactData.lastName} 
+                                                            onChange={(e) => setContactData({ ...contactData, lastName: e.target.value })} 
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        />
                                                     </div>
                                                 </fieldset>
                                             </div>
@@ -369,7 +603,13 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Phone Number</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" value={contactData.phone} onChange={(e) => setContactData({ ...contactData, phone: e.target.value })} className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter Your Phone Number" 
+                                                        value={contactData.phone} 
+                                                        onChange={(e) => setContactData({ ...contactData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
                                             </fieldset>
@@ -380,7 +620,13 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Email Address</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" value={contactData.email} onChange={(e) => setContactData({ ...contactData, email: e.target.value })} className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter Your Email Address" 
+                                                        value={contactData.email} 
+                                                        onChange={(e) => setContactData({ ...contactData, email: e.target.value })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
                                             </fieldset>
@@ -391,7 +637,13 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Address</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" value={contactData.street} onChange={(e) => setContactData({ ...contactData, street: e.target.value })} className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Enter Your Address" 
+                                                        value={contactData.street} 
+                                                        onChange={(e) => setContactData({ ...contactData, street: e.target.value })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
                                             </fieldset>
@@ -401,9 +653,18 @@ const CheckoutPage = () => {
                                         <div className="relative">
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Country</legend>
-                                                <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" />
-                                                    <ChevronDown className="text-gray-600" size={18} />
+                                                <div className="flex items-center justify-between py-1">
+                                                    <select 
+                                                        value={contactData.country} 
+                                                        onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none" 
+                                                    >
+                                                        <option value="" className="text-gray-400">Select Country</option>
+                                                        {countries.map((c) => (
+                                                            <option key={c._id} value={c._id} className="text-gray-800">{c.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="text-gray-600 pointer-events-none" size={18} />
                                                 </div>
                                             </fieldset>
                                         </div>
@@ -412,9 +673,18 @@ const CheckoutPage = () => {
                                         <div className="relative">
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">State</legend>
-                                                <div className="flex items-center justify-between py-2">
-                                                    <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" />
-                                                    <ChevronDown className="text-gray-600" size={18} />
+                                                <div className="flex items-center justify-between py-1">
+                                                    <select 
+                                                        value={contactData.state} 
+                                                        onChange={(e) => setContactData({ ...contactData, state: e.target.value })} 
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none" 
+                                                    >
+                                                        <option value="" className="text-gray-400">Select State</option>
+                                                        {states.map((s) => (
+                                                            <option key={s._id} value={s._id} className="text-gray-800">{s.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="text-gray-600 pointer-events-none" size={18} />
                                                 </div>
                                             </fieldset>
                                         </div>
@@ -425,7 +695,13 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">City</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Enter Your City" 
+                                                            value={contactData.city} 
+                                                            onChange={(e) => setContactData({ ...contactData, city: e.target.value })} 
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        />
                                                     </div>
                                                 </fieldset>
                                             </div>
@@ -433,7 +709,13 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">Zip Code</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input type="text" placeholder="Enter Your Number" className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Enter Your Zip Code" 
+                                                            value={contactData.pincode} 
+                                                            onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} 
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        />
                                                     </div>
                                                 </fieldset>
                                             </div>
@@ -1008,7 +1290,11 @@ const MobileCheckoutView = ({
     contactData,
     setContactData,
     saveAddress,
-    setSaveAddress
+    setSaveAddress,
+    loginPhone,
+    setLoginPhone,
+    countries,
+    states
 }: {
     currentStep: number;
     setCurrentStep: (step: number) => void;
@@ -1033,6 +1319,10 @@ const MobileCheckoutView = ({
     setContactData?: any;
     saveAddress?: boolean;
     setSaveAddress?: any;
+    loginPhone?: string;
+    setLoginPhone?: any;
+    countries: any[];
+    states: any[];
 }) => {
     if (isSuccess) {
         return (
@@ -1229,14 +1519,15 @@ const MobileCheckoutView = ({
                                 Enter phone number to send one time Password On SMS
                             </p>
 
-                            {/* Phone Input */}
                             <div className="relative mb-6 text-left">
                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Phone Number</legend>
                                     <div className="flex items-center justify-between py-1">
                                         <input
                                             type="text"
-                                            placeholder="Enter Your Number"
+                                            placeholder="Enter Your Phone Number"
+                                            value={loginPhone}
+                                            onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                                             className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm"
                                         />
                                         <Pencil className="text-gray-400" size={16} />
@@ -1338,15 +1629,79 @@ const MobileCheckoutView = ({
                             </div>
 
                             {/* Address */}
-                            <div className="relative">
-                                <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                    <legend className="px-2 text-[10px] font-bold text-gray-800">Address</legend>
-                                    <div className="flex items-center justify-between py-1">
-                                        <input type="text" placeholder="Enter Full Address" value={contactData.street} onChange={(e) => setContactData({ ...contactData, street: e.target.value })} className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm" />
-                                        <Pencil className="text-gray-400" size={16} />
-                                    </div>
-                                </fieldset>
-                            </div>
+                             <div className="relative">
+                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Address</legend>
+                                     <div className="flex items-center justify-between py-1">
+                                         <input type="text" placeholder="Enter Full Address" value={contactData.street} onChange={(e) => setContactData({ ...contactData, street: e.target.value })} className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm" />
+                                         <Pencil className="text-gray-400" size={16} />
+                                     </div>
+                                 </fieldset>
+                             </div>
+
+                             {/* Country */}
+                             <div className="relative">
+                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Country</legend>
+                                     <div className="flex items-center justify-between py-1">
+                                         <select 
+                                             value={contactData.country} 
+                                             onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })}
+                                             className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
+                                         >
+                                             <option value="">Select Country</option>
+                                             {countries.map((c: any) => (
+                                                 <option key={c._id} value={c._id}>{c.name}</option>
+                                             ))}
+                                         </select>
+                                         <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
+                                     </div>
+                                 </fieldset>
+                             </div>
+
+                             {/* State */}
+                             <div className="relative">
+                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                     <legend className="px-2 text-[10px] font-bold text-gray-800">State</legend>
+                                     <div className="flex items-center justify-between py-1">
+                                         <select 
+                                             value={contactData.state} 
+                                             onChange={(e) => setContactData({ ...contactData, state: e.target.value })}
+                                             className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
+                                         >
+                                             <option value="">Select State</option>
+                                             {states.map((s: any) => (
+                                                 <option key={s._id} value={s._id}>{s.name}</option>
+                                             ))}
+                                         </select>
+                                         <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
+                                     </div>
+                                 </fieldset>
+                             </div>
+
+                             {/* City & Zip Code Row */}
+                             <div className="flex gap-4">
+                                 <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                     <legend className="px-2 text-[10px] font-bold text-gray-800">City</legend>
+                                     <input 
+                                         type="text" 
+                                         placeholder="City" 
+                                         value={contactData.city} 
+                                         onChange={(e) => setContactData({ ...contactData, city: e.target.value })} 
+                                         className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1" 
+                                     />
+                                 </fieldset>
+                                 <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Zip Code</legend>
+                                     <input 
+                                         type="text" 
+                                         placeholder="Zip Code" 
+                                         value={contactData.pincode} 
+                                         onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} 
+                                         className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1" 
+                                     />
+                                 </fieldset>
+                             </div>
 
                             {/* Save Checkbox */}
                             <div className="flex items-center gap-3 py-2">

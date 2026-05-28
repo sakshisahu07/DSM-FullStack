@@ -8,6 +8,26 @@ export default class AddressService {
    * CREATE ADDRESS
    */
   static async createAddress(userId, data) {
+    const { firstName, lastName, phone, email, street, city, state, pincode, country } = data;
+
+    if (!firstName || !firstName.trim()) throw new AppError("First Name is required", 400);
+    if (!lastName || !lastName.trim()) throw new AppError("Last Name is required", 400);
+
+    if (!phone || !phone.trim()) throw new AppError("Phone Number is required", 400);
+    if (!/^\d{10}$/.test(phone.trim())) throw new AppError("Phone Number must be exactly 10 digits", 400);
+
+    if (!email || !email.trim()) throw new AppError("Email Address is required", 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new AppError("Please enter a valid email address", 400);
+
+    if (!street || !street.trim()) throw new AppError("Address/Street is required", 400);
+    if (!city || !city.trim()) throw new AppError("City is required", 400);
+    if (!state || !state.trim()) throw new AppError("State is required", 400);
+
+    if (!pincode || !pincode.trim()) throw new AppError("Zip Code is required", 400);
+    if (!/^\d{6}$/.test(pincode.trim())) throw new AppError("Zip Code must be exactly 6 digits", 400);
+
+    if (!country || !country.trim()) throw new AppError("Country is required", 400);
+
     const address = await addressModel.create({
       ...data,
       userId,

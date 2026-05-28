@@ -67,4 +67,12 @@ export const createProductWithVariantSchema = Joi.object({
   variant: Joi.alternatives()
     .try(variantSchema, Joi.array().items(variantSchema).min(1))
     .required(),
+
+  hotdeal: Joi.boolean().optional(),
+  trending: Joi.boolean().optional(),
+  disable: Joi.boolean().optional(),
+
+  metaTitle: Joi.string().allow("").optional(),
+  metaDescription: Joi.string().allow("").optional(),
+  keywords: Joi.string().allow("").optional(),
 });

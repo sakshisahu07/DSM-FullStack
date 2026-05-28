@@ -18,6 +18,18 @@ export default class ProductController {
         }
       }
 
+      // PARSE JSON FIELDS
+      const jsonFields = ["specification", "keyFeatures", "minDeliveryCharge"];
+      for (const field of jsonFields) {
+        if (body[field] && typeof body[field] === "string") {
+          try {
+            body[field] = JSON.parse(body[field]);
+          } catch {
+            throw new ValidationError(`Invalid ${field} JSON format`);
+          }
+        }
+      }
+
       // PARSE LOCATION ARRAYS
       const locationFields = ["countries", "states", "cities", "pincodes"];
       for (const field of locationFields) {
@@ -66,6 +78,18 @@ export default class ProductController {
           body.variant = JSON.parse(body.variant);
         } catch {
           throw new ValidationError("Invalid variant JSON format");
+        }
+      }
+
+      // PARSE JSON FIELDS
+      const jsonFields = ["specification", "keyFeatures", "minDeliveryCharge"];
+      for (const field of jsonFields) {
+        if (body[field] && typeof body[field] === "string") {
+          try {
+            body[field] = JSON.parse(body[field]);
+          } catch {
+            throw new ValidationError(`Invalid ${field} JSON format`);
+          }
         }
       }
 

@@ -27,6 +27,13 @@ interface Order {
     firstName?: string;
     lastName?: string;
     email: string;
+    number?: string;
+  } | null;
+  customerSnapshot?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
   } | null;
   orderTotal: number;
   paymentMethod: string;
@@ -34,6 +41,25 @@ interface Order {
   status: string;
   shippingMode: string;
   createdAt: string;
+}
+
+// Helpers to get customer info with snapshot fallback
+function getCustomerName(o: Order): string {
+  if (o.customerId) {
+    const name = `${o.customerId.firstName || ""} ${o.customerId.lastName || ""}`.trim();
+    if (name) return name;
+  }
+  if (o.customerSnapshot) {
+    const name = `${o.customerSnapshot.firstName || ""} ${o.customerSnapshot.lastName || ""}`.trim();
+    if (name) return name;
+  }
+  return "Unknown Customer";
+}
+
+function getCustomerEmail(o: Order): string {
+  if (o.customerId?.email) return o.customerId.email;
+  if (o.customerSnapshot?.email) return o.customerSnapshot.email;
+  return "No Email";
 }
 
 function statusVariant(s: string) {
@@ -100,9 +126,9 @@ function OrdersAll() {
       cell: (o) => (
         <div className="flex flex-col">
           <span className="font-medium text-sm">
-            {o.customerId ? `${o.customerId.firstName || ""} ${o.customerId.lastName || ""}`.trim() || "Guest" : "Guest"}
+            {getCustomerName(o)}
           </span>
-          <span className="text-[10px] text-muted-foreground">{o.customerId?.email || "No Email"}</span>
+          <span className="text-[10px] text-muted-foreground">{getCustomerEmail(o)}</span>
         </div>
       ) 
     },
@@ -154,8 +180,8 @@ function OrdersAll() {
               <div className="grid grid-cols-2 gap-6 text-sm">
                 <div className="space-y-1">
                   <div className="text-[10px] uppercase text-muted-foreground font-bold">Customer</div>
-                  <div className="font-semibold text-base">{view.customerId ? `${view.customerId.firstName || ""} ${view.customerId.lastName || ""}` : "Guest Customer"}</div>
-                  <div className="text-xs text-muted-foreground">{view.customerId?.email}</div>
+                  <div className="font-semibold text-base">{view ? getCustomerName(view) : "Unknown Customer"}</div>
+                  <div className="text-xs text-muted-foreground">{view ? getCustomerEmail(view) : "No Email"}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-[10px] uppercase text-muted-foreground font-bold">Order Date</div>

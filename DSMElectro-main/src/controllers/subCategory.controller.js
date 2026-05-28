@@ -13,9 +13,12 @@ export default class SubCategoryController {
       const { error } = subCategorySchema.validate(req.body);
       if (error) throw new ValidationError(error.details[0].message);
 
+      // .fields() puts files in req.files, .single() puts in req.file
+      const iconFile = req.files?.icon?.[0] || req.file;
+
       const payload = {
         ...req.body,
-        icon: req.file?.location || null,
+        icon: iconFile?.location || null,
       };
 
       const data = await SubCategoryService.createSubCategory(payload);
@@ -29,9 +32,12 @@ export default class SubCategoryController {
       const { error } = updateSubCategorySchema.validate(req.body);
       if (error) throw new ValidationError(error.details[0].message);
 
+      // .fields() puts files in req.files, .single() puts in req.file
+      const iconFile = req.files?.icon?.[0] || req.file;
+
       const payload = {
         ...req.body,
-        ...(req.file && { icon: req.file.location }),
+        ...(iconFile && { icon: iconFile.location }),
       };
 
       const data = await SubCategoryService.updateSubCategory(

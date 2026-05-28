@@ -17,7 +17,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { CardGridSkeleton } from "@/components/loading-skeletons";
 
-const API_BASE = "http://15.207.149.229:2000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050/api/v1";
 
 export const Route = createFileRoute("/_app/products/brands")({
   component: BrandsPage,
@@ -44,8 +44,9 @@ function BrandsPage() {
       setLoading(true);
       const res = await apiFetch(`${API_BASE}/brands?page=1&limit=100`);
       const json = await res.json();
-      if (json.success) {
-        setItems(json.data || []);
+      if (json.success !== false) {
+        const brandsData = json.data?.brands || json.data || [];
+        setItems(Array.isArray(brandsData) ? brandsData : []);
       }
     } catch (err) {
       toast.error("Failed to load brands");
@@ -136,7 +137,7 @@ function BrandsPage() {
                 <div className="min-w-0">
                   <div className="font-bold truncate">{b.brandName}</div>
                   <div className="text-[10px] text-muted-foreground uppercase mt-0.5">
-                    {typeof b.category === 'object' ? b.category.title : "No Category"}
+                    {b.category && typeof b.category === 'object' ? b.category.title : "No Category"}
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -194,8 +195,14 @@ function BrandDialog({ open, onOpenChange, brand, onSave }: {
             apiFetch(`${API_BASE}/sub-category`)
           ]);
           const [cJson, sJson] = await Promise.all([cRes.json(), sRes.json()]);
-          if (cJson.success) setCategories(cJson.data || []);
-          if (sJson.success) setSubCategories(sJson.data || []);
+          if (cJson.success !== false) {
+            const catData = cJson.data?.categories || cJson.data || [];
+            setCategories(Array.isArray(catData) ? catData : []);
+          }
+          if (sJson.success !== false) {
+            const subData = sJson.data?.subCategories || sJson.data?.subcategories || sJson.data || [];
+            setSubCategories(Array.isArray(subData) ? subData : []);
+          }
         } catch (err) {
           console.error("Failed to load dialog metadata", err);
         }

@@ -174,6 +174,64 @@ export const addToCart = createAsyncThunk(
   }
 );
 
+export const applyCoupon = createAsyncThunk(
+  'cart/applyCoupon',
+  async (code: string, { rejectWithValue, getState, dispatch }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth?.token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+
+      if (!token) return rejectWithValue('No authorization token found');
+
+      const response = await fetch(`${BASE_URL}/cart/apply-coupon`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to apply coupon');
+
+      dispatch(fetchCart());
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+export const removeCoupon = createAsyncThunk(
+  'cart/removeCoupon',
+  async (_, { rejectWithValue, getState, dispatch }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth?.token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+
+      if (!token) return rejectWithValue('No authorization token found');
+
+      const response = await fetch(`${BASE_URL}/cart/remove-coupon`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to remove coupon');
+
+      dispatch(fetchCart());
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,

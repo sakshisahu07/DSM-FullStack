@@ -42,6 +42,24 @@ export default class ProductService {
   //   return { product, variants: [] };
   // }
 
+  static async bustProductCaches(productId) {
+    try {
+      const keys = await redisClient.keys("products:*");
+      const homeKeys = await redisClient.keys("home:data:*");
+      const allKeys = ["products:list", ...keys, ...homeKeys];
+      if (productId) {
+        allKeys.push(`product:${productId}`);
+        allKeys.push(`variants:product:${productId}`);
+      }
+      const uniqueKeys = [...new Set(allKeys)].filter(Boolean);
+      if (uniqueKeys.length > 0) {
+        await redisClient.del(...uniqueKeys);
+      }
+    } catch (err) {
+      console.error("Failed to bust product caches:", err.message);
+    }
+  }
+
   static async createProductWithVariant(payload) {
     const { variant, ...productData } = payload;
 
@@ -60,19 +78,28 @@ export default class ProductService {
     };
 
     const variantsToInsert = (Array.isArray(variant) ? variant : [variant]).map(
-      (v) => ({ ...v, ...sharedFields }),
+      (v) => {
+        const mrp = Number(v.mrp) || 0;
+        const discount = Number(v.discount) || 0;
+        const discountAmount = mrp * (discount / 100);
+        const finalPrice = mrp - discountAmount;
+        return {
+          ...v,
+          ...sharedFields,
+          discountAmount,
+          finalPrice,
+        };
+      }
     );
 
-    Promise.resolve().then(async () => {
-      try {
-        await variantModel.insertMany(variantsToInsert, { ordered: false });
-        await redisClient.unlink("products:list");
-      } catch (err) {
-        console.error("Variant insert failed:", err.message);
-      }
-    });
+    try {
+      await variantModel.insertMany(variantsToInsert, { ordered: false });
+      await ProductService.bustProductCaches(product._id);
+    } catch (err) {
+      console.error("Variant insert failed:", err.message);
+    }
 
-    return { product, variants: [] };
+    return { product, variants: variantsToInsert };
   }
 
   // UPDATE PRODUCT
@@ -107,10 +134,12 @@ export default class ProductService {
       }
     }
 
+    // Extract variant from payload
+    const { variant, ...productData } = payload;
 
     // ───────────── UPDATE DATA ─────────────
     const updateData = {
-      ...payload,
+      ...productData,
       ...(files?.icon?.[0] && { icon: files.icon[0].location }),
       ...(files?.images?.length && {
         images: files.images.map((f) => f.location),
@@ -131,10 +160,39 @@ export default class ProductService {
       { new: true },
     );
 
+    // ───────────── UPDATE VARIANTS ─────────────
+    if (variant) {
+      // 1. Delete old variants
+      await variantModel.deleteMany({ productId });
+
+      // 2. Map and insert new variants
+      const sharedFields = {
+        productId: updated._id,
+        category: updated.categoryId,
+        subCategory: updated.subCategoryId,
+        brand: updated.brandId,
+      };
+
+      const variantsToInsert = (Array.isArray(variant) ? variant : [variant]).map(
+        (v) => {
+          const mrp = Number(v.mrp) || 0;
+          const discount = Number(v.discount) || 0;
+          const discountAmount = mrp * (discount / 100);
+          const finalPrice = mrp - discountAmount;
+          return {
+            ...v,
+            ...sharedFields,
+            discountAmount,
+            finalPrice,
+          };
+        }
+      );
+
+      await variantModel.insertMany(variantsToInsert, { ordered: false });
+    }
 
     // ───────────── CACHE CLEAR ─────────────
-    await redisClient.del(`product:${productId}`);
-    await redisClient.unlink("products:list");
+    await ProductService.bustProductCaches(productId);
 
     return updated;
   }
@@ -327,12 +385,7 @@ export default class ProductService {
       dataPipeline.push({ $skip: skip }, { $limit: limitNumber });
     }
 
-    dataPipeline.push({
-      $project: {
-        variants: 0,
-        variant: 0,
-      },
-    });
+    // No projection out of variants to ensure frontend receives variant and stock details
 
     const pipeline = [
       { $match: match },
@@ -526,12 +579,7 @@ export default class ProductService {
             { $sort: sortStage },
             { $skip: skip },
             { $limit: limitNumber },
-            {
-              $project: {
-                variants: 0,
-                variant: 0,
-              },
-            },
+            // No projection out of variants to ensure frontend receives variant and stock details
           ],
           totalCount: [{ $count: "total" }],
         },
@@ -599,8 +647,7 @@ export default class ProductService {
     await variantModel.deleteMany({ productId });
     await product.deleteOne();
 
-    await redisClient.del("products:list");
-    await redisClient.del(`product:${productId}`);
+    await ProductService.bustProductCaches(productId);
 
     return true;
   }

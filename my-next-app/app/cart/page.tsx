@@ -18,8 +18,9 @@ import {
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
-import { fetchCart, removeFromCart, increaseQuantity, decreaseQuantity } from '@/redux/slices/cartSlice';
+import { fetchCart, removeFromCart, increaseQuantity, decreaseQuantity, applyCoupon, removeCoupon } from '@/redux/slices/cartSlice';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/redux/slices/wishlistSlice';
+import toast from 'react-hot-toast';
 
 const getItemImage = (item: any) => {
     if (item.itemType === 'combo') {
@@ -75,10 +76,126 @@ const CartPage = () => {
     const [isCouponApplied, setIsCouponApplied] = useState(false);
     const [isCouponError, setIsCouponError] = useState(false);
 
+    // Country & State dynamic select states
+    const [countries, setCountries] = useState<any[]>([]);
+    const [states, setStates] = useState<any[]>([]);
+    const [selectedCountry, setSelectedCountry] = useState('');
+    const [selectedState, setSelectedState] = useState('');
+    const [city, setCity] = useState('');
+    const [zipCode, setZipCode] = useState('');
+    const [couponInput, setCouponInput] = useState('');
+
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5050/api/v1';
+
+    // Fetch Countries on Mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/countries?limit=100`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && Array.isArray(data.data.data)) {
+                        setCountries(data.data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching countries:", err);
+            }
+        };
+        fetchCountries();
+    }, [BASE_URL]);
+
+    // Fetch States when Selected Country Changes
+    useEffect(() => {
+        if (!selectedCountry) {
+            setStates([]);
+            setSelectedState('');
+            return;
+        }
+        const fetchStates = async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/states?countryId=${selectedCountry}&limit=100`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && Array.isArray(data.data.data)) {
+                        setStates(data.data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching states:", err);
+            }
+        };
+        fetchStates();
+    }, [selectedCountry, BASE_URL]);
+
     useEffect(() => {
         dispatch(fetchCart());
         dispatch(fetchWishlist());
     }, [dispatch]);
+
+    const handleCalculateShipping = (e: React.MouseEvent | React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!selectedCountry) {
+            toast.error("Please select a country");
+            return;
+        }
+        if (!selectedState) {
+            toast.error("Please select a state");
+            return;
+        }
+        if (!city.trim()) {
+            toast.error("Please enter a city");
+            return;
+        }
+        if (!zipCode || zipCode.length !== 6) {
+            toast.error("Please enter a valid 6-digit zip code");
+            return;
+        }
+
+        const countryObj = countries.find(c => c._id === selectedCountry);
+        const stateObj = states.find(s => s._id === selectedState);
+
+        toast.success(`Shipping charges calculated for ${city}, ${stateObj?.name}, ${countryObj?.name}!`);
+        setShowAddressForm(false);
+    };
+
+    const handleApplyCoupon = async (code: string) => {
+        if (!code.trim()) {
+            toast.error("Please enter a coupon code");
+            return;
+        }
+        try {
+            const resAction = await dispatch(applyCoupon(code));
+            if (applyCoupon.fulfilled.match(resAction)) {
+                toast.success("Coupon Applied Successfully");
+                setIsCouponApplied(true);
+                setIsCouponError(false);
+                setCouponInput('');
+            } else {
+                const errorMsg = resAction.payload as string || "Invalid coupon code";
+                toast.error(errorMsg);
+                setIsCouponError(true);
+                setIsCouponApplied(false);
+            }
+        } catch (err: any) {
+            toast.error("Error applying coupon");
+        }
+    };
+
+    const handleRemoveCoupon = async () => {
+        try {
+            const resAction = await dispatch(removeCoupon());
+            if (removeCoupon.fulfilled.match(resAction)) {
+                toast.success("Coupon Removed Successfully");
+                setIsCouponApplied(false);
+                setIsCouponError(false);
+            } else {
+                toast.error("Failed to remove coupon");
+            }
+        } catch (err: any) {
+            toast.error("Error removing coupon");
+        }
+    };
 
     const updateQuantity = (id: string, delta: number, currentQuantity: number) => {
         if (delta > 0) {
@@ -109,11 +226,13 @@ const CartPage = () => {
         }
     };
 
-    const subtotal = cartItems?.reduce((acc, item) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0;
-    const itemsMRP = cartItems?.reduce((acc, item) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0) || 0;
-    const totalSaving = itemsMRP - subtotal;
-    const shippingFee = cartItems?.length > 0 ? (selectedShipping === 'air' ? 250 : 150) : 0;
-    const totalWeight = (cartItems?.reduce((acc, item) => acc + (Number(item.variantId?.weight?.value || 0) * Number(item.quantity || 0)), 0) || 0) / 1000;
+    const itemsMRP = summary?.totalMRP || cartItems?.reduce((acc, item) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0) || 0;
+    const subtotal = (summary?.subTotal !== undefined && summary?.subTotal !== null) ? summary.subTotal : (cartItems?.reduce((acc, item) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0);
+    const couponDiscount = summary?.couponDiscount || 0;
+    const productSaving = summary?.totalProductSaving || (itemsMRP - (cartItems?.reduce((acc, item) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0));
+    const totalSaving = productSaving + couponDiscount;
+    const shippingFee = cartItems?.length > 0 ? (selectedShipping === 'air' ? (summary?.shipping?.air?.charge ?? 250) : (summary?.shipping?.road?.charge ?? 150)) : 0;
+    const totalWeight = summary?.totalWeight || ((cartItems?.reduce((acc, item) => acc + (Number(item.variantId?.weight?.value || 0) * Number(item.quantity || 0)), 0) || 0) / 1000);
 
     return (
         <div className="min-h-screen bg-white md:bg-white">
@@ -265,7 +384,7 @@ const CartPage = () => {
                                     </div>
                                     <div className="flex justify-between items-center text-[#333333] font-medium">
                                         <span>Items Quantity</span>
-                                        <span className="font-bold text-[#333333]">{summary?.totalQuantity || 0} items</span>
+                                        <span className="font-bold text-[#333333]">{summary?.totalQuantity || cartItems?.reduce((acc, item: any) => acc + (Number(item.quantity) || 0), 0) || 0} items</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[#333333] font-medium">
                                         <span>Discount</span>
@@ -375,15 +494,29 @@ const CartPage = () => {
 
                                                         <div className="space-y-3">
                                                             <div className="relative">
-                                                                <select className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer">
-                                                                    <option>Select Country</option>
+                                                                <select 
+                                                                    value={selectedCountry}
+                                                                    onChange={(e) => setSelectedCountry(e.target.value)}
+                                                                    className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer"
+                                                                >
+                                                                    <option value="">Select Country</option>
+                                                                    {countries.map((c) => (
+                                                                        <option key={c._id} value={c._id}>{c.name}</option>
+                                                                    ))}
                                                                 </select>
                                                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                                                             </div>
 
                                                             <div className="relative">
-                                                                <select className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer">
-                                                                    <option>Select State</option>
+                                                                <select 
+                                                                    value={selectedState}
+                                                                    onChange={(e) => setSelectedState(e.target.value)}
+                                                                    className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer"
+                                                                >
+                                                                    <option value="">Select State</option>
+                                                                    {states.map((s) => (
+                                                                        <option key={s._id} value={s._id}>{s.name}</option>
+                                                                    ))}
                                                                 </select>
                                                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                                                             </div>
@@ -391,17 +524,27 @@ const CartPage = () => {
                                                             <input
                                                                 type="text"
                                                                 placeholder="Enter City"
+                                                                value={city}
+                                                                onChange={(e) => setCity(e.target.value)}
                                                                 className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10"
                                                             />
 
                                                             <input
                                                                 type="text"
                                                                 placeholder="Enter Zip Code"
+                                                                value={zipCode}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                                    setZipCode(val);
+                                                                }}
                                                                 className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10"
                                                             />
                                                         </div>
 
-                                                        <button className="w-full bg-gradient-to-r from-[#EE9C24] to-[#B3520A] text-white py-2 md:py-4 rounded-full font-bold text-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]">
+                                                        <button 
+                                                            onClick={handleCalculateShipping}
+                                                            className="w-full bg-gradient-to-r from-[#EE9C24] to-[#B3520A] text-white py-2 md:py-4 rounded-full font-bold text-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                                                        >
                                                             Calculate
                                                         </button>
                                                     </div>
@@ -415,35 +558,39 @@ const CartPage = () => {
                                 <div className="pt-4 border-t border-gray-100 space-y-4 mb-8">
                                     <h3 className="font-bold text-gray-900">Have a Coupon Code?</h3>
 
-                                    {isCouponApplied && (
-                                        <div className="bg-[#E7F6E7] border-l-[6px] border-[#2EB85C] rounded-r-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <CheckCircle2 className="text-[#2EB85C]" size={24} />
-                                            <div className="flex gap-2 items-baseline">
-                                                <span className="font-bold text-[#2EB85C]">Success</span>
-                                                <span className="text-[#5C685C] text-sm font-medium">Coupon Applied Successfully</span>
+                                    {summary?.couponCode ? (
+                                        <div className="bg-[#E7F6E7] border-l-[6px] border-[#2EB85C] rounded-r-xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 className="text-[#2EB85C]" size={24} />
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-[#2EB85C] text-sm">Coupon "{summary.couponCode}" Applied</span>
+                                                    <span className="text-[#5C685C] text-xs font-semibold">Saved ₹{summary.couponDiscount.toFixed(2)} on this order!</span>
+                                                </div>
                                             </div>
+                                            <button 
+                                                onClick={handleRemoveCoupon}
+                                                className="text-red-500 hover:text-red-700 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full"
+                                            >
+                                                <Trash2 size={14} /> Remove
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Enter code (e.g. SAVE2026)"
+                                                value={couponInput}
+                                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                                className="flex-1 text-[#333333] border border-gray-100 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/20"
+                                            />
+                                            <button 
+                                                onClick={() => handleApplyCoupon(couponInput)}
+                                                className="bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white px-6 py-3 rounded-md font-bold text-sm shadow-sm hover:shadow-md transition-all active:scale-95 leading-none"
+                                            >
+                                                Apply Coupon
+                                            </button>
                                         </div>
                                     )}
-
-                                    {isCouponError && (
-                                        <div className="bg-[#FEE2E2] border-l-[6px] border-[#F87171] rounded-r-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <CheckCircle2 className="text-[#F87171]" size={24} />
-                                            <div className="flex gap-2 items-baseline">
-                                                <span className="font-bold text-[#F87171]">Error</span>
-                                                <span className="text-[#7F4E4E] text-sm font-medium">Coupon not applicable on selected items</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Save10"
-                                            className="flex-1 text-[#333333] border border-gray-100 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/20"
-                                        />
-                                        <button className="bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white px-6 py-3 rounded-md font-bold text-sm shadow-sm hover:shadow-md transition-all active:scale-95 leading-none">
-                                            Apply Coupon
-                                        </button>
-                                    </div>
                                     <button
                                         onClick={() => setShowCouponList(!showCouponList)}
                                         className="text-[#333333] text-sm font-bold block ml-auto hover:underline underline"
@@ -453,50 +600,56 @@ const CartPage = () => {
 
                                     {showCouponList && (
                                         <div className="bg-[#FBFAFA] rounded-3xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            {/* Coupon Card: SAVE10 */}
+                                            {/* Coupon Card: SAVE2026 */}
                                             <div className="bg-white rounded-2xl border border-[#FBE9D9] flex overflow-hidden shadow-sm">
+                                                <div className="flex-1 p-4 space-y-1">
+                                                    <h4 className="font-bold text-[#E47B25] text-sm">SAVE2026</h4>
+                                                    <p className="text-[#333333] text-[11px] font-medium">Get <span className="text-[#4CAF50]">10% OFF</span> on your order</p>
+                                                    <p className="text-[10px] text-gray-500 font-medium">Valid on orders <span className="text-red-500">above ₹100</span></p>
+                                                    <p className="text-[9px] text-gray-400 italic">Valid in 2026</p>
+                                                </div>
+                                                {summary?.couponCode === 'SAVE2026' ? (
+                                                    <div className="relative w-24 flex items-center justify-center bg-[#FBE9D9]/50 border-l border-dashed border-[#FBE9D9]">
+                                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
+                                                        <span className="font-bold text-[#CD9264] text-sm">Applied</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleApplyCoupon('SAVE2026')}
+                                                        className="relative w-24 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] flex items-center justify-center text-white border-l border-dashed border-white/20 active:scale-95 transition-all"
+                                                    >
+                                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
+                                                        <span className="font-bold text-sm">Apply</span>
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Coupon Card: SAVE10 */}
+                                            <div className="bg-white rounded-2xl border border-gray-100 flex overflow-hidden shadow-sm">
                                                 <div className="flex-1 p-4 space-y-1">
                                                     <h4 className="font-bold text-[#E47B25] text-sm">SAVE10</h4>
                                                     <p className="text-[#333333] text-[11px] font-medium">Get <span className="text-[#4CAF50]">10% OFF</span> on your order</p>
                                                     <p className="text-[10px] text-gray-500 font-medium">Valid on orders <span className="text-red-500">above ₹999</span></p>
                                                     <p className="text-[9px] text-gray-400 italic">Limited time offer</p>
                                                 </div>
-                                                <div className="relative w-24 flex items-center justify-center bg-[#FBE9D9]/50 border-l border-dashed border-[#FBE9D9]">
-                                                    {/* Notched cutouts */}
-                                                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
-                                                    <span className="font-bold text-[#CD9264] text-sm">Applied</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Coupon Card: FREESHIP */}
-                                            <div className="bg-white rounded-2xl border border-gray-100 flex overflow-hidden shadow-sm">
-                                                <div className="flex-1 p-4 space-y-1">
-                                                    <h4 className="font-bold text-[#E47B25] text-sm">FREESHIP</h4>
-                                                    <p className="text-[#333333] text-[11px] font-medium">Enjoy <span className="text-[#4CAF50]">Free Shipping</span> on your order</p>
-                                                    <p className="text-[10px] text-gray-500 font-medium">On orders above <span className="text-red-500">₹1,499</span></p>
-                                                    <p className="text-[9px] text-gray-400 italic">Auto-applied at checkout</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => {
-                                                        setIsCouponApplied(true);
-                                                        setIsCouponError(false);
-                                                    }}
-                                                    className="relative w-24 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] flex items-center justify-center text-white border-l border-dashed border-white/20"
-                                                >
-                                                    {/* Notched cutouts */}
-                                                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
-                                                    <span className="font-bold text-sm">Apply</span>
-                                                </button>
+                                                {summary?.couponCode === 'SAVE10' ? (
+                                                    <div className="relative w-24 flex items-center justify-center bg-[#FBE9D9]/50 border-l border-dashed border-gray-100">
+                                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
+                                                        <span className="font-bold text-[#CD9264] text-sm">Applied</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleApplyCoupon('SAVE10')}
+                                                        className="relative w-24 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] flex items-center justify-center text-white border-l border-dashed border-white/20 active:scale-95 transition-all"
+                                                    >
+                                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#FBFAFA] rounded-full" />
+                                                        <span className="font-bold text-sm">Apply</span>
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Coupon Card: COMBO20 */}
-                                            <div
-                                                onClick={() => {
-                                                    setIsCouponError(true);
-                                                    setIsCouponApplied(false);
-                                                }}
-                                                className="bg-white rounded-2xl border border-gray-100 flex overflow-hidden opacity-60 grayscale shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                            >
+                                            <div className="bg-white rounded-2xl border border-gray-100 flex overflow-hidden opacity-60 grayscale shadow-sm hover:shadow-md transition-shadow">
                                                 <div className="flex-1 p-4 space-y-1">
                                                     <h4 className="font-bold text-[#E47B25] text-sm">COMBO20</h4>
                                                     <p className="text-[#333333] text-[11px] font-medium">Get <span className="text-[#4CAF50]">20% OFF</span> on combo kits</p>
@@ -655,7 +808,7 @@ const CartPage = () => {
                                 </div>
                                 <div className="flex justify-between items-center text-xs font-semibold text-[#333333]">
                                     <span className="opacity-70">Items Quantity</span>
-                                    <span>{summary?.totalQuantity || 0} items</span>
+                                    <span>{summary?.totalQuantity || cartItems?.reduce((acc, item: any) => acc + (Number(item.quantity) || 0), 0) || 0} items</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs font-semibold text-[#333333]">
                                     <span className="opacity-70">Discount</span>
@@ -677,30 +830,124 @@ const CartPage = () => {
                             </div>
                             <div className="flex justify-between items-center text-xs font-semibold text-[#333333] px-1">
                                 <span className="opacity-70">Delivery Fee</span>
-                                <button className="text-[#EE9C24] font-bold underline">Calculate Now</button>
+                                <button 
+                                    onClick={() => {
+                                        setShowAddressForm(true);
+                                        const element = document.getElementById("mobile-address-estimator");
+                                        if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="text-[#EE9C24] font-bold underline"
+                                >
+                                    Calculate Now
+                                </button>
                             </div>
                         </div>
 
                         {/* Delivery Address and Coupon Section */}
-                        <div className="space-y-5 pt-4">
+                        <div id="mobile-address-estimator" className="space-y-5 pt-4">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-sm font-bold text-[#333333]">Add Delivery Address</h3>
-                                <button className="text-[#EE9C24] font-bold underline text-xs">Calculate</button>
+                                <button 
+                                    onClick={() => setShowAddressForm(!showAddressForm)}
+                                    className="text-[#EE9C24] font-bold underline text-xs"
+                                >
+                                    {showAddressForm ? "Hide" : "Calculate"}
+                                </button>
                             </div>
 
-                            <div className="space-y-3">
-                                <h3 className="text-sm font-bold text-[#333333]">Discount</h3>
-                                <div className="flex gap-2 h-12">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Enter code" 
-                                        className="flex-1 bg-white border border-gray-100 rounded-md px-4 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#EE9C24]/20"
-                                    />
-                                    <button className="bg-gradient-to-r from-[#B3520A] to-[#EE9C24] text-white px-4 rounded-md font-bold text-xs shadow-sm active:scale-95 transition-transform">
-                                        Apply Coupon
+                            {showAddressForm && (
+                                <div className="bg-white rounded-2xl p-4 border border-gray-100 space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                                    <div className="space-y-3">
+                                        <div className="relative">
+                                            <select 
+                                                value={selectedCountry}
+                                                onChange={(e) => setSelectedCountry(e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-xs text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer"
+                                            >
+                                                <option value="">Select Country</option>
+                                                {countries.map((c: any) => (
+                                                    <option key={c._id} value={c._id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                        </div>
+
+                                        <div className="relative">
+                                            <select 
+                                                value={selectedState}
+                                                onChange={(e) => setSelectedState(e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-xs text-gray-500 appearance-none focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10 cursor-pointer"
+                                            >
+                                                <option value="">Select State</option>
+                                                {states.map((s: any) => (
+                                                    <option key={s._id} value={s._id}>{s.name}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            placeholder="Enter City"
+                                            value={city}
+                                            onChange={(e) => setCity(e.target.value)}
+                                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-xs text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10"
+                                        />
+
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Zip Code"
+                                            value={zipCode}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                setZipCode(val);
+                                            }}
+                                            className="w-full bg-white border border-gray-200 rounded-[10px] px-4 py-3 text-xs text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#EE9C24]/10"
+                                        />
+                                    </div>
+
+                                    <button 
+                                        onClick={handleCalculateShipping}
+                                        className="w-full bg-gradient-to-r from-[#EE9C24] to-[#B3520A] text-white py-2 rounded-full font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                                    >
+                                        Calculate
                                     </button>
                                 </div>
-                            </div>
+                            )}
+
+                             <div className="space-y-3">
+                                 <h3 className="text-sm font-bold text-[#333333]">Discount</h3>
+                                 {summary?.couponCode ? (
+                                     <div className="bg-[#E7F6E7] border-l-[4px] border-[#2EB85C] rounded-r-xl p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+                                         <div className="flex flex-col">
+                                             <span className="font-bold text-[#2EB85C] text-xs">Coupon "{summary.couponCode}" Applied</span>
+                                             <span className="text-[#5C685C] text-[10px] font-semibold">Saved ₹{summary.couponDiscount.toFixed(2)}!</span>
+                                         </div>
+                                         <button 
+                                             onClick={handleRemoveCoupon}
+                                             className="text-red-500 hover:text-red-700 font-bold text-[10px] flex items-center gap-1 transition-all active:scale-95 bg-red-50 px-2.5 py-1 rounded-full"
+                                         >
+                                             <Trash2 size={12} /> Remove
+                                         </button>
+                                     </div>
+                                 ) : (
+                                     <div className="flex gap-2 h-12">
+                                         <input 
+                                             type="text" 
+                                             placeholder="Enter code (e.g. SAVE2026)" 
+                                             value={couponInput}
+                                             onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                             className="flex-1 bg-white border border-gray-100 rounded-md px-4 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#EE9C24]/20 text-[#333333]"
+                                         />
+                                         <button 
+                                             onClick={() => handleApplyCoupon(couponInput)}
+                                             className="bg-gradient-to-r from-[#B3520A] to-[#EE9C24] text-white px-4 rounded-md font-bold text-xs shadow-sm active:scale-95 transition-transform"
+                                         >
+                                             Apply Coupon
+                                         </button>
+                                     </div>
+                                 )}
+                             </div>
                         </div>
 
                         {/* Bottom Sticky-style Summary Card */}

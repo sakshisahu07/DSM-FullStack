@@ -50,9 +50,16 @@ export default class CountryService {
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const data = await countryModel.find().skip(skip).limit(limit).lean();
+    const filter = {};
+    if (query.disable !== undefined) {
+      filter.disable = query.disable === "true";
+    } else {
+      filter.disable = false; // Only active countries by default
+    }
 
-    const total = await countryModel.countDocuments();
+    const data = await countryModel.find(filter).skip(skip).limit(limit).lean();
+
+    const total = await countryModel.countDocuments(filter);
 
     return {
       data,
