@@ -1,0 +1,8 @@
+node_modules
+firebase.json
+*.firebase-adminsdk-*.json
+*.pem
+*.key
+src/config/firebase.json
+check_users.js
+check_admin.js
