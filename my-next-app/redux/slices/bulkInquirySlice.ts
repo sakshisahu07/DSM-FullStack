@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 interface BulkInquiryState {
   loading: boolean;
   error: string | null;
   success: boolean;
   inquiryData: any | null;
   cities: any[];
+  states: any[];
+  countries: any[];
   categories: any[];
 }
 
@@ -15,34 +17,89 @@ const initialState: BulkInquiryState = {
   success: false,
   inquiryData: null,
   cities: [],
+  states: [],
+  countries: [],
   categories: [],
 };
 
-export const fetchCities = createAsyncThunk(
-  'bulkInquiry/fetchCities',
+const getCleanToken = (token: string | null) => {
+  if (!token || token === 'null' || token === 'undefined') return null;
+  return token;
+};
+
+export const fetchCountries = createAsyncThunk(
+  'bulkInquiry/fetchCountries',
   async (token: string | null, { rejectWithValue }) => {
     try {
-      console.log("Fetching cities with token:", token);
       const headers: any = {
         'Content-Type': 'application/json',
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      const cleanToken = getCleanToken(token);
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
       }
-      
-      const response = await fetch(`${BASE_URL}/cities`, {
-        headers
-      });
+      const response = await fetch(`${BASE_URL}/countries?limit=150`, { headers });
       const data = await response.json();
-      console.log("Cities API Response:", data);
-      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch cities');
-      return data.data;
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch countries');
+      return Array.isArray(data.data) ? data.data : (data.data?.data || []);
     } catch (error: any) {
-      console.error("Cities Fetch Error:", error);
       return rejectWithValue(error.message || 'Network error');
     }
   }
 );
+
+export const fetchStates = createAsyncThunk(
+  'bulkInquiry/fetchStates',
+  async (payload: { token: string | null; countryId: string }, { rejectWithValue }) => {
+    try {
+      if (!payload.countryId) {
+        return [];
+      }
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      const cleanToken = getCleanToken(payload.token);
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+      const response = await fetch(`${BASE_URL}/states?countryId=${payload.countryId}&limit=150`, { headers });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch states');
+      return Array.isArray(data.data) ? data.data : (data.data?.data || []);
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+export const fetchCities = createAsyncThunk(
+  'bulkInquiry/fetchCities',
+  async (payload: { token: string | null; stateId?: string }, { rejectWithValue }) => {
+    try {
+      if (!payload.stateId) {
+        return [];
+      }
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      const cleanToken = getCleanToken(payload.token);
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+      let url = `${BASE_URL}/cities?limit=150`;
+      if (payload.stateId) {
+        url += `&stateId=${payload.stateId}`;
+      }
+      const response = await fetch(url, { headers });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch cities');
+      return Array.isArray(data.data) ? data.data : (data.data?.data || []);
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 export const fetchCategories = createAsyncThunk(
   'bulkInquiry/fetchCategories',
   async (token: string | null, { rejectWithValue }) => {
@@ -50,8 +107,9 @@ export const fetchCategories = createAsyncThunk(
       const headers: any = {
         'Content-Type': 'application/json',
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      const cleanToken = getCleanToken(token);
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
       }
 
       const response = await fetch(`${BASE_URL}/categories`, {
@@ -149,8 +207,28 @@ const bulkInquirySlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      .addCase(fetchCountries.fulfilled, (state, action) => {
+        state.countries = action.payload;
+      })
+      .addCase(fetchStates.pending, (state) => {
+        state.states = [];
+      })
+      .addCase(fetchStates.fulfilled, (state, action) => {
+        state.states = action.payload;
+      })
+      .addCase(fetchStates.rejected, (state, action) => {
+        state.states = [];
+        state.error = action.payload as string;
+      })
+      .addCase(fetchCities.pending, (state) => {
+        state.cities = [];
+      })
       .addCase(fetchCities.fulfilled, (state, action) => {
         state.cities = action.payload;
+      })
+      .addCase(fetchCities.rejected, (state, action) => {
+        state.cities = [];
+        state.error = action.payload as string;
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.categories = action.payload;

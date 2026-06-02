@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Loader2, Globe } from "lucide-react";
 
-const API_BASE = "http://15.207.149.229:2000/api/v1";
+const API_BASE = "https://api.dsmelectro.com/api/v1";
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("dsm_token");

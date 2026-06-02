@@ -55,7 +55,7 @@ interface CatalogItem {
 
 /* ─── Constants ──────────────────────────────────────────────── */
 const API_BASE =
-  import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+  import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 /* ─── Helper: map raw API hot-deal → HotDeal ─────────────────── */
 function mapHotDeal(
@@ -127,7 +127,7 @@ function mapHotDeal(
 
   return {
     id: hd._id,
-    name: hd.title || "Hot Deal",
+    name: hd.title || "Hot Product",
     type: hd.type ?? "both",
     status,
     endsIn,
@@ -177,7 +177,7 @@ function HotDealsPage() {
         )
       );
     } catch (err) {
-      toast.error("Failed to load hot deals");
+      toast.error("Failed to load hot products");
     } finally {
       setLoading(false);
     }
@@ -268,7 +268,7 @@ function HotDealsPage() {
       if (json.success) {
         toast.success(
           json.message ??
-            `Hot deal ${willBeActive ? "activated" : "deactivated"}`
+            `Hot product ${willBeActive ? "activated" : "deactivated"}`
         );
       } else {
         // Revert on failure
@@ -282,7 +282,7 @@ function HotDealsPage() {
       setItems((prev) =>
         prev.map((x) => (x.id === id ? { ...x, active: !willBeActive } : x))
       );
-      toast.error(`Failed to toggle hot deal status`);
+      toast.error(`Failed to toggle hot product status`);
     }
   };
 
@@ -380,7 +380,7 @@ function HotDealsPage() {
       }
 
       if (anySuccess) {
-        toast.success("Hot deal updated successfully");
+        toast.success("Hot product updated successfully");
       } else {
         // Local fallback
         setItems((prev) =>
@@ -425,14 +425,14 @@ function HotDealsPage() {
         const json = await res.json();
 
         if (json.success) {
-          toast.success(json.message ?? "Hot deal created successfully");
+          toast.success(json.message ?? "Hot product created successfully");
           await fetchHotDeals();
           setOpen(false);
         } else {
-          toast.error(json.message ?? "Failed to create hot deal");
+          toast.error(json.message ?? "Failed to create hot product");
         }
       } catch {
-        toast.error("Failed to create hot deal");
+        toast.error("Failed to create hot product");
       }
     }
   };
@@ -473,6 +473,7 @@ function HotDealsPage() {
     {
       name: "startDate",
       label: "Start Date",
+      type: "date",
       required: true,
       span: 6,
       placeholder: "YYYY-MM-DD",
@@ -480,6 +481,7 @@ function HotDealsPage() {
     {
       name: "endDate",
       label: "End Date",
+      type: "date",
       required: true,
       span: 6,
       placeholder: "YYYY-MM-DD",
@@ -511,11 +513,11 @@ function HotDealsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Hot Deals"
-        subtitle="Time-limited premium offers across the catalog."
+        title="Hot Products"
+        subtitle="Time-limited premium products across the catalog."
         actions={
           <Button className="gap-1.5" onClick={onCreate}>
-            <Plus className="h-4 w-4" /> New hot deal
+            <Plus className="h-4 w-4" /> New hot product
           </Button>
         }
       />
@@ -524,12 +526,12 @@ function HotDealsPage() {
         <div className="flex flex-col items-center justify-center py-24 gap-3 border rounded-xl bg-card shadow-sm">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground italic">
-            Loading hot deals…
+            Loading hot products…
           </p>
         </div>
       ) : items.length === 0 ? (
         <Card className="p-20 text-center text-muted-foreground italic bg-card shadow-sm border">
-          No hot deals found. Create your first one!
+          No hot products found. Create your first one!
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -649,7 +651,7 @@ function HotDealsPage() {
       <FormDialog<HotDealFormData>
         open={open}
         onOpenChange={setOpen}
-        title={editing ? "Edit hot deal" : "New hot deal"}
+        title={editing ? "Edit hot product" : "New hot product"}
         fields={fields}
         initialValues={
           editing
@@ -668,7 +670,7 @@ function HotDealsPage() {
               }
             : null
         }
-        defaultValues={{ type: "both", discountType: "percentage", isActive: true }}
+        defaultValues={{ type: "both", discountType: "percentage", isActive: true, startDate: new Date().toISOString().split("T")[0], endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }}
         onSubmit={handleSubmit}
       />
     </div>

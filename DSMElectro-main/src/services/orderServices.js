@@ -220,7 +220,13 @@ export default class OrderService {
         await OrderService._deductStock(stockDeductions, session);
 
         // ── Clear cart ──
-        // await cartModel.deleteOne({ userId }).session(session);
+        await cartModel.deleteOne({ userId }).session(session);
+        try {
+          await redisClient.del(`cart:${userId}`);
+          await redisClient.del(`products:related:cart:${userId}`);
+        } catch (cacheErr) {
+          console.error("Cache clear error on checkout:", cacheErr.message);
+        }
 
         // 🟢 GENERATE INVOICE (Background)
         // InvoiceService.generateInvoice(createdOrder._id).catch(err => console.error("Auto-invoice failed:", err));
@@ -323,7 +329,13 @@ export default class OrderService {
       await OrderService._deductStock(stockDeductions, session);
 
       // clear cart
-      // await cartModel.deleteOne({ userId: order.customerId }).session(session);
+      await cartModel.deleteOne({ userId: order.customerId }).session(session);
+      try {
+        await redisClient.del(`cart:${order.customerId}`);
+        await redisClient.del(`products:related:cart:${order.customerId}`);
+      } catch (cacheErr) {
+        console.error("Cache clear error on verification:", cacheErr.message);
+      }
 // 
       // coins
       const totalCoins = await OrderService._calculateOrderCoins(order.product);
@@ -739,12 +751,25 @@ export default class OrderService {
 
   static async _clearOrderCache(userId) {
     try {
-      const keys = await redisClient.keys(`orders:${userId}:*`);
-      if (keys.length > 0) {
-        await redisClient.del(keys);
+      // Clear user's orders cache
+      const userKeys = await redisClient.keys(`orders:${userId}:*`);
+      if (userKeys.length > 0) {
+        await redisClient.del(userKeys);
+      }
+
+      // Clear admin orders cache
+      const adminKeys = await redisClient.keys("orders:admin:*");
+      if (adminKeys.length > 0) {
+        await redisClient.del(adminKeys);
+      }
+
+      // Clear admin dashboard cache
+      const dashboardKeys = await redisClient.keys("dashboard:admin:full:*");
+      if (dashboardKeys.length > 0) {
+        await redisClient.del(dashboardKeys);
       }
     } catch (err) {
-      console.error("Redis clear error:", err.message);
+      console.error("Redis clear error in _clearOrderCache:", err.message);
     }
   }
 

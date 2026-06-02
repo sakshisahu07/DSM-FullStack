@@ -102,7 +102,7 @@ export default function CareerPage() {
                         <MapPin size={13} className="text-[#EE9C24]" />
                         <div className="flex flex-col">
                           <span className="text-[8px] font-black text-[#EE9C24] uppercase tracking-wide opacity-80">Location :</span>
-                          <span className="text-[10px] font-black text-[#333] capitalize">{job.city || "Bhopal(M.P)"}</span>
+                          <span className="text-[10px] font-black text-[#333] capitalize">{typeof job.city === 'object' ? (job.city as any)?.name : job.city || "Bhopal(M.P)"}</span>
                         </div>
                       </div>
                     </div>
@@ -227,7 +227,7 @@ export default function CareerPage() {
                         Location :
                       </span>
                       <span className="text-[#333333] font-black text-[15px]">
-                        {job.city || "Bhopal"}
+                        {typeof job.city === 'object' ? (job.city as any)?.name : job.city || "Bhopal"}
                       </span>
                     </div>
                   </div>

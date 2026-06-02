@@ -100,6 +100,12 @@ function PersonalInfoForm({
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
                 <button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-[#E47B25] to-[#B3520A] px-5 py-3 text-sm font-medium text-white transition hover:shadow-md sm:px-7 sm:text-base"
+                >
+                    Save
+                </button>
+                <button
                     type="button"
                     onClick={onCancel}
                     className="text-sm font-medium text-[#8f8590] transition hover:text-heading"
@@ -123,15 +129,6 @@ export default function PersonalInfoCard({
             <ProfileCardWrapper
                 title="Personal Information"
                 description="Update only your personal profile details here."
-                action={
-                    <button
-                        type="submit"
-                        form="personal-info-form"
-                        className={`bg-primary-gradient text-white shadow-sm hover:shadow-md ${buttonClassName}`}
-                    >
-                        Save
-                    </button>
-                }
             >
                 <PersonalInfoForm
                     key={`${data.email}-${data.mobileNumber}`}

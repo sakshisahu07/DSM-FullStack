@@ -19,7 +19,7 @@ const redisClient = new IORedis({
     lazyConnect: true,
 });
 
-['get', 'set', 'setex', 'del', 'keys'].forEach(method => {
+['get', 'set', 'setex', 'del', 'keys', 'unlink'].forEach(method => {
     if (typeof redisClient[method] === 'function') {
         const original = redisClient[method].bind(redisClient);
         redisClient[method] = async (...args) => {
@@ -57,6 +57,17 @@ export const connectRedis = async () => {
         await redisClient.connect();
     } catch (err) {
         logger.warn('⚠️  Redis not available. Caching will be skipped.');
+    }
+};
+
+export const clearHomeCache = async () => {
+    try {
+        const keys = await redisClient.keys("home:data:*");
+        if (keys && keys.length > 0) {
+            await redisClient.del(keys);
+        }
+    } catch (err) {
+        // ignore offline redis or execution errors
     }
 };
 

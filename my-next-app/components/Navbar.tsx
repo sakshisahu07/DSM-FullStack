@@ -84,6 +84,32 @@ const Navbar = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search?search=${encodeURIComponent(searchQuery)}`);
+          const json = await res.json();
+          if (json.success) {
+            setSearchResults(json.data.products || []);
+          }
+        } catch (error) {
+          console.error("Search failed", error);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   // Create display categories list
   const displayCategories = React.useMemo(() => {
     if (dynamicCategories && dynamicCategories.length > 0) {
@@ -104,6 +130,7 @@ const Navbar = () => {
   }, [dynamicCategories]);
 
   const { items: wishlistItems } = useSelector((state: RootState) => state.wishlist);
+  const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const [activeCategory, setActiveCategory] = useState<any>(null);
 
   // Initialize and Sync activeCategory
@@ -119,6 +146,13 @@ const Navbar = () => {
     if (activeToken) {
       dispatch(fetchWishlist());
       dispatch(fetchUnseenCount());
+      
+      // Add polling mechanism for notifications to update dynamically
+      const intervalId = setInterval(() => {
+        dispatch(fetchUnseenCount());
+      }, 30000); // 30 seconds polling
+      
+      return () => clearInterval(intervalId);
     }
   }, [dispatch, rawToken]);
 
@@ -147,7 +181,7 @@ const Navbar = () => {
           </Link>
           <div className="flex-1 max-w-2xl relative group mx-4" ref={searchRef}>
             <div className="flex items-center border-[1.5px] border-[#EE9C24] rounded-full overflow-hidden hover:border-[#EE9C24] transition-colors bg-white pr-1 py-0.5 pl-4 shadow-sm w-full">
-              <input type="text" placeholder="Search components..." className="w-full py-2 outline-none text-sm text-gray-600" />
+              <input type="text" placeholder="Search components..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setIsSearchFocused(true)} className="w-full py-2 outline-none text-sm text-gray-600" />
               <button className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-2 rounded-full"><Search size={20} /></button>
             </div>
           </div>
@@ -202,6 +236,11 @@ const Navbar = () => {
               </div>
               <Link href="/cart" className="relative cursor-pointer hover:scale-110 transition-transform">
                 <Image src="/shoppingcart.png" alt="cart" width={20} height={20} style={{ width: 'auto', height: 'auto' }} />
+                {cartItems?.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                    {cartItems.length}
+                  </span>
+                )}
               </Link>
               <Link href={token ? "/profile" : "/login"}>
                 <Image src="/account.png" alt="account" width={20} height={20} />
@@ -228,6 +267,8 @@ const Navbar = () => {
                 <input
                   type="text"
                   placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => {
                     setIsMobileSearchOpen(true);
                     setIsSearchFocused(true);
@@ -287,6 +328,8 @@ const Navbar = () => {
               <input
                 type="text"
                 placeholder="Search components..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-transparent outline-none text-sm px-2 text-gray-700"
                 autoFocus
                 onFocus={() => setIsSearchFocused(true)}
@@ -303,19 +346,29 @@ const Navbar = () => {
             </button>
           </div>
           <div className="p-4 overflow-y-auto h-[calc(100vh-60px)]">
-            <h3 className="text-[#DE7420] text-sm font-medium mb-4">Popular Suggestions</h3>
+            <h3 className="text-[#DE7420] text-sm font-medium mb-4">{searchQuery.length >= 2 ? 'Search Results' : 'Type to search...'}</h3>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={`msug-${i}`} className="flex items-center gap-3 p-2 border-b border-gray-50">
-                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
-                    <Image src="/btmodule.png" alt="p" width={32} height={32} className="object-contain" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-800">Bluetooth Module</span>
-                    <span className="text-[10px] text-gray-400">Communication</span>
-                  </div>
-                </div>
-              ))}
+              {isSearching ? (
+                <div className="text-gray-500 text-sm py-2">Searching...</div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((product) => (
+                  <Link href={`/product/${product.slug || product._id}`} onClick={() => setIsMobileSearchOpen(false)} key={product._id} className="flex items-center gap-3 p-2 border-b border-gray-50">
+                    <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                      {product.images?.[0] && product.images[0] !== 'false' ? (
+                        <Image src={product.images[0]} alt={product.name} width={32} height={32} className="object-contain w-full h-full" />
+                      ) : (
+                        <Image src="/btmodule.png" alt="p" width={32} height={32} className="object-contain" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-800 line-clamp-1">{product.name}</span>
+                      <span className="text-[10px] text-gray-400">Price: ₹{product.finalPrice || product.price || 0}</span>
+                    </div>
+                  </Link>
+                ))
+              ) : searchQuery.length >= 2 ? (
+                <div className="text-gray-500 text-sm py-2">No products found.</div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -330,6 +383,8 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search components..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               className="w-full py-2 outline-none text-sm text-gray-600 placeholder:text-gray-400"
             />
@@ -338,79 +393,58 @@ const Navbar = () => {
             </button>
           </div>
           {isSearchFocused && (
-            <div className="absolute top-[110%] mt-2 left-0 w-[700px] bg-white rounded-md shadow-[0_20px_60px_rgba(0,0,0,0.15)] z-[110] border border-gray-50 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="mb-8">
-                <h3 className="text-[#DE7420] text-base font-medium p-3">Popular Suggestions</h3>
-                <div className="">
-                  {[1, 2, 3].map((i) => (
-                    <div key={`psug-${i}`} className="border-b border-gray-50 last:border-0">
-                      <div className="flex items-center gap-4 group cursor-pointer p-3 border border-transparent hover:border-[#DE7420] hover:bg-[#F8FAFB] transition-all duration-300">
-                        <div className="w-10 h-10 bg-white border border-gray-100 rounded-lg flex items-center justify-center p-1.5 shadow-sm">
-                          <Image src="/btmodule.png" alt="p" width={30} height={30} className="object-contain" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-gray-800 font-medium text-sm transition-colors">Bluetooth Module</span>
-                          <span className="text-gray-400 text-[11px]">Category: Communication</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-8">
-                <h3 className="text-[#DE7420] text-base font-medium p-3">Category Suggestions</h3>
-                <div className="">
-                  {[1, 2, 3].map((i) => (
-                    <div key={`csug-${i}`} className="border-b border-gray-50 last:border-0 py-1">
-                      <div className="flex items-center gap-4 group cursor-pointer p-3 border border-transparent hover:border-[#DE7420] hover:bg-[#F8FAFB] transition-all duration-300">
-                        <div className="w-10 h-10 bg-white border border-gray-100 rounded-md flex items-center justify-center p-1.5 shadow-sm">
-                          <Image src="/btmodule.png" alt="c" width={30} height={30} className="object-contain" />
-                        </div>
-                        <span className="text-gray-600 font-medium text-sm ">Communicataion</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="absolute top-[110%] mt-2 left-0 w-[700px] bg-white rounded-md shadow-[0_20px_60px_rgba(0,0,0,0.15)] z-[110] border border-gray-50 p-4 animate-in fade-in slide-in-from-top-2 duration-300 max-h-[70vh] overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-[#DE7420] p-3 text-base font-medium">Product Wise Suggestions</h3>
-                  <Link href="/allproduct" className="text-gray-500 text-sm font-bold hover:text-[#DE7420] transition-colors">View All</Link>
+                  <h3 className="text-[#DE7420] p-3 text-base font-medium">{searchQuery.length >= 2 ? 'Search Results' : 'Type to search...'}</h3>
+                  {searchQuery.length >= 2 && <Link href={`/allproduct?search=${encodeURIComponent(searchQuery)}`} onClick={() => setIsSearchFocused(false)} className="text-gray-500 text-sm font-bold hover:text-[#DE7420] transition-colors">View All</Link>}
                 </div>
-                <div className="grid grid-cols-3 gap-4 p-3 ">
-                  {[1, 2, 3].map((i) => (
-                    <div key={`pwsug-${i}`} className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col group hover:shadow-md transition-all shadow-sm relative">
-                      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gradient-to-r from-[#DE7420] to-[#B3520A] text-white text-[9px] font-bold px-2 py-1 rounded-md">
-                        <Image src="/hot.png" alt="hot" width={10} height={10} className="invert brightness-0" />
-                        Trending
-                      </div>
-                      <div className="absolute top-2 right-2 z-10 p-1.5 bg-white/80 rounded-full shadow-sm text-[#DE7420]">
-                        <Heart size={14} />
-                      </div>
-                      <div className="aspect-[4/3] flex items-center justify-center mb-3">
-                        <Image src="/bluetooth.png" alt="p" width={100} height={100} className="object-contain group-hover:scale-110 transition-transform" />
-                      </div>
-                      <div className="flex flex-col space-y-1 mt-auto">
-                        <h4 className="text-[12px] text-gray-900 font-medium line-clamp-1">Bluetooth 4.0 Module NRF51822</h4>
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, j) => <Star key={j} size={10} fill="currentColor" />)}
-                        </div>
-                        <div className="flex items-end justify-between mt-2">
-                          <div className="flex flex-col">
-                            <span className="text-[9px] text-gray-400 leading-none">Price</span>
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-sm font-bold text-gray-900">₹447</span>
-                              <span className="text-[10px] text-gray-400 line-through">₹447</span>
-                            </div>
+                {isSearching ? (
+                  <div className="text-center py-8 text-gray-500">Searching...</div>
+                ) : searchResults.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-4 p-3 ">
+                    {searchResults.slice(0, 6).map((product) => (
+                      <Link href={`/product/${product.slug || product._id}`} onClick={() => setIsSearchFocused(false)} key={product._id} className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col group hover:shadow-md transition-all shadow-sm relative">
+                        {product.trending && (
+                          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gradient-to-r from-[#DE7420] to-[#B3520A] text-white text-[9px] font-bold px-2 py-1 rounded-md">
+                            <Image src="/hot.png" alt="hot" width={10} height={10} className="invert brightness-0" />
+                            Trending
                           </div>
-                          <button className="bg-gradient-to-r from-[#DE7420] to-[#C25C13] text-white p-1.5 rounded-lg shadow-sm">
-                            <ShoppingCart size={14} />
-                          </button>
+                        )}
+                        <div className="absolute top-2 right-2 z-10 p-1.5 bg-white/80 rounded-full shadow-sm text-[#DE7420] hover:bg-orange-50 cursor-pointer">
+                          <Heart size={14} />
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        <div className="aspect-[4/3] flex items-center justify-center mb-3 overflow-hidden">
+                          {product.images?.[0] && product.images[0] !== 'false' ? (
+                            <Image src={product.images[0]} alt={product.name} width={100} height={100} className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
+                          ) : (
+                            <Image src="/bluetooth.png" alt="p" width={100} height={100} className="object-contain group-hover:scale-110 transition-transform" />
+                          )}
+                        </div>
+                        <div className="flex flex-col space-y-1 mt-auto">
+                          <h4 className="text-[12px] text-gray-900 font-medium line-clamp-1">{product.name}</h4>
+                          <div className="flex text-yellow-400">
+                            {[...Array(5)].map((_, j) => <Star key={j} size={10} fill="currentColor" />)}
+                          </div>
+                          <div className="flex items-end justify-between mt-2">
+                            <div className="flex flex-col">
+                              <span className="text-[9px] text-gray-400 leading-none">Price</span>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-bold text-gray-900">₹{product.finalPrice || product.price || 0}</span>
+                                {product.discount > 0 && <span className="text-[10px] text-gray-400 line-through">₹{product.price || 0}</span>}
+                              </div>
+                            </div>
+                            <button className="bg-gradient-to-r from-[#DE7420] to-[#C25C13] text-white p-1.5 rounded-lg shadow-sm hover:opacity-90">
+                              <ShoppingCart size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : searchQuery.length >= 2 ? (
+                  <div className="text-center py-8 text-gray-500">No products found.</div>
+                ) : null}
               </div>
             </div>
           )}
@@ -460,7 +494,7 @@ const Navbar = () => {
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        {category.icon && (
+                        {category.icon && category.icon !== 'false' && (
                           <div className="w-6 h-6 relative shrink-0">
                             <Image src={category.icon} alt={category.name} fill className="object-contain" />
                           </div>
@@ -524,6 +558,11 @@ const Navbar = () => {
             </div>
             <Link href="/cart" className="relative cursor-pointer hover:scale-110 transition-transform">
               <Image src="/shoppingcart.png" alt="cart" width={20} height={20} style={{ width: 'auto', height: 'auto' }} />
+              {cartItems?.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                  {cartItems.length}
+                </span>
+              )}
             </Link>
             <Link href={token ? "/profile" : "/login"}>
               <Image src="/account.png" alt="account" width={20} height={20} />

@@ -2,7 +2,7 @@ import hotDealModel from "../model/hotDeal.model.js";
 import productModel from "../model/product.model.js";
 import variantModel from "../model/variant.model.js";
 import comboModel from "../model/combo.model.js";
-import redisClient from "../config/redis.js";
+import redisClient, { clearHomeCache } from "../config/redis.js";
 import { NotFoundError } from "../utils/apiResponse.js";
 
 // ─── Redis Key Helpers ────────────────────────────────────────────────────────
@@ -111,6 +111,7 @@ async function clearProductCache() {
     ]);
     const all = [...hdKeys, ...productKeys];
     if (all.length) await redisClient.del(all);
+    await clearHomeCache();
   } catch { /* skip */ }
 }
 
@@ -377,5 +378,26 @@ export default class HotDealService {
 
     await clearProductCache();
     return deal;
+  }
+
+  // ── DELETE ──────────────────────────────────────────────────────────
+  static async delete(id) {
+    const deal = await hotDealModel.findById(id);
+    if (!deal) throw new NotFoundError("Hot deal not found");
+
+    const rmProducts = deal.products || [];
+    const rmVariants = deal.variants || [];
+    const rmCombos   = deal.combos   || [];
+
+    await Promise.all([
+      rmProducts.length && productModel.updateMany({ _id: { $in: rmProducts } }, { $set: { hotdeal: false } }),
+      rmProducts.length && variantModel.updateMany({ productId: { $in: rmProducts } }, { $set: { hotDeal: false } }),
+      rmVariants.length && variantModel.updateMany({ _id: { $in: rmVariants } }, { $set: { hotDeal: false } }),
+      rmCombos.length   && comboModel.updateMany({ _id: { $in: rmCombos } }, { $set: { hotDeal: false } }),
+      hotDealModel.findByIdAndDelete(id),
+    ].filter(Boolean));
+
+    await clearProductCache();
+    return true;
   }
 }

@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "switch" | "email" | "url" | "file";
+export type FieldType = "text" | "number" | "textarea" | "select" | "switch" | "email" | "url" | "file" | "date" | "datetime-local" | "dynamic-list";
 
 export interface FormField {
   name: string;
@@ -24,6 +24,7 @@ export interface FormField {
   /** Width in 12-col grid; default 12 (full width) */
   span?: 6 | 12;
   disabled?: boolean;
+  listKeys?: { key: string; label: string; type?: "text" | "textarea" | "file" }[];
 }
 
 export interface FormDialogProps<T extends Record<string, any>> {
@@ -47,6 +48,97 @@ function emptyForType(t?: FieldType) {
   if (t === "switch") return false;
   if (t === "file") return null;
   return "";
+}
+
+import { Plus, Trash2 } from "lucide-react";
+
+function DynamicListField({ field, value, onChange, onSetExtra }: { field: FormField, value: string, onChange: (v: string) => void, onSetExtra: (k: string, v: any) => void }) {
+  let items: any[] = [];
+  try {
+    items = JSON.parse(value || "[]");
+    if (!Array.isArray(items)) items = [];
+  } catch {
+    items = [];
+  }
+
+  const updateItems = (newItems: any[]) => {
+    onChange(JSON.stringify(newItems));
+  };
+
+  const addItem = () => {
+    const newItem: any = {};
+    field.listKeys?.forEach(k => newItem[k.key] = "");
+    updateItems([...items, newItem]);
+  };
+
+  const removeItem = (index: number) => {
+    const next = [...items];
+    next.splice(index, 1);
+    updateItems(next);
+  };
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    updateItems(next);
+  };
+
+  return (
+    <div className="space-y-3 rounded-md border p-4 bg-muted/10">
+      <div className="flex justify-between items-center">
+        <Label className="font-semibold text-primary">{field.label}</Label>
+        <Button variant="outline" size="sm" onClick={addItem} type="button" className="gap-1 h-8">
+          <Plus className="w-3 h-3" /> Add Item
+        </Button>
+      </div>
+      {items.length === 0 && <p className="text-xs text-muted-foreground">No items added.</p>}
+      <div className="space-y-3">
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-4 items-start border p-3 rounded-md bg-background relative group">
+            <div className="flex-1 space-y-3">
+              {field.listKeys?.map(lk => (
+                <div key={lk.key}>
+                  <Label className="text-xs mb-1.5 block text-muted-foreground">{lk.label}</Label>
+                  {lk.type === "textarea" ? (
+                    <Textarea 
+                      value={item[lk.key] || ""} 
+                      onChange={(e) => updateItem(i, lk.key, e.target.value)}
+                      rows={2}
+                      className="text-sm resize-y"
+                    />
+                  ) : lk.type === "file" ? (
+                    <div className="space-y-2">
+                      {item[lk.key]?.url && <img src={item[lk.key].url} className="w-10 h-10 object-contain rounded bg-muted" alt="icon"/>}
+                      <Input 
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onSetExtra(`${field.name}_file_${i}_${lk.key}`, file);
+                            updateItem(i, `_hasNewFile_${lk.key}`, "true");
+                          }
+                        }}
+                        className="text-sm h-8 file:py-1 file:px-2 file:text-xs"
+                      />
+                    </div>
+                  ) : (
+                    <Input 
+                      value={item[lk.key] || ""}
+                      onChange={(e) => updateItem(i, lk.key, e.target.value)}
+                      className="text-sm h-8"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8 shrink-0 mt-6" onClick={() => removeItem(i)} type="button">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function FormDialog<T extends Record<string, any>>({
@@ -178,11 +270,24 @@ export function FormDialog<T extends Record<string, any>>({
               );
             }
 
+            if (f.type === "dynamic-list") {
+              return (
+                <div key={f.name} className={`${colClass}`}>
+                  <DynamicListField 
+                    field={f}
+                    value={v ?? "[]"}
+                    onChange={(newVal) => set(f.name, newVal)}
+                    onSetExtra={set}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={f.name} className={`${colClass} space-y-1.5`}>
                 <Label>{f.label}{f.required && " *"}</Label>
                   <Input
-                    type={f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "url" ? "url" : "text"}
+                    type={f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "url" ? "url" : f.type === "date" ? "date" : f.type === "datetime-local" ? "datetime-local" : "text"}
                     value={v ?? ""}
                     onChange={(e) => set(f.name, f.type === "number" ? (e.target.value === "" ? "" : +e.target.value) : e.target.value)}
                     placeholder={f.placeholder}

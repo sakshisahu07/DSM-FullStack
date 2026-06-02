@@ -33,7 +33,7 @@ interface AtlInquiry {
   createdAt: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 const API_INQUIRY = `${API_BASE}/alt/inquiry`;
 const API_PAGE = `${API_BASE}/alt/page`;
 const API_UPDATE_PAGE = `${API_BASE}/alt/update-page`;
@@ -85,9 +85,13 @@ const pageFields: FormField[] = [
   { name: "subDescription", label: "Sub Description", type: "textarea", required: true },
   { name: "bannerFile", label: "New Banner Image", type: "file" },
   { name: "galleryImageFile", label: "Add Gallery Image", type: "file" },
-  { name: "cardsStr", label: "Cards (JSON Array)", type: "textarea" },
-  { name: "setupDetailsStr", label: "Setup Details (JSON Array)", type: "textarea" },
-  { name: "setProcessStr", label: "Set Process (JSON Array)", type: "textarea" },
+  { name: "processHeading", label: "Process Section Heading" },
+  { name: "processImageFile", label: "Process Section Image", type: "file" },
+  { name: "setupHeading", label: "Setup Section Heading" },
+  { name: "setupImageFile", label: "Setup Section Image", type: "file" },
+  { name: "cardsStr", label: "Cards", type: "dynamic-list", listKeys: [{key: "icon", label: "Icon", type: "file"}, {key: "title", label: "Title"}, {key: "description", label: "Description", type: "textarea"}] },
+  { name: "setupDetailsStr", label: "Setup Details", type: "dynamic-list", listKeys: [{key: "setupIcon", label: "Setup Icon", type: "file"}, {key: "title", label: "Title"}, {key: "description", label: "Description", type: "textarea"}] },
+  { name: "setProcessStr", label: "Set Process", type: "dynamic-list", listKeys: [{key: "processIcon", label: "Process Icon", type: "file"}, {key: "heading", label: "Heading"}, {key: "description", label: "Description", type: "textarea"}] },
 ];
 
 function AtlKitsPage() {
@@ -167,6 +171,8 @@ function AtlKitsPage() {
     description: pageData.description || "",
     subTitle: pageData.subTitle || "",
     subDescription: pageData.subDescription || "",
+    processHeading: pageData.processHeading || "",
+    setupHeading: pageData.setupHeading || "",
     cardsStr: JSON.stringify(pageData.cards ? stripId(pageData.cards) : []),
     setupDetailsStr: JSON.stringify(pageData.setupDetails ? stripId(pageData.setupDetails) : []),
     setProcessStr: JSON.stringify(pageData.setProcess ? stripId(pageData.setProcess) : []),
@@ -422,11 +428,61 @@ function AtlKitsPage() {
             fd.append("description", v.description);
             fd.append("subTitle", v.subTitle);
             fd.append("subDescription", v.subDescription);
-            if (v.cardsStr) fd.append("cards", v.cardsStr);
-            if (v.setupDetailsStr) fd.append("setupDetails", v.setupDetailsStr);
-            if (v.setProcessStr) fd.append("setProcess", v.setProcessStr);
+            if (v.processHeading) fd.append("processHeading", v.processHeading);
+            if (v.setupHeading) fd.append("setupHeading", v.setupHeading);
+
             if (v.bannerFile) fd.append("banner", v.bannerFile);
             if (v.galleryImageFile) fd.append("images", v.galleryImageFile);
+            if (v.processImageFile) fd.append("processImageFile", v.processImageFile);
+            if (v.setupImageFile) fd.append("setupImageFile", v.setupImageFile);
+
+            if (v.cardsStr) {
+              const cards = JSON.parse(v.cardsStr || "[]");
+              let cardIconIndex = 0;
+              cards.forEach((c: any, i: number) => {
+                if (c._hasNewFile_icon) {
+                  const file = v[`cardsStr_file_${i}_icon`];
+                  if (file) {
+                    fd.append("cardIcons", file);
+                    c.newIconIndex = cardIconIndex++;
+                  }
+                  delete c._hasNewFile_icon;
+                }
+              });
+              fd.append("cards", JSON.stringify(cards));
+            }
+
+            if (v.setupDetailsStr) {
+              const setupDetails = JSON.parse(v.setupDetailsStr || "[]");
+              let setupIconIndex = 0;
+              setupDetails.forEach((s: any, i: number) => {
+                if (s._hasNewFile_setupIcon) {
+                  const file = v[`setupDetailsStr_file_${i}_setupIcon`];
+                  if (file) {
+                    fd.append("setupIcons", file);
+                    s.newIconIndex = setupIconIndex++;
+                  }
+                  delete s._hasNewFile_setupIcon;
+                }
+              });
+              fd.append("setupDetails", JSON.stringify(setupDetails));
+            }
+
+            if (v.setProcessStr) {
+              const setProcess = JSON.parse(v.setProcessStr || "[]");
+              let processIconIndex = 0;
+              setProcess.forEach((p: any, i: number) => {
+                if (p._hasNewFile_processIcon) {
+                  const file = v[`setProcessStr_file_${i}_processIcon`];
+                  if (file) {
+                    fd.append("processIcons", file);
+                    p.newIconIndex = processIconIndex++;
+                  }
+                  delete p._hasNewFile_processIcon;
+                }
+              });
+              fd.append("setProcess", JSON.stringify(setProcess));
+            }
 
             const res = await fetch(API_UPDATE_PAGE, {
               method: "PUT",

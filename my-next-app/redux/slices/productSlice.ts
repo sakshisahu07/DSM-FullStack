@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 
 interface Product {
   _id: string;
@@ -55,7 +54,7 @@ export const fetchProducts = createAsyncThunk(
 
       const cleanBaseUrl = BASE_URL?.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
       
-      let url = params ? `${cleanBaseUrl}/products/user?${params}` : `${cleanBaseUrl}/products/user`;
+      let url = params ? `${cleanBaseUrl}/products?${params}` : `${cleanBaseUrl}/products`;
       let response = await fetch(url, { headers });
       let data = await response.json();
 
@@ -79,7 +78,7 @@ export const fetchProducts = createAsyncThunk(
             _id: p._id,
             name: p.name || p.title || 'Unnamed Product',
             title: p.title || p.name || 'Unnamed Product',
-            image: (p.images && p.images[0]) || p.image || p.icon || '/images/product-image.png',
+            image: (p.images && p.images[0]) || p.image || (p.icon && p.icon !== 'false' ? p.icon : null) || '/images/product-image.png',
             price: v.finalPrice || p.finalPrice || p.coinPrice || p.price || 0,
             oldPrice: v.mrp || p.mrp || p.oldPrice || 0,
             discount: v.discount || p.discount || 0,
@@ -166,7 +165,7 @@ export const fetchRelatedProducts = createAsyncThunk(
           _id: p._id,
           name: p.name || p.title || 'Unnamed Product',
           title: p.title || p.name || 'Unnamed Product',
-          image: (p.images && p.images[0]) || p.image || p.icon || '/images/product-image.png',
+          image: (p.images && p.images[0]) || p.image || (p.icon && p.icon !== 'false' ? p.icon : null) || '/images/product-image.png',
           price: v.finalPrice || p.finalPrice || p.coinPrice || p.price || 0,
           oldPrice: v.mrp || p.mrp || p.oldPrice || 0,
           discount: v.discount || p.discount || 0,

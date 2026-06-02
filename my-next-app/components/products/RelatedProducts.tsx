@@ -66,7 +66,7 @@ export default function RelatedProducts({ categoryId: initialCategoryId, subCate
     }
 
     return (
-        <section className="px-4 md:px-14 py-8 md:py-12 bg-white">
+        <section className="px-4 md:px-14 py-4 md:py-8 bg-white">
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex items-center justify-between mb-6 md:mb-10">
                     <div className="relative">

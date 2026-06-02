@@ -42,4 +42,11 @@ export default class SpecialOfferController {
       return [{ data: result }, "Special offer deactivated and items reverted"];
     });
   }
+
+  static async delete(req, res) {
+    return handleApiRequest(req, res, async () => {
+      await SpecialOfferService.delete(req.params.id);
+      return [{}, "Special offer deleted successfully"];
+    });
+  }
 }

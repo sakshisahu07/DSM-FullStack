@@ -17,7 +17,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { CardGridSkeleton } from "@/components/loading-skeletons";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/products/brands")({
   component: BrandsPage,

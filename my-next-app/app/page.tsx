@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { BASE_URL } from '@/redux/slices/apiConfig';
 import HeroSection from "@/components/HeroSection";
 import HotProducts from "@/components/HotProducts";
 import FlashSale from "@/components/FlashSale";
@@ -18,7 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     let isMounted = true;
-    const cleanBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://apiDev.dsmonline.in/api/v1/';
+    const cleanBaseUrl = BASE_URL;
 
     const fetchHomeData = async () => {
       try {
@@ -88,8 +89,8 @@ export default function Home() {
       rating: p.avgRating || 5,
       category: p.categoryName || 'Electronics',
       subcategory: p.subCategoryName || 'Gadgets',
-      image: p.images?.[0] || p.icon || '/bluetooth.png',
-      images: p.images || (p.icon ? [p.icon] : []),
+      image: p.images?.[0] || (p.icon && p.icon !== 'false' ? p.icon : '/bluetooth.png'),
+      images: p.images && p.images.length > 0 ? p.images : (p.icon && p.icon !== 'false' ? [p.icon] : []),
       discount: p.discount ? `${p.discount}% Off` : undefined,
       timeLeft: type === 'flash' ? "02 : 15 Hours" : undefined,
       slug: p.slug
@@ -108,8 +109,8 @@ export default function Home() {
       rating: 5,
       category: 'Combo',
       subcategory: 'Offers',
-      image: c.images?.[0] || c.icon || '/speacialoffer.png',
-      images: c.images || (c.icon ? [c.icon] : []),
+      image: c.images?.[0] || (c.icon && c.icon !== 'false' ? c.icon : '/speacialoffer.png'),
+      images: c.images && c.images.length > 0 ? c.images : (c.icon && c.icon !== 'false' ? [c.icon] : []),
       discount: c.discount ? `${c.discount}% Off` : undefined,
       isCombo: true,
       slug: c.slug

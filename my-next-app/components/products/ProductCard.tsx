@@ -135,7 +135,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       <div className="relative w-full aspect-[4/3] bg-white p-2 md:p-6 flex items-center justify-center overflow-hidden">
         {/* Main Image */}
         <Image
-          src={product.image}
+          src={product.image !== 'false' && product.image ? product.image : (images[0] !== 'false' && images[0] ? images[0] : "/placeholder.png")}
           alt={name}
           width={280}
           height={180}
@@ -145,7 +145,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         {/* Hover Image */}
         {images.length > 1 && (
           <Image
-            src={images[1] || images[0]}
+            src={images[1] !== 'false' && images[1] ? images[1] : (images[0] !== 'false' && images[0] ? images[0] : "/placeholder.png")}
             alt={`${name} hover`}
             width={280}
             height={180}

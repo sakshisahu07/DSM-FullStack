@@ -92,14 +92,14 @@ export default function ProfilePage() {
                     />
                 </div>
                 <h2 className="font-bold text-gray-900 text-lg mb-1 capitalize">
-                    {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : "Aisha sheikh"}
+                    {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || "User" : "User"}
                 </h2>
                 <div className="text-gray-500 text-xs flex flex-col items-center text-center max-w-[250px]">
                     <span className="flex items-center gap-1 mb-1 text-[11px] font-medium text-gray-400">
                         <MapPin size={10} className="text-gray-400" /> Address :
                     </span>
                     <span className="text-gray-600 font-medium">
-                        {user?.address || "2118 Thornridge Cir. Syracuse, Connecticut 35624"}
+                        {typeof user?.address === 'string' && user.address.length > 20 ? "Address details not available" : (user?.address || "No address added")}
                     </span>
                 </div>
             </div>

@@ -46,7 +46,7 @@ const categories = [
   { name: "Label", hasSub: true },
 ];
 
-const products = Array(12).fill({
+const dummyProducts = Array(12).fill({
   id: "69c6238ac40bad37d3db4a96",
   name: "Bluetooth 4.0 Module NRF51822",
   description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
@@ -97,6 +97,72 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
       prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
     );
   };
+
+  // Dynamic Data State
+  const [products, setProducts] = useState<any[]>([]);
+  const [categoriesList, setCategoriesList] = useState<any[]>(categories);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchHomeData = async () => {
+      try {
+        setIsDataLoading(true);
+        const { BASE_URL } = await import('@/redux/slices/apiConfig');
+        const cleanBaseUrl = BASE_URL;
+        const url = `${cleanBaseUrl.endsWith('/') ? cleanBaseUrl : cleanBaseUrl + '/'}home`;
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(url, { headers });
+        const json = await res.json();
+
+        if (json.success && isMounted) {
+          if (json.data?.categories) {
+            setCategoriesList([
+              { name: "All Categories", active: true },
+              ...json.data.categories.map((c: any) => ({
+                name: c.title,
+                hasSub: false, // You can populate this if subcategories exist
+                active: false
+              }))
+            ]);
+          }
+
+          if (json.data?.specialOffers) {
+            const mapped = json.data.specialOffers.map((p: any) => ({
+              id: p._id,
+              variantId: p.variantId || p._id,
+              name: p.name || p.title || 'Product',
+              description: p.description || 'Latest top-quality product with special price.',
+              price: p.price || p.mrp || 0,
+              originalPrice: p.mrp || p.price || 0,
+              rating: p.avgRating || 5,
+              category: p.categoryName || 'Electronics',
+              subcategory: p.subCategoryName || 'Gadgets',
+              image: p.images?.[0] || (p.icon && p.icon !== 'false' ? p.icon : '/bluetooth.png'),
+              images: p.images && p.images.length > 0 ? p.images : (p.icon && p.icon !== 'false' ? [p.icon] : []),
+              discount: p.discount ? `${p.discount}% Off` : undefined,
+              slug: p.slug
+            }));
+            setProducts(mapped.length ? mapped : dummyProducts);
+          } else {
+            setProducts(dummyProducts);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching special offers:", err);
+        setProducts(dummyProducts);
+      } finally {
+        if (isMounted) setIsDataLoading(false);
+      }
+    };
+
+    fetchHomeData();
+    return () => { isMounted = false; };
+  }, []);
 
   const toggleFeature = (idx: number) => {
     setSelectedFeatures(prev =>
@@ -225,7 +291,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                 <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden p-5 space-y-6">
                   {/* Categories */}
                   <div className="space-y-1">
-                    {categories.map((cat, idx) => (
+                    {categoriesList.map((cat, idx) => (
                       <div key={idx} className="group">
                         <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg cursor-pointer transition-all ${cat.active && !cat.subCategories ? 'bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white' : cat.name === 'Raspberry Pi' && cat.active ? 'bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white' : 'hover:bg-orange-50 text-gray-700'}`}>
                           <span className="text-[14px] font-bold">{cat.name}</span>
@@ -233,7 +299,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                         </div>
                         {cat.expanded && cat.subCategories && (
                           <div className="pl-6 pt-2 pb-1 space-y-3">
-                            {cat.subCategories.map((sub, sIdx) => (
+                            {cat.subCategories.map((sub: any, sIdx: number) => (
                               <div key={sIdx} className="flex items-center gap-2 group/sub cursor-pointer">
                                 <ChevronRight size={10} className="text-[#E47B25] -ml-2" strokeWidth={4} />
                                 <span className="text-[13px] text-gray-600 font-bold group-hover/sub:text-[#E47B25]">{sub}</span>
@@ -374,16 +440,15 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {loading ? (
+                  {isDataLoading || loading ? (
                     Array(6).fill(0).map((_, idx) => (
                       <ProductCardSkeleton key={`skeleton-filtered-${idx}`} />
                     ))
                   ) : (
                     products.map((product, idx) => (
                       <div key={`${activeTabId}-${idx}`} className="h-full animate-in fade-in zoom-in duration-300">
-                        <ProductCard product={{ 
-                          ...product, 
-                          name: `${filterTabs.find(t => t.id === activeTabId)?.name} ${idx + 1}`,
+                        <ProductCard product={{
+                          ...product,
                           isTrending: activeTabId === 'new-arrivals' || activeTabId === 'hot-deals'
                         }} />
                       </div>
@@ -419,7 +484,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                 {/* Categories Card */}
                 <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 mb-8">
                   <div className="space-y-2">
-                    {categories.map((cat, idx) => (
+                    {categoriesList.map((cat, idx) => (
                       <div key={idx} className="space-y-2">
                         <div
                           className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ${(cat.active && !cat.subCategories) || (cat.name === 'Raspberry Pi' && cat.active)
@@ -434,7 +499,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                         {/* Subcategories (Expanded) */}
                         {cat.expanded && cat.subCategories && (
                           <div className="pl-8 space-y-4 py-4">
-                            {cat.subCategories.map((sub, sIdx) => (
+                            {cat.subCategories.map((sub: any, sIdx: number) => (
                               <div key={sIdx} className="flex items-center gap-3 group cursor-pointer">
                                 <div className="flex gap-0.5 text-[#E47B25] group-hover:translate-x-1 transition-transform">
                                   <ChevronRight size={12} strokeWidth={4} />
@@ -483,19 +548,17 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
 
               {/* Product Cards - Grid (2 cols on mobile) */}
               <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-10">
-                {loading ? (
+                {isDataLoading || loading ? (
                   Array(6).fill(0).map((_, idx) => (
                     <ProductCardSkeleton key={`skeleton-default-${idx}`} />
                   ))
                 ) : (
                   products.map((product, idx) => (
                     <div key={`${activeTabId}-${idx}`} className="h-full animate-in fade-in zoom-in duration-300">
-                      <ProductCard product={{ 
-                        ...product, 
-                        name: `${filterTabs.find(t => t.id === activeTabId)?.name} ${idx + 1}`,
-                        discount: "50% Off", 
+                      <ProductCard product={{
+                        ...product,
                         isTrending: activeTabId === 'new-arrivals' || activeTabId === 'hot-deals',
-                        isHot: false 
+                        isHot: false
                       }} />
                     </div>
                   ))
@@ -527,7 +590,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
               {/* Price Range */}
               <div className="space-y-6">
                 <h3 className="text-[15px] font-bold text-gray-900 tracking-tight">Select Price Range</h3>
-                <div 
+                <div
                   className="h-1.5 w-full bg-gray-100 rounded-full relative px-1 cursor-pointer"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -543,21 +606,21 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                   }}
                 >
                   {/* Connecting Bar */}
-                  <div 
-                    className="absolute h-full bg-[#E47B25] rounded-full" 
-                    style={{ 
-                      left: `${((priceRange.min - 447) / (627 - 447)) * 100}%`, 
-                      right: `${100 - ((priceRange.max - 447) / (627 - 447)) * 100}%` 
+                  <div
+                    className="absolute h-full bg-[#E47B25] rounded-full"
+                    style={{
+                      left: `${((priceRange.min - 447) / (627 - 447)) * 100}%`,
+                      right: `${100 - ((priceRange.max - 447) / (627 - 447)) * 100}%`
                     }}
                   />
                   {/* Min Handle */}
-                  <div 
-                    className="absolute top-1/2 w-5 h-5 bg-white border-[2.5px] border-[#E47B25] rounded-full shadow-[0_2px_10px_rgba(228,123,37,0.3)] z-10 -translate-y-1/2 -translate-x-1/2 transition-all active:scale-110" 
+                  <div
+                    className="absolute top-1/2 w-5 h-5 bg-white border-[2.5px] border-[#E47B25] rounded-full shadow-[0_2px_10px_rgba(228,123,37,0.3)] z-10 -translate-y-1/2 -translate-x-1/2 transition-all active:scale-110"
                     style={{ left: `${((priceRange.min - 447) / (627 - 447)) * 100}%` }}
                   />
                   {/* Max Handle */}
-                  <div 
-                    className="absolute top-1/2 w-5 h-5 bg-white border-[2.5px] border-[#E47B25] rounded-full shadow-[0_2px_10px_rgba(228,123,37,0.3)] z-10 -translate-y-1/2 -translate-x-1/2 transition-all active:scale-110" 
+                  <div
+                    className="absolute top-1/2 w-5 h-5 bg-white border-[2.5px] border-[#E47B25] rounded-full shadow-[0_2px_10px_rgba(228,123,37,0.3)] z-10 -translate-y-1/2 -translate-x-1/2 transition-all active:scale-110"
                     style={{ left: `${((priceRange.max - 447) / (627 - 447)) * 100}%` }}
                   />
                 </div>
@@ -639,14 +702,14 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
             </div>
 
             <div className="flex gap-4 mt-12">
-              <button 
+              <button
                 onClick={() => {
                   setPriceRange({ min: 447, max: 627 });
                   setActiveBrandToggles([0]);
                   setActiveBrandRadio(0);
                   setSelectedFeatures([0]);
                   setSelectedRating(5);
-                }} 
+                }}
                 className="flex-1 py-3.5 rounded-2xl border-2 border-gray-100 text-gray-400 font-bold text-[14px] hover:bg-gray-50 transition-colors"
               >
                 Reset
@@ -674,7 +737,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
 
             <div className="space-y-5">
               {[
-                'Latest First', 'Oldest First', 'Price: Low to High', 
+                'Latest First', 'Oldest First', 'Price: Low to High',
                 'Price: High to Low', 'Popular', 'Top Rated'
               ].map((option, i) => (
                 <div key={i} className="flex items-center gap-3 cursor-pointer group" onClick={() => setIsSortDrawerOpen(false)}>

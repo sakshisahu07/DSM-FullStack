@@ -26,7 +26,7 @@ interface Video {
   createdAt?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 const API_VIDEO = `${API_BASE}/video`;
 
 const getAuthHeader = (): Record<string, string> => {

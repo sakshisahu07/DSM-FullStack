@@ -24,18 +24,28 @@ const jobApplicationSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       lowercase: true,
     },
     city: {
       type: String,
-      required: true,
+      required: false,
+      trim: true,
+    },
+    state: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    country: {
+      type: String,
+      required: false,
       trim: true,
     },
     gender: {
       type: String,
-      required: true,
+      required: false,
       enum: ["Male", "Female", "Other"],
     },
     message: {

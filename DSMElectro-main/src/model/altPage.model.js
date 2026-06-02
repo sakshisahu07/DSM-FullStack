@@ -43,6 +43,18 @@ const atlPageSchema = new mongoose.Schema(
       description: String,
     },
 
+    processHeading: String,
+    processImage: {
+      url: String,
+      key: String,
+    },
+
+    setupHeading: String,
+    setupImage: {
+      url: String,
+      key: String,
+    },
+
     setupDetails: [
       {
         title: String,

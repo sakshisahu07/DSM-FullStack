@@ -76,4 +76,12 @@ export default class FlashSaleController {
       ];
     });
   }
+
+  // DELETE /flash-sale/:id
+  static async delete(req, res) {
+    return handleApiRequest(req, res, async () => {
+      await FlashSaleService.delete(req.params.id);
+      return [{}, "Flash sale deleted successfully"];
+    });
+  }
 }

@@ -42,6 +42,7 @@ import { Route as AppOrdersReturnsRouteImport } from './routes/_app/orders/retur
 import { Route as AppOrdersInvoicesRouteImport } from './routes/_app/orders/invoices'
 import { Route as AppOrdersAllRouteImport } from './routes/_app/orders/all'
 import { Route as AppMarketingTrendingRouteImport } from './routes/_app/marketing/trending'
+import { Route as AppMarketingSpecialOffersRouteImport } from './routes/_app/marketing/special-offers'
 import { Route as AppMarketingHotDealsRouteImport } from './routes/_app/marketing/hot-deals'
 import { Route as AppMarketingFlashSalesRouteImport } from './routes/_app/marketing/flash-sales'
 import { Route as AppMarketingComboOffersRouteImport } from './routes/_app/marketing/combo-offers'
@@ -227,6 +228,12 @@ const AppMarketingTrendingRoute = AppMarketingTrendingRouteImport.update({
   path: '/marketing/trending',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMarketingSpecialOffersRoute =
+  AppMarketingSpecialOffersRouteImport.update({
+    id: '/marketing/special-offers',
+    path: '/marketing/special-offers',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppMarketingHotDealsRoute = AppMarketingHotDealsRouteImport.update({
   id: '/marketing/hot-deals',
   path: '/marketing/hot-deals',
@@ -345,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/marketing/combo-offers': typeof AppMarketingComboOffersRoute
   '/marketing/flash-sales': typeof AppMarketingFlashSalesRoute
   '/marketing/hot-deals': typeof AppMarketingHotDealsRoute
+  '/marketing/special-offers': typeof AppMarketingSpecialOffersRoute
   '/marketing/trending': typeof AppMarketingTrendingRoute
   '/orders/all': typeof AppOrdersAllRoute
   '/orders/invoices': typeof AppOrdersInvoicesRoute
@@ -397,6 +405,7 @@ export interface FileRoutesByTo {
   '/marketing/combo-offers': typeof AppMarketingComboOffersRoute
   '/marketing/flash-sales': typeof AppMarketingFlashSalesRoute
   '/marketing/hot-deals': typeof AppMarketingHotDealsRoute
+  '/marketing/special-offers': typeof AppMarketingSpecialOffersRoute
   '/marketing/trending': typeof AppMarketingTrendingRoute
   '/orders/all': typeof AppOrdersAllRoute
   '/orders/invoices': typeof AppOrdersInvoicesRoute
@@ -451,6 +460,7 @@ export interface FileRoutesById {
   '/_app/marketing/combo-offers': typeof AppMarketingComboOffersRoute
   '/_app/marketing/flash-sales': typeof AppMarketingFlashSalesRoute
   '/_app/marketing/hot-deals': typeof AppMarketingHotDealsRoute
+  '/_app/marketing/special-offers': typeof AppMarketingSpecialOffersRoute
   '/_app/marketing/trending': typeof AppMarketingTrendingRoute
   '/_app/orders/all': typeof AppOrdersAllRoute
   '/_app/orders/invoices': typeof AppOrdersInvoicesRoute
@@ -505,6 +515,7 @@ export interface FileRouteTypes {
     | '/marketing/combo-offers'
     | '/marketing/flash-sales'
     | '/marketing/hot-deals'
+    | '/marketing/special-offers'
     | '/marketing/trending'
     | '/orders/all'
     | '/orders/invoices'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/marketing/combo-offers'
     | '/marketing/flash-sales'
     | '/marketing/hot-deals'
+    | '/marketing/special-offers'
     | '/marketing/trending'
     | '/orders/all'
     | '/orders/invoices'
@@ -610,6 +622,7 @@ export interface FileRouteTypes {
     | '/_app/marketing/combo-offers'
     | '/_app/marketing/flash-sales'
     | '/_app/marketing/hot-deals'
+    | '/_app/marketing/special-offers'
     | '/_app/marketing/trending'
     | '/_app/orders/all'
     | '/_app/orders/invoices'
@@ -877,6 +890,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMarketingTrendingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/marketing/special-offers': {
+      id: '/_app/marketing/special-offers'
+      path: '/marketing/special-offers'
+      fullPath: '/marketing/special-offers'
+      preLoaderRoute: typeof AppMarketingSpecialOffersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/marketing/hot-deals': {
       id: '/_app/marketing/hot-deals'
       path: '/marketing/hot-deals'
@@ -1029,6 +1049,7 @@ interface AppRouteChildren {
   AppMarketingComboOffersRoute: typeof AppMarketingComboOffersRoute
   AppMarketingFlashSalesRoute: typeof AppMarketingFlashSalesRoute
   AppMarketingHotDealsRoute: typeof AppMarketingHotDealsRoute
+  AppMarketingSpecialOffersRoute: typeof AppMarketingSpecialOffersRoute
   AppMarketingTrendingRoute: typeof AppMarketingTrendingRoute
   AppOrdersAllRoute: typeof AppOrdersAllRoute
   AppOrdersInvoicesRoute: typeof AppOrdersInvoicesRoute
@@ -1080,6 +1101,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMarketingComboOffersRoute: AppMarketingComboOffersRoute,
   AppMarketingFlashSalesRoute: AppMarketingFlashSalesRoute,
   AppMarketingHotDealsRoute: AppMarketingHotDealsRoute,
+  AppMarketingSpecialOffersRoute: AppMarketingSpecialOffersRoute,
   AppMarketingTrendingRoute: AppMarketingTrendingRoute,
   AppOrdersAllRoute: AppOrdersAllRoute,
   AppOrdersInvoicesRoute: AppOrdersInvoicesRoute,

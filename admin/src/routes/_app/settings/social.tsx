@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save, Facebook, Instagram, Youtube, Linkedin, Twitter, Loader2, Share2 } from "lucide-react";
 
-const API_BASE = "http://15.207.149.229:2000/api/v1";
+const API_BASE = "https://api.dsmelectro.com/api/v1";
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("dsm_token");

@@ -1,6 +1,6 @@
 import comboModel from "../model/combo.model.js";
 import variantModel from "../model/variant.model.js";
-import redisClient from "../config/redis.js";
+import redisClient, { clearHomeCache } from "../config/redis.js";
 import slugify from "slugify";
 import mongoose from "mongoose";
 import { AppError } from "../utils/apiResponse.js";
@@ -44,6 +44,7 @@ export default class ComboService {
     });
 
     await redisClient.unlink("combos:list");
+    await clearHomeCache();
 
     return ComboService.getComboById(combo._id.toString());
   }
@@ -435,6 +436,7 @@ export default class ComboService {
 
     await redisClient.del(`combo:${id}`);
     await redisClient.unlink("combos:list");
+    await clearHomeCache();
 
     return ComboService.getComboById(id);
   }
@@ -447,6 +449,7 @@ export default class ComboService {
 
     await redisClient.del(`combo:${id}`);
     await redisClient.unlink("combos:list");
+    await clearHomeCache();
 
     return true;
   }
@@ -463,6 +466,7 @@ export default class ComboService {
 
     await redisClient.del(`combo:${id}`);
     await redisClient.unlink("combos:list");
+    await clearHomeCache();
 
     return ComboService.getComboById(id);
   }

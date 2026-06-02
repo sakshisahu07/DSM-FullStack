@@ -4,12 +4,10 @@ import { authUser } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.use(authUser); // All address routes require authentication
-
-router.post("/address", AddressController.createAddress);
-router.get("/address", AddressController.getAddresses);
-router.get("/address/:id", AddressController.getAddressById);
-router.put("/address/:id", AddressController.updateAddress);
-router.delete("/address/:id", AddressController.deleteAddress);
+router.post("/address", authUser, AddressController.createAddress);
+router.get("/address", authUser, AddressController.getAddresses);
+router.get("/address/:id", authUser, AddressController.getAddressById);
+router.put("/address/:id", authUser, AddressController.updateAddress);
+router.delete("/address/:id", authUser, AddressController.deleteAddress);
 
 export default router;

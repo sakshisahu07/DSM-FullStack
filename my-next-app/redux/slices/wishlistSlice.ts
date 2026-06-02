@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { BASE_URL } from './apiConfig';
 import toast from 'react-hot-toast';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 interface WishlistState {
   items: any[];
   loading: boolean;
@@ -111,7 +111,7 @@ export const removeFromWishlist = createAsyncThunk(
         bodyPayload.product = arg;
       } else {
         if (arg.productId) bodyPayload.product = arg.productId;
-        else if (arg.wishlistId) bodyPayload.product = arg.wishlistId; // legacy fallback
+        if (arg.wishlistId) bodyPayload.wishlistId = arg.wishlistId;
         if (arg.variantId) bodyPayload.variant = arg.variantId;
       }
 

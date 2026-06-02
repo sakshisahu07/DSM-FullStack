@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_app/users/membership")({
   component: MembershipPage,
 });
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 const API = `${API_BASE}/membership`;
 
 interface Plan {

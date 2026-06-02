@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 interface RatingState {
   loading: boolean;
   success: boolean;
@@ -24,7 +24,7 @@ export const postRating = createAsyncThunk(
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${BASE_URL}rating`, {
+      const response = await fetch(`${BASE_URL}/rating`, {
         method: 'POST',
         headers,
         body: JSON.stringify(ratingData),

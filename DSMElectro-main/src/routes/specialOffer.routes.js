@@ -10,6 +10,7 @@ router.post("/special-offer", authUser, adminMiddleware, SpecialOfferController.
 router.get("/special-offers/all", authUser, adminMiddleware, SpecialOfferController.getAll);
 router.get("/special-offer/:id", authUser, adminMiddleware, SpecialOfferController.getById);
 router.patch("/special-offer/:id/deactivate", authUser, adminMiddleware, SpecialOfferController.deactivate);
+router.delete("/special-offer/:id", authUser, adminMiddleware, SpecialOfferController.delete);
 
 // Public route
 router.get("/special-offers", SpecialOfferController.getActive);

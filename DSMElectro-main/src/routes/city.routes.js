@@ -1,6 +1,6 @@
 import express from "express";
 import CityController from "../controllers/city.controller.js";
-import { authUser, adminMiddleware } from "../middlewares/authMiddleware.js";
+import { authUser, adminMiddleware, optionalAuth } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -28,9 +28,9 @@ router.patch(
 );
 
 // GET ALL
-router.get("/cities", authUser, CityController.getAllCities);
+router.get("/cities", optionalAuth, CityController.getAllCities);
 
 // GET BY ID
-router.get("/city/:id", authUser, CityController.getCityById);
+router.get("/city/:id", optionalAuth, CityController.getCityById);
 
 export default router;

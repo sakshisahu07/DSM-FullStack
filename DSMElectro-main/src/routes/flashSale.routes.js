@@ -62,6 +62,14 @@ router.get(
   FlashSaleController.getById
 );
 
+// Delete flash sale
+router.delete(
+  "/flash-sale/:id",
+  authUser,
+  adminMiddleware,
+  FlashSaleController.delete
+);
+
 // ─── Public Routes ────────────────────────────────────────────────────────────
 
 // Active flash sales for users  ?page=1&limit=10&search=keyword

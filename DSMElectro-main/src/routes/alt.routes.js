@@ -18,6 +18,8 @@ router.post(
     { name: "cardIcons", maxCount: 20 },
     { name: "setupIcons", maxCount: 20 },
     { name: "processIcons", maxCount: 20 },
+    { name: "processImageFile", maxCount: 1 },
+    { name: "setupImageFile", maxCount: 1 },
   ]),
   AtlController.upsertPage,
 );
@@ -33,6 +35,8 @@ router.put(
     { name: "cardIcons", maxCount: 20 },
     { name: "setupIcons", maxCount: 20 },
     { name: "processIcons", maxCount: 20 },
+    { name: "processImageFile", maxCount: 1 },
+    { name: "setupImageFile", maxCount: 1 },
   ]),
   AtlController.updatePagePut,
 );

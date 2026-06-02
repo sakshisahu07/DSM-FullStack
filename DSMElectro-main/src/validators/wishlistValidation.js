@@ -8,4 +8,5 @@ export const addWishlistSchema = Joi.object({
 export const removeWishlistSchema = Joi.object({
   product: Joi.string().optional(),
   variant: Joi.string().optional(),
+  wishlistId: Joi.string().optional(),
 });

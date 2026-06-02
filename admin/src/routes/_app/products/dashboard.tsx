@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/products/dashboard")({
   component: ProductsDashboard,
 });
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 interface OverviewStat {
   count: number;

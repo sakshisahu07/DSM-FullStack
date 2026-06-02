@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Edit2, Trash2, Copy, ImageIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Copy, ImageIcon, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -186,13 +186,18 @@ function ProductsAll() {
     { key: "isAvailable", header: "Active", cell: (p) => <Switch checked={p.isAvailable} onCheckedChange={() => toggle(p.id, "isAvailable")} /> },
     {
       key: "actions", header: "Actions", className: "text-right",
-      cell: (p) => (
-        <div className="flex justify-end gap-1">
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onDuplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
-        </div>
-      ),
+      cell: (p) => {
+        const productId = (p as any).id || (p as any).raw?._id;
+        const viewUrl = productId ? `http://localhost:3000/product/${productId}` : '#';
+        return (
+          <div className="flex justify-end gap-1">
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(viewUrl, '_blank')} disabled={!productId}><Eye className="h-3.5 w-3.5" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onDuplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+          </div>
+        )
+      },
     },
   ];
 
@@ -353,17 +358,23 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
       
       const rawVars = raw?.variants || raw?.variant;
       if (rawVars && rawVars.length > 0) {
-        setVariants(rawVars.map((v: any, i: number) => ({
-          id: v._id || i, 
-          variant: v.size || v.variant || "Default", 
-          mrp: v.mrp ?? 0, 
-          discount: v.discount ?? 0, 
-          stock: v.stock ?? 0, 
-          sku: v.sku ?? "", 
-          weight: v.weight?.value ?? v.weight ?? 0
-        })));
+        setVariants(rawVars.map((v: any, i: number) => {
+          const mrp = v.mrp ?? 0;
+          const discount = v.discount ?? 0;
+          const sellingPrice = mrp > 0 ? Math.round(mrp - (mrp * discount / 100)) : 0;
+          return {
+            id: v._id || i, 
+            variant: v.size || v.variant || "Default", 
+            mrp: mrp, 
+            sellingPrice: sellingPrice,
+            discount: discount, 
+            stock: v.stock ?? 0, 
+            sku: v.sku ?? "", 
+            weight: v.weight?.value ?? v.weight ?? 0
+          };
+        }));
       } else {
-        setVariants([{ id: Date.now(), variant: "Default", mrp: 0, discount: 0, stock: 0, sku: product?.sku ?? "", weight: 0 }]);
+        setVariants([{ id: Date.now(), variant: "Default", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, sku: product?.sku ?? "", weight: 0 }]);
       }
       
       setIcon(null);
@@ -542,39 +553,43 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
           <TabsContent value="variants" className="mt-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">Manage product variants (size, color, etc)</div>
-              <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setVariants([...variants, { id: Date.now(), variant: "", mrp: 0, discount: 0, stock: 0, sku: "", weight: 0 }]); }}>
+              <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setVariants([...variants, { id: Date.now(), variant: "", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, sku: "", weight: 0 }]); }}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Add variant
               </Button>
             </div>
             
             <div className="space-y-3">
               {variants.map((v, idx) => (
-                <div key={v.id} className="grid grid-cols-2 md:grid-cols-6 gap-3 p-4 border rounded-xl relative">
+                <div key={v.id} className="grid grid-cols-2 md:grid-cols-7 gap-3 p-4 border rounded-xl relative">
                   <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-6 w-6 text-destructive" onClick={(e) => { e.preventDefault(); setVariants(variants.filter(x => x.id !== v.id)); }}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
-                  <div className="space-y-1.5 col-span-2 md:col-span-1">
-                    <Label className="text-xs">Variant Name</Label>
+                  <div className="flex flex-col justify-end gap-1.5 col-span-2 md:col-span-1">
+                    <Label className="text-xs whitespace-nowrap">Variant Name</Label>
                     <Input className="h-8" value={v.variant} onChange={e => { const nv = [...variants]; nv[idx].variant = e.target.value; setVariants(nv); }} placeholder="e.g. Red" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">SKU</Label>
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs whitespace-nowrap">SKU</Label>
                     <Input className="h-8" value={v.sku} onChange={e => { const nv = [...variants]; nv[idx].sku = e.target.value; setVariants(nv); }} />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">MRP (₹)</Label>
-                    <Input className="h-8" type="number" value={v.mrp === 0 ? "" : v.mrp} onChange={e => { const nv = [...variants]; nv[idx].mrp = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs whitespace-nowrap">MRP (₹)</Label>
+                    <Input className="h-8" type="number" value={v.mrp === 0 ? "" : v.mrp} onChange={e => { const val = e.target.value === "" ? 0 : +e.target.value; const nv = [...variants]; nv[idx].mrp = val; if (nv[idx].discount > 0) { nv[idx].sellingPrice = Math.round(val - (val * nv[idx].discount / 100)); } else { nv[idx].sellingPrice = val; } setVariants(nv); }} placeholder="0" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Discount (%)</Label>
-                    <Input className="h-8" type="number" value={v.discount === 0 ? "" : v.discount} onChange={e => { const nv = [...variants]; nv[idx].discount = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs text-primary font-semibold whitespace-nowrap">Selling Price</Label>
+                    <Input className="h-8 border-primary font-medium" type="number" value={v.sellingPrice === 0 ? "" : v.sellingPrice} onChange={e => { const val = e.target.value === "" ? 0 : +e.target.value; const nv = [...variants]; nv[idx].sellingPrice = val; if (nv[idx].mrp > 0) { nv[idx].discount = Math.max(0, Math.round(((nv[idx].mrp - val) / nv[idx].mrp) * 100)); } setVariants(nv); }} placeholder="0" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Stock</Label>
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs whitespace-nowrap">Discount (%)</Label>
+                    <Input className="h-8 bg-muted" type="number" value={v.discount === 0 ? "" : v.discount} onChange={e => { const val = e.target.value === "" ? 0 : +e.target.value; const nv = [...variants]; nv[idx].discount = val; if (nv[idx].mrp > 0) { nv[idx].sellingPrice = Math.max(0, Math.round(nv[idx].mrp - (nv[idx].mrp * val / 100))); } setVariants(nv); }} placeholder="0" />
+                  </div>
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs whitespace-nowrap">Stock</Label>
                     <Input className="h-8" type="number" value={v.stock === 0 ? "" : v.stock} onChange={e => { const nv = [...variants]; nv[idx].stock = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Weight (g)</Label>
+                  <div className="flex flex-col justify-end gap-1.5">
+                    <Label className="text-xs whitespace-nowrap">Weight (g)</Label>
                     <Input className="h-8" type="number" value={v.weight === 0 ? "" : v.weight} onChange={e => { const nv = [...variants]; nv[idx].weight = e.target.value === "" ? 0 : +e.target.value; setVariants(nv); }} placeholder="0" />
                   </div>
                 </div>

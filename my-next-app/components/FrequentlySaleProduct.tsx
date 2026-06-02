@@ -12,60 +12,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-const products = [
-  {
-    id: "69c6238ac40bad37d3db4a88",
-    variantId: "69c6238ac40bad37d3db4a89",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/frequently.png",
-
-  },
-  {
-    id: "69c6238ac40bad37d3db4a90",
-    variantId: "69c6238ac40bad37d3db4a91",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/frequently.png",
-
-  },
-  {
-    id: "69c6238ac40bad37d3db4a92",
-    variantId: "69c6238ac40bad37d3db4a93",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/frequently.png",
-
-  },
-  {
-    id: "69c6238ac40bad37d3db4a94",
-    variantId: "69c6238ac40bad37d3db4a95",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/frequently.png",
-
-  }
-];
+// No static fallback — section only renders when live API data is available
 
 import ProductCard from '@/components/products/ProductCard';
 import ProductSwiperSkeleton from '@/components/products/ProductSwiperSkeleton';
@@ -74,16 +21,21 @@ const FrequentlySaleProduct = ({ products: propProducts, loading = false }: { pr
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
 
-  const displayProducts = propProducts && propProducts.length > 0 ? propProducts : products;
+  const displayProducts = propProducts || [];
 
-  if (loading && (!propProducts || propProducts.length === 0)) {
+  if (loading && displayProducts.length === 0) {
     return <ProductSwiperSkeleton title="Frequently Sale Products" />;
+  }
+
+  // Hide section if no live data from API
+  if (displayProducts.length === 0) {
+    return null;
   }
 
   return (
     <section className="w-full bg-white py-2 md:py-8 px-4 md:px-14">
       <div className="max-w-[1400px] mx-auto">
-         {/* Mobile Header */}
+        {/* Mobile Header */}
         <div className="flex md:hidden items-center justify-between mb-6">
           <div className="relative">
             <h2 className="text-[14px] font-medium text-[#000000]">Frequently Sale Products</h2>

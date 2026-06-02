@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { BASE_URL } from './apiConfig';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface OrderState {
   currentOrder: any | null;

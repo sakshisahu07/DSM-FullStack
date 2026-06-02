@@ -1,120 +1,154 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { DataTable, type Column } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { FormDialog, type FormField } from "@/components/form-dialog";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/b2b/job-applications")({
   component: ApplicationsPage,
 });
 
 interface App {
-  id: string; candidate: string; role: string; experience: string;
-  status: "new" | "shortlisted" | "interview" | "rejected" | "offered";
-  date: string; shortlisted: boolean;
+  id: string; 
+  candidate: string; 
+  role: string; 
+  location: string;
+  status: string;
+  date: string; 
+  raw: any;
 }
 
-const seed: App[] = [
-  { id: "APP-201", candidate: "Anjali Nair", role: "Senior Hardware Engineer", experience: "6 yrs", status: "interview", date: "Apr 30", shortlisted: true },
-  { id: "APP-200", candidate: "Vikas Joshi", role: "Content Writer (Tech)", experience: "3 yrs", status: "shortlisted", date: "Apr 29", shortlisted: true },
-  { id: "APP-199", candidate: "Megha Rao", role: "B2B Sales Executive", experience: "4 yrs", status: "new", date: "Apr 29", shortlisted: false },
-  { id: "APP-198", candidate: "Rohan Pillai", role: "Senior Hardware Engineer", experience: "8 yrs", status: "offered", date: "Apr 26", shortlisted: true },
-  { id: "APP-197", candidate: "Tina Kapoor", role: "Content Writer (Tech)", experience: "2 yrs", status: "rejected", date: "Apr 24", shortlisted: false },
-];
-
-const tone = {
-  new: "bg-info/15 text-info",
+const tone: Record<string, string> = {
+  pending: "bg-info/15 text-info",
+  reviewed: "bg-primary/15 text-primary",
   shortlisted: "bg-warning/15 text-warning",
+  rejected: "bg-destructive/15 text-destructive",
+  new: "bg-info/15 text-info",
   interview: "bg-primary/15 text-primary",
   offered: "bg-success/15 text-success",
-  rejected: "bg-destructive/15 text-destructive",
 };
 
 const fields: FormField[] = [
-  { name: "candidate", label: "Candidate", required: true, span: 6 },
-  { name: "experience", label: "Experience", span: 6, placeholder: "5 yrs" },
-  { name: "role", label: "Applied for", required: true },
-  { name: "date", label: "Date", span: 6 },
-  {
-    name: "status", label: "Stage", type: "select", required: true, span: 6,
+  { name: "status", label: "Stage", type: "select", required: true,
     options: [
-      { label: "New", value: "new" },
-      { label: "Shortlisted", value: "shortlisted" },
-      { label: "Interview", value: "interview" },
-      { label: "Offered", value: "offered" },
-      { label: "Rejected", value: "rejected" },
+      { label: "Pending", value: "Pending" },
+      { label: "Reviewed", value: "Reviewed" },
+      { label: "Shortlisted", value: "Shortlisted" },
+      { label: "Rejected", value: "Rejected" },
     ],
   },
-  { name: "shortlisted", label: "Shortlisted", type: "switch" },
 ];
 
 function ApplicationsPage() {
-  const [items, setItems] = useState<App[]>(seed);
+  const [items, setItems] = useState<App[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<App | null>(null);
 
-  const onCreate = () => { setEditing(null); setOpen(true); };
-  const onEdit = (r: App) => { setEditing(r); setOpen(true); };
-  const onDelete = (r: App) => {
-    setItems((p) => p.filter((x) => x.id !== r.id));
-    toast.success(`Removed ${r.id}`);
-  };
-  const toggle = (id: string) => {
-    setItems((p) => p.map((x) => x.id === id ? { ...x, shortlisted: !x.shortlisted } : x));
-    toast.success("Updated");
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const res = await apiFetch("/applications/all");
+      const data = await res.json();
+      if (data.success && data.data?.applications) {
+        setItems(data.data.applications.map((app: any) => ({
+          id: app._id,
+          candidate: `${app.firstName} ${app.lastName}`,
+          role: app.jobId?.title || "N/A",
+          location: [app.city, app.state, app.country].filter(Boolean).join(", "),
+          date: new Date(app.createdAt).toLocaleDateString(),
+          status: app.status || "Pending",
+          raw: app
+        })));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch applications");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const onEdit = (r: App) => { setEditing(r); setOpen(true); };
+  
   const cols: Column<App>[] = [
-    { key: "id", header: "ID", cell: (r) => <code className="text-xs">{r.id}</code> },
-    { key: "candidate", header: "Candidate", cell: (r) => <span className="font-medium">{r.candidate}</span> },
+    { key: "candidate", header: "Candidate", cell: (r) => (
+       <div className="flex flex-col">
+          <span className="font-medium">{r.candidate}</span>
+          <span className="text-[10px] text-muted-foreground">{r.raw?.phone} • {r.raw?.email || "No email"}</span>
+       </div>
+    )},
     { key: "role", header: "Applied for", cell: (r) => r.role },
-    { key: "experience", header: "Exp", cell: (r) => r.experience },
+    { key: "location", header: "Location", cell: (r) => r.location },
     { key: "date", header: "Date", cell: (r) => r.date },
-    { key: "status", header: "Stage", cell: (r) => <Badge variant="outline" className={tone[r.status]}>{r.status}</Badge> },
-    { key: "shortlisted", header: "Shortlisted", cell: (r) => <Switch checked={r.shortlisted} onCheckedChange={() => toggle(r.id)} /> },
+    { key: "status", header: "Stage", cell: (r) => <Badge variant="outline" className={tone[r.status.toLowerCase()] || "bg-gray-100"}>{r.status}</Badge> },
     {
       key: "actions", header: "", className: "text-right",
       cell: (r) => (
         <div className="flex justify-end gap-1">
+          {r.raw?.resume && (
+            <Button size="sm" variant="outline" className="h-8" asChild>
+              <a href={r.raw.resume} target="_blank" rel="noopener noreferrer">Resume</a>
+            </Button>
+          )}
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDelete(r)}><Trash2 className="h-3.5 w-3.5" /></Button>
         </div>
       ),
     },
   ];
+
+  const handleUpdateStatus = async (values: any) => {
+    if (!editing) return;
+    try {
+      const res = await apiFetch(`/application/${editing.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: values.status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Application status updated");
+        fetchApplications();
+        setOpen(false);
+      } else {
+        toast.error(data.message || "Failed to update status");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Job Applications"
         subtitle="Candidates applying through the careers page."
-        actions={<Button className="gap-1.5" onClick={onCreate}><Plus className="h-4 w-4" /> Add application</Button>}
       />
-      <DataTable storageKey="b2b.job-applications" data={items} columns={cols} searchKeys={["candidate", "role"]} />
+      
+      {loading ? (
+        <div className="py-20 text-center text-sm text-muted-foreground">Loading applications...</div>
+      ) : (
+        <DataTable storageKey="b2b.job-applications" data={items} columns={cols} searchKeys={["candidate", "role"]} />
+      )}
 
       <FormDialog<App>
         open={open}
         onOpenChange={setOpen}
-        title={editing ? "Edit application" : "New application"}
+        title="Update Application Status"
         fields={fields}
-        initialValues={editing}
-        defaultValues={{ status: "new", shortlisted: false, date: "Today" }}
-        onSubmit={(v) => {
-          if (editing) {
-            setItems((p) => p.map((x) => x.id === editing.id ? { ...editing, ...v } : x));
-            toast.success("Application updated");
-          } else {
-            setItems((p) => [{ ...v, id: `APP-${202 + p.length}` }, ...p]);
-            toast.success("Application created");
-          }
-          setOpen(false);
-        }}
+        initialValues={editing ? { status: editing.status } as any : undefined}
+        onSubmit={handleUpdateStatus}
       />
     </div>
   );
 }
+

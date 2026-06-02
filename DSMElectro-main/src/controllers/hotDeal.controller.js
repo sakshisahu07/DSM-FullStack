@@ -76,4 +76,12 @@ export default class HotDealController {
       return [{ data: result }, msg];
     });
   }
+
+  // DELETE /hot-deal/:id
+  static async delete(req, res) {
+    return handleApiRequest(req, res, async () => {
+      await HotDealService.delete(req.params.id);
+      return [{}, "Hot deal deleted successfully"];
+    });
+  }
 }

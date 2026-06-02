@@ -2,14 +2,45 @@ import bulkInquiryModel from "../model/bulkInquiry.model.js";
 import "../model/city.model.js";
 import "../model/state.model.js";
 import "../model/country.model.js";
-import "../model/pincode.model.js";
+import pincodeModel from "../model/pincode.model.js";
 
 export default class BulkInquiryService {
   // CREATE
   static async createInquiry(userId, payload) {
+    const { country, state, city, pincode, products, message, status } = payload;
+
+    const isObjectId = /^[0-9a-fA-F]{24}$/;
+    let resolvedPincode = pincode;
+
+    if (pincode && !isObjectId.test(pincode.toString().trim())) {
+      const codeStr = pincode.toString().trim();
+      let pincodeDoc = await pincodeModel.findOne({
+        code: codeStr,
+        cityId: city,
+        stateId: state,
+        countryId: country
+      });
+
+      if (!pincodeDoc) {
+        pincodeDoc = await pincodeModel.create({
+          code: codeStr,
+          cityId: city,
+          stateId: state,
+          countryId: country
+        });
+      }
+      resolvedPincode = pincodeDoc._id;
+    }
+
     return await bulkInquiryModel.create({
       userId,
-      ...payload,
+      country,
+      state,
+      city,
+      pincode: resolvedPincode,
+      products,
+      message,
+      status,
     });
   }
 

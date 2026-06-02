@@ -115,6 +115,20 @@ export default class AtlController {
         }));
       }
 
+      if (req.files?.processImageFile?.[0]) {
+        body.processImage = {
+          url: req.files.processImageFile[0].location,
+          key: req.files.processImageFile[0].key,
+        };
+      }
+
+      if (req.files?.setupImageFile?.[0]) {
+        body.setupImage = {
+          url: req.files.setupImageFile[0].location,
+          key: req.files.setupImageFile[0].key,
+        };
+      }
+
       if (body.cards) {
         body.cards = body.cards.map((c, i) => {
           let icon = c.icon;

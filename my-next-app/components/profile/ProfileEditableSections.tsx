@@ -74,13 +74,43 @@ function formatAddress(addressInfo: AddressInfo) {
         .join(", ");
 }
 
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+import { useEffect } from "react";
+import { updateUserProfile } from "@/redux/slices/authSlice";
+
 export default function ProfileEditableSections() {
     const router = useRouter();
+    const dispatch = useDispatch<any>();
+    const { user } = useSelector((state: RootState) => state.auth);
+
     const [activeSection, setActiveSection] = useState<EditableSection>(null);
     const [addressMode, setAddressMode] = useState<"edit" | "add">("edit");
-    const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(() =>
-        getInitialValue(PERSONAL_STORAGE_KEY, defaultPersonalInfo)
-    );
+    
+    const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(() => {
+        if (user) {
+            return {
+                firstName: user.firstName || "",
+                lastName: user.lastName || "",
+                email: user.email || "",
+                mobileNumber: user.number || "",
+            };
+        }
+        return { firstName: "", lastName: "", email: "", mobileNumber: "" };
+    });
+
+    // Update personalInfo when user loads
+    useEffect(() => {
+        if (user) {
+            setPersonalInfo({
+                firstName: user.firstName || "",
+                lastName: user.lastName || "",
+                email: user.email || "",
+                mobileNumber: user.number || "",
+            });
+        }
+    }, [user]);
+
     const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() =>
         getInitialValue(COMPANY_STORAGE_KEY, defaultCompanyInfo)
     );
@@ -100,12 +130,25 @@ export default function ProfileEditableSections() {
         setEditingAddressIndex(null);
     };
 
-    const handlePersonalSave = (nextPersonalInfo: PersonalInfo) => {
-        setPersonalInfo(nextPersonalInfo);
-        window.localStorage.setItem(
-            PERSONAL_STORAGE_KEY,
-            JSON.stringify(nextPersonalInfo)
-        );
+    const handlePersonalSave = async (nextPersonalInfo: PersonalInfo) => {
+        if (user && user._id) {
+            try {
+                await dispatch(updateUserProfile({
+                    id: user._id,
+                    data: {
+                        firstName: nextPersonalInfo.firstName,
+                        lastName: nextPersonalInfo.lastName,
+                        email: nextPersonalInfo.email,
+                        number: nextPersonalInfo.mobileNumber
+                    }
+                })).unwrap();
+                // Update local state only on success
+                setPersonalInfo(nextPersonalInfo);
+            } catch (err) {
+                console.error("Failed to update user profile", err);
+                // Optionally add a toast error here
+            }
+        }
         closeEditor();
     };
 
@@ -140,9 +183,9 @@ export default function ProfileEditableSections() {
     return (
         <div className="space-y-4 md:space-y-6">
             <ProfileHeaderCard
-                fullName={formatFullName(personalInfo)}
+                fullName={formatFullName(personalInfo) || "User"}
                 description="Manage your details with ease."
-                address={displayAddress}
+                address={displayAddress || "No address added"}
             />
 
             <PersonalInfoCard

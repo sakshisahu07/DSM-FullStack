@@ -8,13 +8,15 @@ import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { registerLoginUser, verifyOtp } from "@/redux/slices/authSlice";
-import { submitBulkInquiry, resetInquiryStatus, fetchCities } from "@/redux/slices/bulkInquirySlice";
+import { submitBulkInquiry, resetInquiryStatus, fetchCities, fetchCountries, fetchStates } from "@/redux/slices/bulkInquirySlice";
+import { fetchProducts } from "@/redux/slices/productSlice";
 
 export default function BulkInquiryPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { loading: authLoading, error: authError, otpInfo, user, token } = useSelector((state: RootState) => state.auth);
-  const { loading: inquiryLoading, error: inquiryError, success: inquirySuccess, cities } = useSelector((state: RootState) => state.bulkInquiry);
+  const { loading: inquiryLoading, error: inquiryError, success: inquirySuccess, cities, states, countries } = useSelector((state: RootState) => state.bulkInquiry);
+  const { products } = useSelector((state: RootState) => state.product);
 
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
@@ -40,34 +42,19 @@ export default function BulkInquiryPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (token) {
-      console.log("BulkInquiryPage mounted, dispatching fetchCities with token:", token);
-      dispatch(fetchCities(token));
-    } else {
-      // If no token from state, try localStorage
-      const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (localToken) {
-        console.log("BulkInquiryPage mounted, dispatching fetchCities with localToken:", localToken);
-        dispatch(fetchCities(localToken));
-      } else {
-        console.log("No token available yet to fetch cities.");
-      }
-    }
+    const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const activeToken = token || localToken;
+    console.log("BulkInquiryPage mounted, dispatching fetchCountries and fetchProducts");
+    dispatch(fetchCountries(activeToken));
+    dispatch(fetchProducts('limit=150'));
   }, [dispatch, token]);
 
-  console.log("Current cities in state:", cities);
-
-  const filteredCities = cities.filter(c =>
-    c.name.toLowerCase().includes(citySearch.toLowerCase())
-  );
-  console.log("Filtered cities list:", filteredCities);
-
-  // Sample products based on user's examples
-  const availableProducts = [
-    { id: "69c77f35278095a2c660f1cb", name: "Bluetooth Module", category: "Communication", image: "/bluetooth.png" },
-    { id: "69c780ec1bb7552fbf1b7caf", name: "Arduino Uno", category: "Microcontrollers", image: "/arduino.png" },
-    { id: "69c781a11bb7552fbf1b7cb5", name: "Ultrasonic Sensor", category: "Sensors", image: "/sensor.png" },
-  ];
+  const availableProducts = (products || []).map((p: any) => ({
+    id: p._id,
+    name: p.name || p.title || 'Unnamed Product',
+    category: p.category || 'Electronics',
+    image: p.image || '/placeholder.png'
+  }));
 
   const filteredProducts = availableProducts.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
@@ -95,9 +82,48 @@ export default function BulkInquiryPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Proceed with registration/login to trigger OTP
+    if (!firstName || !firstName.trim()) {
+      alert("Please enter your First Name");
+      return;
+    }
+    if (!lastName || !lastName.trim()) {
+      alert("Please enter your Last Name");
+      return;
+    }
     if (!phoneNumber || !phoneNumber.match(/^\d{10}$/)) {
       alert("Please enter a valid 10-digit phone number");
+      return;
+    }
+    if (!selectedCountryId) {
+      alert("Please select a Country");
+      return;
+    }
+    if (!selectedStateId) {
+      alert("Please select a State");
+      return;
+    }
+    if (!selectedCityId) {
+      alert("Please select a City");
+      return;
+    }
+    if (!zipCode || !zipCode.trim()) {
+      alert("Please enter a Zip Code");
+      return;
+    }
+    if (selectedProducts.length === 0) {
+      alert("Please select at least one product");
+      return;
+    }
+
+    // Check if token exists - if so, submit directly!
+    const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const activeToken = token || localToken;
+    const localUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+    const activeUser = user || localUser;
+    
+    if (activeToken && activeUser) {
+      console.log("Token found, submitting inquiry directly...");
+      await handleFinalSubmit("", activeToken, activeUser);
       return;
     }
 
@@ -162,9 +188,6 @@ export default function BulkInquiryPage() {
             localStorage.setItem('token', finalToken);
             localStorage.setItem('user', JSON.stringify(finalUser));
           }
-
-          // Re-fetch cities now that we have a valid token
-          dispatch(fetchCities(finalToken || null));
         } else {
           alert("Unauthorized: Please verify your phone number to get a valid token.");
           return;
@@ -182,11 +205,11 @@ export default function BulkInquiryPage() {
         const inquiryData = {
           userId,
           number: phoneNumber || finalUser?.number || "",
-          products: selectedProducts.length > 0 ? selectedProducts.map(p => p.id) : ["69c77f35278095a2c660f1cb"],
-          country: selectedCountryId || "69c389b43f5fc953412718a0",
-          state: selectedStateId || "69c39e01202240d9f7d0a17a",
-          city: selectedCityId || "69c4cdf989423fb1b9fceded",
-          pincode: zipCode || "69c4cea289423fb1b9fcedf5",
+          products: selectedProducts.map(p => p.id),
+          country: selectedCountryId,
+          state: selectedStateId,
+          city: selectedCityId,
+          pincode: zipCode,
           message: message || "I am interested in these products",
         };
 
@@ -336,87 +359,93 @@ export default function BulkInquiryPage() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* State (Read-only display) */}
-                <div className="relative">
-                  <label className="absolute -top-3 left-4 z-10 bg-white px-2 text-sm font-semibold text-gray-700">
-                    State
-                  </label>
-                  <div className="w-full border-2 border-gray-100 rounded-lg p-4 text-gray-800 font-medium min-h-[58px] flex items-center">
-                    {stateName || "Select City First"}
-                  </div>
-                </div>
-
-                {/* Country (Read-only display) */}
+                {/* Country */}
                 <div className="relative">
                   <label className="absolute -top-3 left-4 z-10 bg-white px-2 text-sm font-semibold text-gray-700">
                     Country
                   </label>
-                  <div className="w-full border-2 border-gray-100 rounded-lg p-4 text-gray-800 font-medium min-h-[58px] flex items-center">
-                    {countryName || "Select City First"}
+                  <div className="relative">
+                    <select
+                      value={selectedCountryId}
+                      onChange={(e) => {
+                        const cId = e.target.value;
+                        setSelectedCountryId(cId);
+                        const cName = countries.find((c: any) => c._id === cId)?.name || "";
+                        setCountryName(cName);
+                        setSelectedStateId("");
+                        setStateName("");
+                        setSelectedCityId("");
+                        setCity("");
+                        const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                        dispatch(fetchStates({ token: token || localToken, countryId: cId }));
+                      }}
+                      className="w-full border-2 border-[#EE9C24]/30 rounded-lg p-4 outline-none focus:border-[#EE9C24] text-gray-600 font-medium bg-white appearance-none pr-10"
+                    >
+                      <option value="">Select Country</option>
+                      {countries.map((c: any) => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* State */}
+                <div className="relative">
+                  <label className="absolute -top-3 left-4 z-10 bg-white px-2 text-sm font-semibold text-gray-700">
+                    State
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedStateId}
+                      disabled={!selectedCountryId}
+                      onChange={(e) => {
+                        const sId = e.target.value;
+                        setSelectedStateId(sId);
+                        const sName = states.find((s: any) => s._id === sId)?.name || "";
+                        setStateName(sName);
+                        setSelectedCityId("");
+                        setCity("");
+                        const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                        dispatch(fetchCities({ token: token || localToken, stateId: sId }));
+                      }}
+                      className="w-full border-2 border-[#EE9C24]/30 rounded-lg p-4 outline-none focus:border-[#EE9C24] text-gray-600 font-medium bg-white appearance-none pr-10 disabled:bg-gray-50 disabled:border-gray-200"
+                    >
+                      <option value="">Select State</option>
+                      {states.map((s: any) => (
+                        <option key={s._id} value={s._id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* City (Searchable Dropdown) */}
-                <div className="relative z-30">
+                {/* City */}
+                <div className="relative">
                   <label className="absolute -top-3 left-4 z-10 bg-white px-2 text-sm font-semibold text-gray-700">
                     City
                   </label>
-                  <div
-                    className="flex items-center w-full border-2 border-[#EE9C24]/30 rounded-lg p-4 outline-none focus-within:border-[#EE9C24] text-gray-600 font-medium transition-colors cursor-text relative z-0 bg-white"
-                    onClick={() => setShowCityDropdown(true)}
-                  >
-                    <input
-                      type="text"
-                      value={city || citySearch}
+                  <div className="relative">
+                    <select
+                      value={selectedCityId}
+                      disabled={!selectedStateId}
                       onChange={(e) => {
-                        setCitySearch(e.target.value);
-                        if (city) setCity(""); // Clear selection if typing
+                        const cId = e.target.value;
+                        setSelectedCityId(cId);
+                        const cName = cities.find((c: any) => c._id === cId)?.name || "";
+                        setCity(cName);
                       }}
-                      placeholder="Search City"
-                      className="w-full outline-none bg-transparent placeholder-gray-400"
-                      onFocus={() => setShowCityDropdown(true)}
-                    />
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none z-10" />
+                      className="w-full border-2 border-[#EE9C24]/30 rounded-lg p-4 outline-none focus:border-[#EE9C24] text-gray-600 font-medium bg-white appearance-none pr-10 disabled:bg-gray-50 disabled:border-gray-200"
+                    >
+                      <option value="">Select City</option>
+                      {cities.map((c: any) => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                   </div>
-
-                  {/* City Dropdown */}
-                  {showCityDropdown && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowCityDropdown(false)}
-                      ></div>
-                      <div className="absolute top-[110%] left-0 w-full bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-gray-100 z-50 overflow-hidden transform">
-                        <div className="max-h-60 overflow-y-auto">
-                          {filteredCities.length > 0 ? (
-                            filteredCities.map((c, index) => (
-                              <div
-                                key={c._id}
-                                className={`px-6 py-4 cursor-pointer hover:bg-orange-50 transition-colors ${index !== filteredCities.length - 1 ? 'border-b border-gray-100/50' : ''}`}
-                                onClick={() => {
-                                  setCity(c.name);
-                                  setSelectedCityId(c._id);
-                                  setStateName(c.stateId?.name || "");
-                                  setSelectedStateId(c.stateId?._id || "");
-                                  setCountryName(c.countryId?.name || "");
-                                  setSelectedCountryId(c.countryId?._id || "");
-                                  setShowCityDropdown(false);
-                                  setCitySearch("");
-                                }}
-                              >
-                                <p className="text-gray-700 font-medium">{c.name}</p>
-                                <p className="text-gray-400 text-xs">{c.stateId?.name}, {c.countryId?.name}</p>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-6 py-4 text-gray-400 text-center">No cities found</div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 {/* Zip Code */}
@@ -697,14 +726,29 @@ export default function BulkInquiryPage() {
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
                       <span className="text-[10px] font-black text-gray-400 ">Country</span>
                     </div>
-                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24]">
+                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
                       <select
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none"
+                        value={selectedCountryId}
+                        onChange={(e) => {
+                          const cId = e.target.value;
+                          setSelectedCountryId(cId);
+                          const cName = countries.find((c: any) => c._id === cId)?.name || "";
+                          setCountryName(cName);
+                          setSelectedStateId("");
+                          setStateName("");
+                          setSelectedCityId("");
+                          setCity("");
+                          const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                          dispatch(fetchStates({ token: token || localToken, countryId: cId }));
+                        }}
+                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6"
                       >
-                        <option>Select country</option>
-                        <option>India</option>
+                        <option value="">Select country</option>
+                        {countries.map((c: any) => (
+                          <option key={c._id} value={c._id}>{c.name}</option>
+                        ))}
                       </select>
-                      <ChevronDown size={14} className="text-gray-400" />
+                      <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
 
@@ -713,14 +757,28 @@ export default function BulkInquiryPage() {
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
                       <span className="text-[10px] font-black text-gray-400 ">State</span>
                     </div>
-                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24]">
+                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
                       <select
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none"
+                        value={selectedStateId}
+                        disabled={!selectedCountryId}
+                        onChange={(e) => {
+                          const sId = e.target.value;
+                          setSelectedStateId(sId);
+                          const sName = states.find((s: any) => s._id === sId)?.name || "";
+                          setStateName(sName);
+                          setSelectedCityId("");
+                          setCity("");
+                          const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                          dispatch(fetchCities({ token: token || localToken, stateId: sId }));
+                        }}
+                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
                       >
-                        <option>Select state</option>
-                        <option>Gujarat</option>
+                        <option value="">Select state</option>
+                        {states.map((s: any) => (
+                          <option key={s._id} value={s._id}>{s.name}</option>
+                        ))}
                       </select>
-                      <ChevronDown size={14} className="text-gray-400" />
+                      <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
                 </div>
@@ -731,15 +789,24 @@ export default function BulkInquiryPage() {
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
                       <span className="text-[10px] font-black text-gray-400 ">City</span>
                     </div>
-                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24]">
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Enter Your Number"
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent placeholder:text-gray-300"
-                      />
-                      <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />
+                    <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
+                      <select
+                        value={selectedCityId}
+                        disabled={!selectedStateId}
+                        onChange={(e) => {
+                          const cId = e.target.value;
+                          setSelectedCityId(cId);
+                          const cName = cities.find((c: any) => c._id === cId)?.name || "";
+                          setCity(cName);
+                        }}
+                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
+                      >
+                        <option value="">Select city</option>
+                        {cities.map((c: any) => (
+                          <option key={c._id} value={c._id}>{c.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
 
@@ -753,7 +820,7 @@ export default function BulkInquiryPage() {
                         type="text"
                         value={zipCode}
                         onChange={(e) => setZipCode(e.target.value)}
-                        placeholder="Enter Your Number"
+                        placeholder="Enter Zipcode"
                         className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent placeholder:text-gray-300"
                       />
                       <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />

@@ -54,6 +54,14 @@ router.get(
   HotDealController.getById
 );
 
+// Delete hot deal
+router.delete(
+  "/hot-deal/:id",
+  authUser,
+  adminMiddleware,
+  HotDealController.delete
+);
+
 // Toggle hot deal active / inactive
 router.patch(
   "/hot-deal/:id/toggle-status",

@@ -12,61 +12,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-const products = [
-  {
-    id: "69c61a978aa1b6cbb89e46c4",
-    variantId: "69c61a988aa1b6cbb89e46c6",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Bluetooth",
-    subcategory: "Bluetooth",
-    image: "/bluetooth.png",
-    isHot: true,
-  },
-  {
-    id: "69c6238ac40bad37d3db4a7a",
-    variantId: "69c6238ac40bad37d3db4a7d",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Bluetooth",
-    subcategory: "Bluetooth",
-    image: "/bluetooth.png",
-    isHot: true,
-  },
-  {
-    id: "69c65f319376101b1a73d106",
-    variantId: "69c65f319376101b1a73d109",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Bluetooth",
-    subcategory: "Bluetooth",
-    image: "/bluetooth.png",
-    isHot: true,
-  },
-  {
-    id: "69c775e735cb8a0c09045255",
-    variantId: "69c775e735cb8a0c09045258",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Bluetooth",
-    subcategory: "Bluetooth",
-    image: "/bluetooth.png",
-    isHot: false,
-    isFan: true,
-  }
-];
+// No static fallback — section only renders when live API data is available
 
 import ProductCard from '@/components/products/ProductCard';
 import ProductSwiperSkeleton from '@/components/products/ProductSwiperSkeleton';
@@ -75,10 +21,15 @@ const HotProducts = ({ products: propProducts, loading = false }: { products?: a
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
 
-  const displayProducts = propProducts && propProducts.length > 0 ? propProducts : products;
+  const displayProducts = propProducts || [];
 
-  if (loading && (!propProducts || propProducts.length === 0)) {
+  if (loading && displayProducts.length === 0) {
     return <ProductSwiperSkeleton title="Hot Products" />;
+  }
+
+  // Hide section if no live data from API
+  if (displayProducts.length === 0) {
+    return null;
   }
 
   return (

@@ -34,7 +34,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/admin/registerLogin`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1"}/auth/admin/registerLogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -49,7 +49,7 @@ function LoginPage() {
           localStorage.setItem("dsm_token", token);
           if (remember) localStorage.setItem("dsm_remember", "1");
           toast.success(json.message || "Welcome back!");
-          navigate({ to: "/_app/dashboard" });
+          navigate({ to: "/dashboard" });
         } else {
           throw new Error("Token not found in response");
         }

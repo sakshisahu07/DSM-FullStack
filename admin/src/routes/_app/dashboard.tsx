@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -195,7 +195,9 @@ function Dashboard() {
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => fetchData(filter)}>Refresh</Button>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1.5" /> Add Product</Button>
+            <Button size="sm" asChild>
+              <Link to="/products/all"><Plus className="h-4 w-4 mr-1.5" /> Add Product</Link>
+            </Button>
           </>
         }
       />
@@ -218,15 +220,17 @@ function Dashboard() {
       <Card className="p-4">
         <div className="flex flex-wrap gap-2">
           {[
-            { i: Plus, l: "Add New Product" },
-            { i: Zap, l: "Create Flash Sale" },
-            { i: CheckCircle2, l: "Approve KYC" },
-            { i: Send, l: "Process Payout" },
-            { i: FileText, l: "Bulk Inquiries" },
-            { i: LinkIcon, l: "Add Combo Offer" },
+            { i: Plus, l: "Add New Product", to: "/products/all" },
+            { i: Zap, l: "Create Flash Sale", to: "/marketing/flash-sales" },
+            { i: CheckCircle2, l: "Approve KYC", to: "/affiliate/kyc" },
+            { i: Send, l: "Process Payout", to: "/affiliate/payouts" },
+            { i: FileText, l: "Bulk Inquiries", to: "/b2b/inquiries" },
+            { i: LinkIcon, l: "Add Combo Offer", to: "/marketing/combo-offers" },
           ].map((a) => (
-            <Button key={a.l} variant="outline" size="sm" className="gap-1.5">
-              <a.i className="h-4 w-4" /> {a.l}
+            <Button key={a.l} variant="outline" size="sm" className="gap-1.5" asChild>
+              <Link to={a.to}>
+                <a.i className="h-4 w-4" /> {a.l}
+              </Link>
             </Button>
           ))}
         </div>

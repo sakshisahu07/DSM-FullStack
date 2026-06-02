@@ -12,7 +12,7 @@ import { inrFormat } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { useEffect, useCallback } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/orders/returns")({
   component: ReturnsPage,
@@ -153,7 +153,7 @@ function ReturnsPage() {
           if (editing) {
             // Call the API to update the return status
             try {
-              const res = await fetch(`http://15.207.149.229:2000/api/v1/order/${editing.id}/return-status`, {
+              const res = await fetch(`https://api.dsmelectro.com/api/v1/order/${editing.id}/return-status`, {
                 method: "PUT",
                 headers: {
                   "Content-Type": "application/json",

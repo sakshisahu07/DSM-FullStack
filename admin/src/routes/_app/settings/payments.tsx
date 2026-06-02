@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Save, CreditCard, Wallet, Smartphone, Banknote, Loader2, IndianRupee } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const API_BASE = "http://15.207.149.229:2000/api/v1";
+const API_BASE = "https://api.dsmelectro.com/api/v1";
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("dsm_token");

@@ -36,8 +36,12 @@ const WishlistModal: React.FC<WishlistModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const handleRemove = (productId: string, variantId?: string) => {
-    dispatch(removeFromWishlist({ productId, variantId }));
+  const handleRemove = (wishlistId: string, productId?: string, variantId?: string) => {
+    if (wishlistId) {
+      dispatch(removeFromWishlist({ wishlistId }));
+    } else if (productId) {
+      dispatch(removeFromWishlist({ productId, variantId }));
+    }
   };
 
   const handleAddToCart = async (variantId: string) => {
@@ -128,8 +132,8 @@ const WishlistModal: React.FC<WishlistModalProps> = ({ isOpen, onClose }) => {
                       
                       // Image extraction - handle string, array of strings, or variant images
                       const image = (Array.isArray(product.images) && product.images.length > 0 && product.images[0]) || 
-                                    product.icon || 
-                                    (typeof product.image === 'string' && product.image) || 
+                                    (product.icon && product.icon !== 'false' ? product.icon : null) || 
+                                    (typeof product.image === 'string' && product.image !== 'false' ? product.image : null) || 
                                     variant.image || 
                                     '/bluetooth.png';
                       
@@ -145,7 +149,7 @@ const WishlistModal: React.FC<WishlistModalProps> = ({ isOpen, onClose }) => {
                         >
                           {/* Remove button */}
                           <button
-                            onClick={() => handleRemove(product._id || item.product?._id || item._id, variant._id)}
+                            onClick={() => handleRemove(item._id, product._id || item.product?._id, variant._id)}
                             className="absolute top-2 right-2 z-10 p-1 bg-white border border-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors shadow-sm"
                           >
                             <Trash2 size={12} className="md:w-3.5 md:h-3.5" />

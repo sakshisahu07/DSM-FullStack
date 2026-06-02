@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { BASE_URL } from './apiConfig';
 
-const BASE_URL_ENV = process.env.NEXT_PUBLIC_BASE_URL || 'https://priyashu.in/api/v1';
-const BASE_URL = BASE_URL_ENV.endsWith('/') ? BASE_URL_ENV.slice(0, -1) : BASE_URL_ENV;
 
 interface MembershipPlan {
   _id: string;

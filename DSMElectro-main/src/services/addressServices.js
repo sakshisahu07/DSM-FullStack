@@ -2,13 +2,16 @@ import addressModel from "../model/address.model.js";
 import redisClient from "../config/redis.js";
 import { AppError } from "../utils/apiResponse.js";
 import logger from "../utils/logger.js";
+import cityModel from "../model/city.model.js";
+import pincodeModel from "../model/pincode.model.js";
 
 export default class AddressService {
   /**
    * CREATE ADDRESS
    */
   static async createAddress(userId, data) {
-    const { firstName, lastName, phone, email, street, city, state, pincode, country } = data;
+    const { firstName, lastName, phone, email, street, state, country } = data;
+    let { city, pincode } = data;
 
     if (!firstName || !firstName.trim()) throw new AppError("First Name is required", 400);
     if (!lastName || !lastName.trim()) throw new AppError("Last Name is required", 400);
@@ -28,9 +31,60 @@ export default class AddressService {
 
     if (!country || !country.trim()) throw new AppError("Country is required", 400);
 
+    // Resolve City Name to City ObjectId
+    const isObjectId = /^[0-9a-fA-F]{24}$/;
+    if (!isObjectId.test(city.trim())) {
+      let cityDoc = await cityModel.findOne({
+        name: { $regex: new RegExp(`^${city.trim()}$`, "i") },
+        stateId: state,
+        countryId: country
+      });
+
+      if (!cityDoc) {
+        cityDoc = await cityModel.create({
+          name: city.trim(),
+          stateId: state,
+          countryId: country
+        });
+      }
+      city = cityDoc._id;
+    }
+
+    // Resolve Pincode Code to Pincode ObjectId
+    if (!isObjectId.test(pincode.trim())) {
+      let pincodeDoc = await pincodeModel.findOne({
+        code: pincode.trim(),
+        cityId: city,
+        stateId: state,
+        countryId: country
+      });
+
+      if (!pincodeDoc) {
+        pincodeDoc = await pincodeModel.create({
+          code: pincode.trim(),
+          cityId: city,
+          stateId: state,
+          countryId: country
+        });
+      }
+      pincode = pincodeDoc._id;
+    }
+
     const address = await addressModel.create({
       ...data,
+      city,
+      pincode,
       userId,
+    });
+
+    // Sync/update customer name and email to user profile
+    const userModel = (await import("../model/user.model.js")).default;
+    await userModel.findByIdAndUpdate(userId, {
+      $set: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+      }
     });
 
     await this._clearCache(userId);
@@ -90,6 +144,72 @@ export default class AddressService {
    * UPDATE ADDRESS
    */
   static async updateAddress(addressId, userId, data) {
+    let { city, pincode, state, country } = data;
+
+    const isObjectId = /^[0-9a-fA-F]{24}$/;
+    
+    if (city && !isObjectId.test(city.trim())) {
+      let finalState = state;
+      let finalCountry = country;
+      if (!finalState || !finalCountry) {
+        const existing = await addressModel.findById(addressId);
+        if (existing) {
+          finalState = finalState || existing.state;
+          finalCountry = finalCountry || existing.country;
+        }
+      }
+
+      if (finalState && finalCountry) {
+        let cityDoc = await cityModel.findOne({
+          name: { $regex: new RegExp(`^${city.trim()}$`, "i") },
+          stateId: finalState,
+          countryId: finalCountry
+        });
+
+        if (!cityDoc) {
+          cityDoc = await cityModel.create({
+            name: city.trim(),
+            stateId: finalState,
+            countryId: finalCountry
+          });
+        }
+        data.city = cityDoc._id;
+      }
+    }
+
+    if (pincode && !isObjectId.test(pincode.trim())) {
+      let finalCity = data.city || city;
+      let finalState = state;
+      let finalCountry = country;
+      if (!finalCity || !finalState || !finalCountry) {
+        const existing = await addressModel.findById(addressId);
+        if (existing) {
+          finalCity = finalCity || existing.city;
+          finalState = finalState || existing.state;
+          finalCountry = finalCountry || existing.country;
+        }
+      }
+
+      if (finalCity && finalState && finalCountry) {
+        let pincodeDoc = await pincodeModel.findOne({
+          code: pincode.trim(),
+          cityId: finalCity,
+          stateId: finalState,
+          countryId: finalCountry
+        });
+
+        if (!pincodeDoc) {
+          pincodeDoc = await pincodeModel.create({
+            code: pincode.trim(),
+            cityId: finalCity,
+            stateId: finalState,
+            countryId: finalCountry
+          });
+        }
+        data.pincode = pincodeDoc._id;
+      }
+    }
+
     const address = await addressModel.findOneAndUpdate(
       { _id: addressId, userId },
       { $set: data },
@@ -97,6 +217,17 @@ export default class AddressService {
     );
 
     if (!address) throw new AppError("Address not found or unauthorized", 404);
+
+    // Sync/update customer name and email to user profile if provided in the update payload
+    const updateFields = {};
+    if (data.firstName && data.firstName.trim()) updateFields.firstName = data.firstName.trim();
+    if (data.lastName && data.lastName.trim()) updateFields.lastName = data.lastName.trim();
+    if (data.email && data.email.trim()) updateFields.email = data.email.trim();
+
+    if (Object.keys(updateFields).length > 0) {
+      const userModel = (await import("../model/user.model.js")).default;
+      await userModel.findByIdAndUpdate(userId, { $set: updateFields });
+    }
 
     await this._clearCache(userId);
     return address;

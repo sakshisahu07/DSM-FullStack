@@ -12,60 +12,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 
 
-const products = [
-  {
-    id: "69c6238ac40bad37d3db4a80",
-    variantId: "69c6238ac40bad37d3db4a81",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/bluetooth.png",
-    timeLeft: "00 : 00 Hours"
-  },
-  {
-    id: "69c6238ac40bad37d3db4a82",
-    variantId: "69c6238ac40bad37d3db4a83",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/bluetooth.png",
-    timeLeft: "00 : 00 Hours"
-  },
-  {
-    id: "69c6238ac40bad37d3db4a84",
-    variantId: "69c6238ac40bad37d3db4a85",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/bluetooth.png",
-    timeLeft: "00 : 00 Hours"
-  },
-  {
-    id: "69c6238ac40bad37d3db4a86",
-    variantId: "69c6238ac40bad37d3db4a87",
-    name: "Bluetooth 4.0 Module NRF51822",
-    description: "Bluetooth 4.0 Module NRF51822 lrem ipsume lrem ipsume.lorem...",
-    price: 347,
-    originalPrice: 447,
-    rating: 5,
-    category: "Category",
-    subcategory: "Sub category",
-    image: "/bluetooth.png",
-    timeLeft: "00 : 00 Hours"
-  }
-];
+// No static fallback — section only renders when live API data is available
 
 import ProductCard from '@/components/products/ProductCard';
 import ProductSwiperSkeleton from '@/components/products/ProductSwiperSkeleton';
@@ -74,16 +21,21 @@ const FlashSale = ({ products: propProducts, loading = false }: { products?: any
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
 
-  const displayProducts = propProducts && propProducts.length > 0 ? propProducts : products;
+  const displayProducts = propProducts || [];
 
-  if (loading && (!propProducts || propProducts.length === 0)) {
+  if (loading && displayProducts.length === 0) {
     return <ProductSwiperSkeleton title="Flash Sale" />;
+  }
+
+  // Hide section if no live data from API
+  if (displayProducts.length === 0) {
+    return null;
   }
 
   return (
     <section className="w-full bg-white py-2 md:py-8 px-4 md:px-14">
       <div className="max-w-[1400px] mx-auto">
-         {/* Mobile Header */}
+        {/* Mobile Header */}
         <div className="flex md:hidden items-center justify-between mb-6">
           <div className="relative">
             <h2 className="text-[14px] font-medium text-[#000000]">Flash Sale</h2>

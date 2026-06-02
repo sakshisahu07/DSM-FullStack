@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchJobById, clearCurrentJob, applyJob, clearApplyStatus } from "@/redux/slices/careerSlice";
+import { BASE_URL } from "@/redux/slices/apiConfig";
 
 export default function JobDetail() {
    const { id } = useParams();
@@ -20,6 +21,7 @@ export default function JobDetail() {
       lastName: "",
       phone: "",
       email: "",
+      gender: "",
       city: "",
       state: "",
       country: "",
@@ -28,6 +30,38 @@ export default function JobDetail() {
       message: "",
    });
    const [resume, setResume] = useState<File | null>(null);
+
+   const [countries, setCountries] = useState<any[]>([]);
+   const [states, setStates] = useState<any[]>([]);
+
+   useEffect(() => {
+      fetch(`${BASE_URL}/countries?limit=150`)
+         .then(res => res.json())
+         .then(data => {
+            if (data.success) {
+               setCountries(Array.isArray(data.data) ? data.data : (data.data?.data || []));
+            }
+         })
+         .catch(err => console.error(err));
+   }, []);
+
+   useEffect(() => {
+      if (formData.country) {
+         const countryObj = countries.find(c => c.name === formData.country);
+         if (countryObj) {
+            fetch(`${BASE_URL}/states?countryId=${countryObj._id}&limit=150`)
+               .then(res => res.json())
+               .then(data => {
+                  if (data.success) {
+                     setStates(Array.isArray(data.data) ? data.data : (data.data?.data || []));
+                  }
+               })
+               .catch(err => console.error(err));
+         } else {
+            setStates([]);
+         }
+      }
+   }, [formData.country, countries]);
 
    useEffect(() => {
       if (id) {
@@ -68,14 +102,13 @@ export default function JobDetail() {
       data.append("firstName", formData.firstName);
       data.append("lastName", formData.lastName);
       data.append("phone", formData.phone);
+      data.append("email", formData.email);
+      data.append("gender", formData.gender);
 
-      // Backend logic remains consistent with existing fixes
-      data.append("city", "69c4cdf989423fb1b9fceded");
+      if (formData.city) data.append("city", formData.city);
 
       // Packing additional UI fields into the message to ensure data is captured by the backend
       const extendedMessage = [
-         formData.city ? `City: ${formData.city}` : "",
-         formData.state ? `State: ${formData.state}` : "",
          formData.zipcode ? `Zipcode: ${formData.zipcode}` : "",
          formData.product ? `Product: ${formData.product}` : "",
          formData.message ? `Message: ${formData.message}` : ""
@@ -84,14 +117,13 @@ export default function JobDetail() {
       data.append("message", extendedMessage);
 
       data.append("resume", resume);
-      data.append("country", "69c389b43f5fc953412718a0");
-      data.append("state", "69c39e01202240d9f7d0a17a");
-      data.append("pincode", "69c4cea289423fb1b9fcedf5");
+      data.append("country", formData.country);
+      data.append("state", formData.state);
 
       dispatch(applyJob(data)).then((res: any) => {
          if (res.meta.requestStatus === 'fulfilled') {
             alert("Application submitted successfully!");
-            setFormData({ firstName: "", lastName: "", phone: "", email: "", city: "", state: "", country: "", zipcode: "", product: "", message: "" });
+            setFormData({ firstName: "", lastName: "", phone: "", email: "", gender: "", city: "", state: "", country: "", zipcode: "", product: "", message: "" });
             setResume(null);
          } else {
             alert(res.payload || "Failed to submit application");
@@ -149,7 +181,7 @@ export default function JobDetail() {
                      <span className="text-gray-400 font-black mr-2  opacity-80">Experience Required:</span> 2—3 Years
                   </div>
                   <div className="text-[11px] font-bold text-[#333]">
-                     <span className="text-gray-400 font-black mr-2  opacity-80">Location:</span> {currentJob.city}
+                     <span className="text-gray-400 font-black mr-2  opacity-80">Location:</span> {typeof currentJob.city === 'object' ? (currentJob.city as any)?.name : currentJob.city}
                   </div>
                </div>
 
@@ -242,28 +274,35 @@ export default function JobDetail() {
                         <div className="relative">
                            <label className="absolute -top-2.5 left-4 px-2 bg-[#FFFAF2] text-[10px] font-black text-gray-700  z-10">Country</label>
                            <div className="flex bg-white rounded-xl border border-[#EE9C24]/30 px-3 py-3 items-center justify-between">
-                              <input
-                                 type="text"
+                              <select
                                  name="country"
-                                 placeholder="Select country"
                                  value={formData.country}
                                  onChange={handleChange}
-                                 className="bg-transparent outline-none text-[11px] font-bold text-gray-700 w-full placeholder:text-gray-200"
-                              />
+                                 className="bg-transparent outline-none text-[11px] font-bold text-gray-700 w-full appearance-none"
+                              >
+                                 <option value="">Select country</option>
+                                 {countries.map((c: any) => (
+                                    <option key={c._id} value={c.name}>{c.name}</option>
+                                 ))}
+                              </select>
                               <ChevronDown size={14} className="text-gray-300" />
                            </div>
                         </div>
                         <div className="relative">
                            <label className="absolute -top-2.5 left-4 px-2 bg-[#FFFAF2] text-[10px] font-black text-gray-700  z-10">State</label>
                            <div className="flex bg-white rounded-xl border border-[#EE9C24]/30 px-3 py-3 items-center justify-between">
-                              <input
-                                 type="text"
+                              <select
                                  name="state"
-                                 placeholder="Select state"
                                  value={formData.state}
                                  onChange={handleChange}
-                                 className="bg-transparent outline-none text-[11px] font-bold text-gray-700 w-full placeholder:text-gray-200"
-                              />
+                                 disabled={!formData.country}
+                                 className="bg-transparent outline-none text-[11px] font-bold text-gray-700 w-full appearance-none"
+                              >
+                                 <option value="">Select state</option>
+                                 {states.map((s: any) => (
+                                    <option key={s._id} value={s.name}>{s.name}</option>
+                                 ))}
+                              </select>
                               <ChevronDown size={14} className="text-gray-300" />
                            </div>
                         </div>
@@ -428,7 +467,7 @@ export default function JobDetail() {
                         <p><span className="font-black text-gray-400 mr-2  ">Position:</span> {currentJob.title}</p>
                         <p><span className="font-black text-gray-400 mr-2  ">Employment Type:</span> <span className="capitalize">{currentJob.jobType}</span></p>
                         <p><span className="font-black text-gray-400 mr-2  ">Work Mode:</span> <span className="capitalize">{currentJob.workMode}</span></p>
-                        <p><span className="font-black text-gray-400 mr-2  ">Location:</span> {currentJob.city}</p>
+                        <p><span className="font-black text-gray-400 mr-2  ">Location:</span> {typeof currentJob.city === 'object' ? (currentJob.city as any)?.name : currentJob.city}</p>
                      </div>
                   </div>
 
@@ -503,28 +542,87 @@ export default function JobDetail() {
 
                      <div className="grid grid-cols-2 gap-8">
                         <div className="relative">
-                           <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">Country</label>
+                           <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">Email</label>
                            <div className="flex bg-white rounded-2xl border border-[#EE9C24]/30 px-5 py-4 shadow-sm items-center justify-between">
                               <input
-                                 name="country"
-                                 placeholder="Select Country"
-                                 defaultValue="India"
+                                 type="email"
+                                 name="email"
+                                 value={formData.email}
+                                 onChange={handleChange}
+                                 placeholder="Enter Your Email"
                                  className="bg-transparent outline-none font-bold text-gray-700 w-full"
                               />
+                              <Image src="/editicon.png" alt="edit" width={18} height={18} />
+                           </div>
+                        </div>
+                        <div className="relative">
+                           <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">Gender</label>
+                           <div className="flex bg-white rounded-2xl border border-[#EE9C24]/30 px-5 py-4 shadow-sm items-center justify-between">
+                              <select
+                                 name="gender"
+                                 value={formData.gender}
+                                 onChange={handleChange}
+                                 className="bg-transparent outline-none font-bold text-gray-700 w-full appearance-none"
+                              >
+                                 <option value="">Select Gender</option>
+                                 <option value="Male">Male</option>
+                                 <option value="Female">Female</option>
+                                 <option value="Other">Other</option>
+                              </select>
+                              <ChevronDown size={20} className="text-[#EE9C24]" />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-8">
+                        <div className="relative">
+                           <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">Country</label>
+                           <div className="flex bg-white rounded-2xl border border-[#EE9C24]/30 px-5 py-4 shadow-sm items-center justify-between">
+                              <select
+                                 name="country"
+                                 value={formData.country}
+                                 onChange={handleChange}
+                                 className="bg-transparent outline-none font-bold text-gray-700 w-full appearance-none"
+                              >
+                                 <option value="">Select Country</option>
+                                 {countries.map((c: any) => (
+                                    <option key={c._id} value={c.name}>{c.name}</option>
+                                 ))}
+                              </select>
                               <ChevronDown size={20} className="text-[#EE9C24]" />
                            </div>
                         </div>
                         <div className="relative">
                            <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">State</label>
                            <div className="flex bg-white rounded-2xl border border-[#EE9C24]/30 px-5 py-4 shadow-sm items-center justify-between">
-                              <input
+                              <select
                                  name="state"
-                                 placeholder="Select State"
-                                 defaultValue="Madhya Pradesh"
-                                 className="bg-transparent outline-none font-bold text-gray-700 w-full"
-                              />
+                                 value={formData.state}
+                                 onChange={handleChange}
+                                 disabled={!formData.country}
+                                 className="bg-transparent outline-none font-bold text-gray-700 w-full appearance-none"
+                              >
+                                 <option value="">Select State</option>
+                                 {states.map((s: any) => (
+                                    <option key={s._id} value={s.name}>{s.name}</option>
+                                 ))}
+                              </select>
                               <ChevronDown size={20} className="text-[#EE9C24]" />
                            </div>
+                        </div>
+                     </div>
+
+                     <div className="relative">
+                        <label className="absolute -top-3 left-6 px-2 bg-[#FFFAF2] text-xs font-black text-gray-600  z-10">City</label>
+                        <div className="flex bg-white rounded-2xl border border-[#EE9C24]/30 px-5 py-4 shadow-sm items-center justify-between">
+                           <input
+                              name="city"
+                              value={formData.city}
+                              onChange={handleChange}
+                              placeholder="Enter Your City"
+                              className="bg-transparent outline-none font-bold text-gray-700 w-full"
+                           />
+                           <Image src="/editicon.png" alt="edit" width={18} height={18} />
                         </div>
                      </div>
 

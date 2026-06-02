@@ -2,7 +2,7 @@ import flashSaleModel from "../model/flashSale.model.js";
 import productModel from "../model/product.model.js";
 import variantModel from "../model/variant.model.js";
 import comboModel from "../model/combo.model.js";
-import redisClient from "../config/redis.js";
+import redisClient, { clearHomeCache } from "../config/redis.js";
 import { AppError, NotFoundError } from "../utils/apiResponse.js";
 
 // ─── Redis Key Helpers ────────────────────────────────────────────────────────
@@ -33,6 +33,7 @@ async function clearFlashCache() {
     ]);
     const all = [...adminKeys, ...productKeys];
     if (all.length) await redisClient.del(all);
+    await clearHomeCache();
   } catch { /* skip */ }
 }
 
@@ -336,6 +337,23 @@ export default class FlashSaleService {
     return sale;
   }
 
+  // ── DELETE ───────────────────────────────────────────────────────────────────
+  static async delete(id) {
+    const sale = await flashSaleModel.findById(id);
+    if (!sale) throw new NotFoundError("Flash sale not found");
+
+    // Reset all flags and discounts before deleting
+    await Promise.all([
+      sale.products.length && productModel.updateMany({ _id: { $in: sale.products } }, { $set: { flashSale: false } }),
+      (sale.variants.length || sale.products.length) && resetVariantDiscount(sale.variants, sale.products),
+      sale.combos.length   && resetComboDiscount(sale.combos),
+    ].filter(Boolean));
+
+    await flashSaleModel.findByIdAndDelete(id);
+    await clearFlashCache();
+    return true;
+  }
+
   // ── GET ALL — Admin (paginated + search, with Redis) ─────────────────────────
   static async getAll(query = {}) {
     const { page = 1, limit = 10, search = "", status } = query;
@@ -457,5 +475,21 @@ export default class FlashSaleService {
 
     await cacheSet(cacheKey, result, TTL_ACTIVE);
     return result;
+  }
+
+  // ── DELETE ──────────────────────────────────────────────────────────────────
+  static async delete(id) {
+    const sale = await flashSaleModel.findById(id);
+    if (!sale) throw new NotFoundError("Flash sale not found");
+
+    await Promise.all([
+      sale.products?.length && productModel.updateMany({ _id: { $in: sale.products } }, { $set: { flashSale: false } }),
+      ((sale.variants && sale.variants.length) || (sale.products && sale.products.length)) && resetVariantDiscount(sale.variants || [], sale.products || []),
+      sale.combos?.length && resetComboDiscount(sale.combos),
+      flashSaleModel.findByIdAndDelete(id),
+    ].filter(Boolean));
+
+    await clearFlashCache();
+    return true;
   }
 }

@@ -29,9 +29,10 @@ export const navGroups: NavGroup[] = [
     title: "Marketing", icon: Megaphone, items: [
       { title: "Flash Sales", url: "/marketing/flash-sales" },
       { title: "Combo Offers", url: "/marketing/combo-offers" },
-      { title: "Hot Deals", url: "/marketing/hot-deals" },
+      { title: "Hot Products", url: "/marketing/hot-deals" },
       { title: "Trending", url: "/marketing/trending" },
       { title: "Banners", url: "/marketing/banners" },
+      { title: "Special Offers", url: "/marketing/special-offers" },
     ],
   },
   {
@@ -64,6 +65,7 @@ export const navGroups: NavGroup[] = [
     title: "B2B & Services", icon: Building2, items: [
       { title: "Bulk Inquiries", url: "/b2b/inquiries" },
       { title: "Careers", url: "/b2b/careers" },
+      { title: "Job Applications", url: "/b2b/job-applications" },
     ],
   },
   {

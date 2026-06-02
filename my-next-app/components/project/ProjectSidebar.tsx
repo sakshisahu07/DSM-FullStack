@@ -6,17 +6,23 @@ import { ChevronRight, Star } from "lucide-react";
 const categories = [
   { label: "All Projects", value: "" },
   { label: "Beginner Level", value: "beginner" },
-  { label: "Intermidate Level", value: "intermediate" },
+  { label: "Intermediate Level", value: "intermediate" },
   { label: "Advanced Level", value: "advance" },
 ];
 
 interface ProjectSidebarProps {
   activeCategory?: string;
   onCategoryChange?: (value: string) => void;
+  selectedRating?: number | null;
+  onRatingChange?: (value: number) => void;
 }
 
-export default function ProjectSidebar({ activeCategory = "", onCategoryChange }: ProjectSidebarProps) {
-  const [selectedRating, setSelectedRating] = useState(5);
+export default function ProjectSidebar({ 
+  activeCategory = "", 
+  onCategoryChange,
+  selectedRating,
+  onRatingChange 
+}: ProjectSidebarProps) {
 
   return (
     <aside className="w-full">
@@ -46,7 +52,7 @@ export default function ProjectSidebar({ activeCategory = "", onCategoryChange }
             <label
               key={star}
               className="flex items-center gap-2 cursor-pointer group"
-              onClick={() => setSelectedRating(star)}
+              onClick={() => onRatingChange && onRatingChange(star)}
             >
               {/* Custom checkbox */}
               <div

@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
 import { fetchWallet, fetchTransactions } from '@/redux/slices/walletSlice';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from '@/redux/slices/apiConfig';
 
 /* ─── Load Razorpay script ─── */
 function loadRazorpayScript(): Promise<boolean> {

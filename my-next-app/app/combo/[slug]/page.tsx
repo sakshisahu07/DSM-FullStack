@@ -20,7 +20,7 @@ import { fetchComboBySlug, clearCurrentCombo, fetchComboById } from '@/redux/sli
 import { addToCart } from '@/redux/slices/cartSlice';
 import { postRating, resetRatingStatus } from '@/redux/slices/ratingSlice';
 import toast from 'react-hot-toast';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from '@/redux/slices/apiConfig';
 function loadRazorpayScript(): Promise<boolean> {
     return new Promise((resolve) => {
         if (typeof window === 'undefined') return resolve(false);
@@ -41,7 +41,7 @@ const ComboDetailPage = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { currentCombo, loading, error } = useSelector((state: RootState) => state.combo);
     const { loading: ratingLoading, success: ratingSuccess, error: ratingError } = useSelector((state: RootState) => state.rating);
-    
+
     const [quantity, setQuantity] = useState(1);
     const [selectedImage, setSelectedImage] = useState(0);
     const [activeTab, setActiveTab] = useState('Description');
@@ -96,114 +96,18 @@ const ComboDetailPage = () => {
         { src: "/youtube1.png", alt: "YouTube" }
     ];
 
-    const handleBuyNow = async () => {
-        setBuyNowLoading(true);
-        try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            if (!token) {
-                toast.error('Please login to continue');
-                router.push('/login');
-                setBuyNowLoading(false);
-                return;
+    const handleBuyNow = () => {
+        const payload = {
+            itemType: 'combo',
+            itemId: combo._id,
+            quantity: quantity,
+            productDetails: {
+                name: combo.name,
+                image: images[0]
             }
-
-            // Step 1: Create Order
-            const orderRes = await fetch(`${BASE_URL}buy-now`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    comboId: combo._id,
-                    variantId: combo.variantId || combo.variant?._id || (combo.items && combo.items[0]?.variant?._id) || (combo.items && combo.items[0]?.variant) || combo._id,
-                    quantity: quantity,
-                    paymentMethod: "ONLINE",
-                    address: {
-                        street: "123 MG Road",
-                        city: "665abc111111111111111111",
-                        state: "665abc222222222222222222",
-                        country: "665abc333333333333333333",
-                        pincode: "665abc444444444444444444"
-                    }
-                })
-            });
-            const orderData = await orderRes.json();
-            if (!orderRes.ok || !orderData.success) {
-                toast.error(orderData.message || 'Failed to create order');
-                setBuyNowLoading(false);
-                return;
-            }
-
-            const { order, razorpayOrderId, razorpayKey } = orderData.data;
-
-            // Step 2: Load SDK
-            const loaded = await loadRazorpayScript();
-            if (!loaded) {
-                toast.error('Razorpay SDK failed to load.');
-                setBuyNowLoading(false);
-                return;
-            }
-
-            // Step 3: Open Razorpay
-            const options = {
-                key: razorpayKey,
-                amount: order.orderTotal * 100, // paise
-                currency: 'INR',
-                name: 'DSM Electro',
-                description: combo.name || 'Combo Purchase',
-                order_id: razorpayOrderId,
-                handler: async (response: any) => {
-                    // Step 4: Verify Payment
-                    try {
-                        const verifyRes = await fetch(`${BASE_URL}buy-now/verify-payment`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                Authorization: `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                orderId: order._id
-                            })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (verifyData.success) {
-                            toast.success('Order placed successfully!');
-                            router.push('/order-history'); // Or wherever appropriate
-                        } else {
-                            toast.error(verifyData.message || 'Payment verification failed');
-                        }
-                    } catch (err) {
-                        toast.error('Error verifying payment.');
-                    }
-                },
-                prefill: {
-                    name: '',
-                    email: '',
-                    contact: ''
-                },
-                theme: { color: '#E47B25' },
-                modal: {
-                    ondismiss: () => {
-                        setBuyNowLoading(false);
-                    }
-                }
-            };
-
-            const rzp = new (window as any).Razorpay(options);
-            rzp.on('payment.failed', (resp: any) => {
-                toast.error(`Payment failed: ${resp.error.description}`);
-                setBuyNowLoading(false);
-            });
-            rzp.open();
-
-        } catch (error: any) {
-            toast.error(error.message || 'Something went wrong');
-            setBuyNowLoading(false);
-        }
+        };
+        sessionStorage.setItem('buyNowData', JSON.stringify(payload));
+        router.push('/checkout');
     };
 
     const handleReviewSubmit = () => {
@@ -309,7 +213,7 @@ const ComboDetailPage = () => {
                                 {[...Array(5)].map((_, i) => <Star key={i} size={20} fill="currentColor" />)}
                             </div>
                             <span className="text-gray-400">|</span>
-                            <span 
+                            <span
                                 className="text-sm font-medium text-gray-900 cursor-pointer hover:text-[#E47B25]"
                                 onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}
                             >
@@ -323,8 +227,8 @@ const ComboDetailPage = () => {
 
                         {/* Items in Combo */}
                         <div className="pt-2">
-                             <h3 className="text-[#EE9C24] font-bold text-lg mb-2">What's inside this combo:</h3>
-                             <ul className="space-y-2">
+                            <h3 className="text-[#EE9C24] font-bold text-lg mb-2">What's inside this combo:</h3>
+                            <ul className="space-y-2">
                                 {combo.items?.map((item: any, idx: number) => (
                                     <li key={idx} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
                                         <div className="w-12 h-12 relative flex-shrink-0 bg-white rounded border border-gray-200">
@@ -336,7 +240,7 @@ const ComboDetailPage = () => {
                                         </div>
                                     </li>
                                 ))}
-                             </ul>
+                            </ul>
                         </div>
 
                         {/* Pricing */}
@@ -419,7 +323,7 @@ const ComboDetailPage = () => {
                                 <p className="text-gray-700 leading-relaxed italic border-l-4 border-[#E47B25] pl-4">
                                     High-performance combo curated for specialized needs.
                                 </p>
-                                
+
                                 {combo.keyFeatures?.map((feature: any, idx: number) => (
                                     <div key={idx} className="space-y-3">
                                         <h3 className="text-[#EE9C24] font-bold text-xl">{feature.title}</h3>
@@ -462,19 +366,19 @@ const ComboDetailPage = () => {
                         )}
                     </div>
                 </div>
-                
+
                 {/* Code Tab Section if exists */}
                 {combo.codeTab && combo.codeTab.length > 0 && (
                     <div className="mb-20">
-                         <h3 className="text-[#EE9C24] font-bold text-xl mb-4">Combo Code / Instructions</h3>
-                         <div className="bg-gray-900 text-green-400 p-6 rounded-xl font-mono text-sm overflow-x-auto">
+                        <h3 className="text-[#EE9C24] font-bold text-xl mb-4">Combo Code / Instructions</h3>
+                        <div className="bg-gray-900 text-green-400 p-6 rounded-xl font-mono text-sm overflow-x-auto">
                             {combo.codeTab.map((line: string, idx: number) => (
                                 <div key={idx} className="flex gap-6">
                                     <span className="text-gray-600 select-none w-8">{idx + 1}</span>
                                     <span>{line}</span>
                                 </div>
                             ))}
-                         </div>
+                        </div>
                     </div>
                 )}
 
@@ -486,16 +390,16 @@ const ComboDetailPage = () => {
                                 <h3 className="text-[#EE9C24] text-3xl font-medium">Write Reviews</h3>
                                 <div className="w-20 h-1.5 bg-gradient-to-r from-[#EE9C24] to-[#B3520A] rounded-full" />
                             </div>
-                            
+
                             <div className="space-y-8">
                                 <div className="flex items-center gap-6">
                                     <span className="text-[#666666] font-bold text-xl ">Rate Us</span>
                                     <div className="flex gap-2">
                                         {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star 
-                                                key={star} 
-                                                size={32} 
-                                                className={`cursor-pointer transition-all hover:scale-110 ${star <= userRating ? "text-[#FFC107] fill-[#FFC107]" : "text-gray-200"}`} 
+                                            <Star
+                                                key={star}
+                                                size={32}
+                                                className={`cursor-pointer transition-all hover:scale-110 ${star <= userRating ? "text-[#FFC107] fill-[#FFC107]" : "text-gray-200"}`}
                                                 onClick={() => setUserRating(star)}
                                             />
                                         ))}
@@ -504,24 +408,24 @@ const ComboDetailPage = () => {
 
                                 <div className="space-y-4 pt-4 border-t border-gray-100">
                                     <label className="block text-[#666666] font-medium text-xl">Your Review</label>
-                                    <textarea 
-                                        rows={6} 
-                                        placeholder="Enter Your Review" 
+                                    <textarea
+                                        rows={6}
+                                        placeholder="Enter Your Review"
                                         value={userComment}
                                         onChange={(e) => setUserComment(e.target.value)}
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-5 text-gray-700 outline-none focus:border-[#EE9C24] transition-all resize-none text-lg placeholder:text-gray-300" 
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-5 text-gray-700 outline-none focus:border-[#EE9C24] transition-all resize-none text-lg placeholder:text-gray-300"
                                     />
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                    <button 
+                                    <button
                                         onClick={handleReviewSubmit}
                                         disabled={ratingLoading}
                                         className="flex-1 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white font-bold py-5 rounded-2xl shadow-xl shadow-orange-100 hover:shadow-orange-200 disabled:opacity-50 transition-all active:scale-95 text-xl"
                                     >
                                         {ratingLoading ? 'Submitting...' : 'Submit Review'}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setUserComment('')}
                                         className="flex-1 bg-white border-2 border-gray-100 text-[#191919] font-bold py-5 rounded-2xl hover:bg-gray-50 transition-all text-xl"
                                     >

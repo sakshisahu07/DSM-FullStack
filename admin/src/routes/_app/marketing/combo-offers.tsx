@@ -22,7 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/marketing/combo-offers")({
   component: ComboOffersPage,
@@ -523,7 +523,7 @@ function ComboDrawer({ open, onOpenChange, combo, onSave }: {
 
         <SheetFooter className="p-6 border-t bg-muted/20">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={saving || !name || !sku || items[0].variantId === ""} onClick={handleSubmit} className="min-w-[120px]">
+          <Button disabled={saving} onClick={handleSubmit} className="min-w-[120px]">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : combo ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
             {combo ? "Save Changes" : "Create Combo"}
           </Button>

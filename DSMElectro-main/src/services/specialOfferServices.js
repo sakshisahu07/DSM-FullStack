@@ -4,6 +4,7 @@ import ProductModel from "../model/product.model.js";
 import VariantModel from "../model/variant.model.js";
 import HotDeal from "../model/hotDeal.model.js";
 import comboModel from "../model/combo.model.js";
+import redisClient, { clearHomeCache } from "../config/redis.js";
 
 export default class SpecialOfferService {
   // ─── Calculate discount ───────────────────────────────────────────────────
@@ -204,6 +205,8 @@ export default class SpecialOfferService {
       endDate,
     });
 
+    await clearHomeCache();
+
     return offer;
   }
 
@@ -268,7 +271,72 @@ export default class SpecialOfferService {
     offer.isActive = false;
     await offer.save();
 
+    await clearHomeCache();
+
     return offer;
+  }
+
+  // ─── Delete ───────────────────────────────────────────────────────────────
+
+  static async delete(offerId) {
+    const offer = await SpecialOffer.findById(offerId);
+    if (!offer) throw new Error("Special offer not found.");
+
+    // Revert product flags
+    if (offer.products.length) {
+      await ProductModel.updateMany(
+        { _id: { $in: offer.products } },
+        { specialOffer: false, discount: null },
+      );
+    }
+
+    // Revert combo flags
+    if (offer.combos.length) {
+      const comboDocs = await comboModel
+        .find({ _id: { $in: offer.combos } }, "_id totalMrp")
+        .lean();
+
+      const comboOps = comboDocs.map((c) => ({
+        updateOne: {
+          filter: { _id: c._id },
+          update: {
+            specialOffer: false,
+            discount: null,
+            discountAmount: 0,
+            comboPrice: c.totalMrp ?? 0,
+          },
+        },
+      }));
+
+      await comboModel.bulkWrite(comboOps);
+    }
+
+    // Revert variant flags & prices
+    if (offer.variants.length) {
+      const variantDocs = await VariantModel.find(
+        { _id: { $in: offer.variants } },
+        "_id mrp",
+      ).lean();
+
+      const bulkOps = variantDocs.map((v) => ({
+        updateOne: {
+          filter: { _id: v._id },
+          update: {
+            specialOffer: false,
+            discount: null,
+            discountAmount: 0,
+            finalPrice: v.mrp ?? 0,
+          },
+        },
+      }));
+
+      await VariantModel.bulkWrite(bulkOps);
+    }
+
+    await SpecialOffer.findByIdAndDelete(offerId);
+    await clearHomeCache();
+
+    return true;
   }
 
   // ─── Get active offers ────────────────────────────────────────────────────

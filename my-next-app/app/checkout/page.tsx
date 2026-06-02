@@ -42,19 +42,19 @@ const getItemImage = (item: any) => {
     if (item.itemType === 'combo') {
         const combo = item.comboId;
         if (combo) {
-            if (combo.images && combo.images.length > 0 && combo.images[0] && combo.images[0] !== 'null') {
+            if (combo.images && combo.images.length > 0 && combo.images[0] && combo.images[0] !== 'null' && combo.images[0] !== 'false') {
                 return combo.images[0];
             }
-            if (combo.icon && combo.icon !== 'null') {
+            if (combo.icon && combo.icon !== 'null' && combo.icon !== 'false') {
                 return combo.icon;
             }
             // Fallback to first combo item product image
             const firstItemProduct = combo.items?.[0]?.variantId?.productId;
             if (firstItemProduct) {
-                if (firstItemProduct.images && firstItemProduct.images.length > 0 && firstItemProduct.images[0] && firstItemProduct.images[0] !== 'null') {
+                if (firstItemProduct.images && firstItemProduct.images.length > 0 && firstItemProduct.images[0] && firstItemProduct.images[0] !== 'null' && firstItemProduct.images[0] !== 'false') {
                     return firstItemProduct.images[0];
                 }
-                if (firstItemProduct.icon && firstItemProduct.icon !== 'null') {
+                if (firstItemProduct.icon && firstItemProduct.icon !== 'null' && firstItemProduct.icon !== 'false') {
                     return firstItemProduct.icon;
                 }
             }
@@ -63,15 +63,15 @@ const getItemImage = (item: any) => {
     } else {
         const product = item.productId || item.variantId?.productId;
         if (product) {
-            if (product.images && product.images.length > 0 && product.images[0] && product.images[0] !== 'null') {
+            if (product.images && product.images.length > 0 && product.images[0] && product.images[0] !== 'null' && product.images[0] !== 'false') {
                 return product.images[0];
             }
-            if (product.icon && product.icon !== 'null') {
+            if (product.icon && product.icon !== 'null' && product.icon !== 'false') {
                 return product.icon;
             }
         }
         const variant = item.variantId;
-        if (variant && variant.image && variant.image !== 'null') {
+        if (variant && variant.image && variant.image !== 'null' && variant.image !== 'false') {
             return variant.image;
         }
         return "/btmodule.png";
@@ -111,7 +111,7 @@ const CheckoutPage = () => {
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
 
-    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5050/api/v1';
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://api.dsmelectro.com/api/v1';
 
     // Fetch Countries on Mount
     useEffect(() => {
@@ -260,6 +260,10 @@ const CheckoutPage = () => {
             try {
                 // 1. Create address from contact data
                 const addressPayload: any = {
+                    firstName: contactData.firstName,
+                    lastName: contactData.lastName,
+                    phone: contactData.phone,
+                    email: contactData.email,
                     street: contactData.street,
                     city: contactData.city,
                     pincode: contactData.pincode,
@@ -281,6 +285,7 @@ const CheckoutPage = () => {
                     paymentMethod,
                     address: { _id: addressId },
                     shippingMode,
+                    ...(paymentMethod === 'WALLET' ? { walletOption: 'BALANCE' } : {})
                 };
 
                 const orderResult = await dispatch(createOrder(orderPayload)).unwrap();
@@ -537,12 +542,12 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">GST Number(If Applicable)</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Enter Your GST Number" 
-                                                        value={contactData.gstNumber} 
-                                                        onChange={(e) => setContactData({ ...contactData, gstNumber: e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15) })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]" 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter Your GST Number"
+                                                        value={contactData.gstNumber}
+                                                        onChange={(e) => setContactData({ ...contactData, gstNumber: e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15) })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
@@ -554,12 +559,12 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Company Name</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Enter Your Company Name" 
-                                                        value={contactData.companyName} 
-                                                        onChange={(e) => setContactData({ ...contactData, companyName: e.target.value })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]" 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter Your Company Name"
+                                                        value={contactData.companyName}
+                                                        onChange={(e) => setContactData({ ...contactData, companyName: e.target.value })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-[1rem]"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
@@ -572,12 +577,12 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">First Name</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Enter Your First Name" 
-                                                            value={contactData.firstName} 
-                                                            onChange={(e) => setContactData({ ...contactData, firstName: e.target.value })} 
-                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter Your First Name"
+                                                            value={contactData.firstName}
+                                                            onChange={(e) => setContactData({ ...contactData, firstName: e.target.value })}
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]"
                                                         />
                                                     </div>
                                                 </fieldset>
@@ -586,12 +591,12 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">Last Name</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Enter Your Last Name" 
-                                                            value={contactData.lastName} 
-                                                            onChange={(e) => setContactData({ ...contactData, lastName: e.target.value })} 
-                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter Your Last Name"
+                                                            value={contactData.lastName}
+                                                            onChange={(e) => setContactData({ ...contactData, lastName: e.target.value })}
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]"
                                                         />
                                                     </div>
                                                 </fieldset>
@@ -603,12 +608,12 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Phone Number</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Enter Your Phone Number" 
-                                                        value={contactData.phone} 
-                                                        onChange={(e) => setContactData({ ...contactData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter Your Phone Number"
+                                                        value={contactData.phone}
+                                                        onChange={(e) => setContactData({ ...contactData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
@@ -620,12 +625,12 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Email Address</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Enter Your Email Address" 
-                                                        value={contactData.email} 
-                                                        onChange={(e) => setContactData({ ...contactData, email: e.target.value })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter Your Email Address"
+                                                        value={contactData.email}
+                                                        onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
@@ -637,12 +642,12 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Address</legend>
                                                 <div className="flex items-center justify-between py-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Enter Your Address" 
-                                                        value={contactData.street} 
-                                                        onChange={(e) => setContactData({ ...contactData, street: e.target.value })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]" 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter Your Address"
+                                                        value={contactData.street}
+                                                        onChange={(e) => setContactData({ ...contactData, street: e.target.value })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem]"
                                                     />
                                                     <Pencil className="text-gray-400" size={18} />
                                                 </div>
@@ -654,10 +659,10 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">Country</legend>
                                                 <div className="flex items-center justify-between py-1">
-                                                    <select 
-                                                        value={contactData.country} 
-                                                        onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none" 
+                                                    <select
+                                                        value={contactData.country}
+                                                        onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none"
                                                     >
                                                         <option value="" className="text-gray-400">Select Country</option>
                                                         {countries.map((c) => (
@@ -674,10 +679,10 @@ const CheckoutPage = () => {
                                             <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                 <legend className="px-2 md:text-[1rem]  text-[#333333]">State</legend>
                                                 <div className="flex items-center justify-between py-1">
-                                                    <select 
-                                                        value={contactData.state} 
-                                                        onChange={(e) => setContactData({ ...contactData, state: e.target.value })} 
-                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none" 
+                                                    <select
+                                                        value={contactData.state}
+                                                        onChange={(e) => setContactData({ ...contactData, state: e.target.value })}
+                                                        className="bg-transparent border-none outline-none text-[#333333] font-medium w-full md:text-[1rem] appearance-none cursor-pointer focus:outline-none"
                                                     >
                                                         <option value="" className="text-gray-400">Select State</option>
                                                         {states.map((s) => (
@@ -695,12 +700,12 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">City</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Enter Your City" 
-                                                            value={contactData.city} 
-                                                            onChange={(e) => setContactData({ ...contactData, city: e.target.value })} 
-                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter Your City"
+                                                            value={contactData.city}
+                                                            onChange={(e) => setContactData({ ...contactData, city: e.target.value })}
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]"
                                                         />
                                                     </div>
                                                 </fieldset>
@@ -709,12 +714,12 @@ const CheckoutPage = () => {
                                                 <fieldset className="border-2 border-[#EE9C24] rounded-xl px-4 py-1">
                                                     <legend className="px-2 text-sm md:text-[1rem]  text-[#333333]">Zip Code</legend>
                                                     <div className="flex items-center py-2">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Enter Your Zip Code" 
-                                                            value={contactData.pincode} 
-                                                            onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} 
-                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]" 
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter Your Zip Code"
+                                                            value={contactData.pincode}
+                                                            onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                                                            className="bg-transparent border-none outline-none text-[#333333] font-medium w-full text-sm md:text-[1rem]"
                                                         />
                                                     </div>
                                                 </fieldset>
@@ -1629,79 +1634,79 @@ const MobileCheckoutView = ({
                             </div>
 
                             {/* Address */}
-                             <div className="relative">
-                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Address</legend>
-                                     <div className="flex items-center justify-between py-1">
-                                         <input type="text" placeholder="Enter Full Address" value={contactData.street} onChange={(e) => setContactData({ ...contactData, street: e.target.value })} className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm" />
-                                         <Pencil className="text-gray-400" size={16} />
-                                     </div>
-                                 </fieldset>
-                             </div>
+                            <div className="relative">
+                                <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                    <legend className="px-2 text-[10px] font-bold text-gray-800">Address</legend>
+                                    <div className="flex items-center justify-between py-1">
+                                        <input type="text" placeholder="Enter Full Address" value={contactData.street} onChange={(e) => setContactData({ ...contactData, street: e.target.value })} className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm" />
+                                        <Pencil className="text-gray-400" size={16} />
+                                    </div>
+                                </fieldset>
+                            </div>
 
-                             {/* Country */}
-                             <div className="relative">
-                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Country</legend>
-                                     <div className="flex items-center justify-between py-1">
-                                         <select 
-                                             value={contactData.country} 
-                                             onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })}
-                                             className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
-                                         >
-                                             <option value="">Select Country</option>
-                                             {countries.map((c: any) => (
-                                                 <option key={c._id} value={c._id}>{c.name}</option>
-                                             ))}
-                                         </select>
-                                         <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
-                                     </div>
-                                 </fieldset>
-                             </div>
+                            {/* Country */}
+                            <div className="relative">
+                                <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                    <legend className="px-2 text-[10px] font-bold text-gray-800">Country</legend>
+                                    <div className="flex items-center justify-between py-1">
+                                        <select
+                                            value={contactData.country}
+                                            onChange={(e) => setContactData({ ...contactData, country: e.target.value, state: '' })}
+                                            className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
+                                        >
+                                            <option value="">Select Country</option>
+                                            {countries.map((c: any) => (
+                                                <option key={c._id} value={c._id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
+                                    </div>
+                                </fieldset>
+                            </div>
 
-                             {/* State */}
-                             <div className="relative">
-                                 <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                     <legend className="px-2 text-[10px] font-bold text-gray-800">State</legend>
-                                     <div className="flex items-center justify-between py-1">
-                                         <select 
-                                             value={contactData.state} 
-                                             onChange={(e) => setContactData({ ...contactData, state: e.target.value })}
-                                             className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
-                                         >
-                                             <option value="">Select State</option>
-                                             {states.map((s: any) => (
-                                                 <option key={s._id} value={s._id}>{s.name}</option>
-                                             ))}
-                                         </select>
-                                         <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
-                                     </div>
-                                 </fieldset>
-                             </div>
+                            {/* State */}
+                            <div className="relative">
+                                <fieldset className="border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                    <legend className="px-2 text-[10px] font-bold text-gray-800">State</legend>
+                                    <div className="flex items-center justify-between py-1">
+                                        <select
+                                            value={contactData.state}
+                                            onChange={(e) => setContactData({ ...contactData, state: e.target.value })}
+                                            className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm appearance-none cursor-pointer focus:outline-none"
+                                        >
+                                            <option value="">Select State</option>
+                                            {states.map((s: any) => (
+                                                <option key={s._id} value={s._id}>{s.name}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="text-gray-400 pointer-events-none" size={16} />
+                                    </div>
+                                </fieldset>
+                            </div>
 
-                             {/* City & Zip Code Row */}
-                             <div className="flex gap-4">
-                                 <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                     <legend className="px-2 text-[10px] font-bold text-gray-800">City</legend>
-                                     <input 
-                                         type="text" 
-                                         placeholder="City" 
-                                         value={contactData.city} 
-                                         onChange={(e) => setContactData({ ...contactData, city: e.target.value })} 
-                                         className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1" 
-                                     />
-                                 </fieldset>
-                                 <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
-                                     <legend className="px-2 text-[10px] font-bold text-gray-800">Zip Code</legend>
-                                     <input 
-                                         type="text" 
-                                         placeholder="Zip Code" 
-                                         value={contactData.pincode} 
-                                         onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} 
-                                         className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1" 
-                                     />
-                                 </fieldset>
-                             </div>
+                            {/* City & Zip Code Row */}
+                            <div className="flex gap-4">
+                                <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                    <legend className="px-2 text-[10px] font-bold text-gray-800">City</legend>
+                                    <input
+                                        type="text"
+                                        placeholder="City"
+                                        value={contactData.city}
+                                        onChange={(e) => setContactData({ ...contactData, city: e.target.value })}
+                                        className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1"
+                                    />
+                                </fieldset>
+                                <fieldset className="flex-1 border-2 border-[#F4E1D2] rounded-2xl px-4 py-2">
+                                    <legend className="px-2 text-[10px] font-bold text-gray-800">Zip Code</legend>
+                                    <input
+                                        type="text"
+                                        placeholder="Zip Code"
+                                        value={contactData.pincode}
+                                        onChange={(e) => setContactData({ ...contactData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                                        className="bg-transparent border-none outline-none text-gray-500 font-bold w-full text-sm py-1"
+                                    />
+                                </fieldset>
+                            </div>
 
                             {/* Save Checkbox */}
                             <div className="flex items-center gap-3 py-2">

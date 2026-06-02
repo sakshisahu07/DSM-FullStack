@@ -35,7 +35,7 @@ const SpecialOffers = ({ products: propProducts, loading = false }: { products?:
   return (
     <section id="special-offers" className="w-full bg-white py-2 px-4 md:px-14">
       <div className="max-w-[1400px] mx-auto relative">
-         {/* Mobile Header */}
+        {/* Mobile Header */}
         <div className="flex md:hidden items-center justify-between mb-6">
           <div className="relative">
             <h2 className="text-[14px] font-medium text-[#000000]">Special Offer</h2>

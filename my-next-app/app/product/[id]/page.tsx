@@ -27,7 +27,7 @@ const ProductDetailPage = () => {
     const { id: productId } = useParams();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
-    
+
     const { loading: ratingLoading, success: ratingSuccess, error: ratingError } = useSelector((state: RootState) => state.rating);
     const { currentProduct, loading } = useSelector((state: RootState) => state.product);
     const { items: wishlistItems } = useSelector((state: RootState) => state.wishlist);
@@ -102,8 +102,8 @@ const ProductDetailPage = () => {
     const toggleWishlist = () => {
         const pId = currentProduct?.product?._id || currentProduct?._id;
         const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
-        
-        const isInWishlist = wishlistItems.some((item: any) => 
+
+        const isInWishlist = wishlistItems.some((item: any) =>
             (item.variant === vId) || (item.variant?._id === vId) || (item.product?._id === pId)
         );
 
@@ -132,23 +132,23 @@ const ProductDetailPage = () => {
             ...rawProduct,
             name: rawProduct.name || rawProduct.title || "Product",
             category: rawProduct.categoryId?.title || rawProduct.category || "Electronics",
-            availability: rawVariant.stock > 0 
-                ? `${rawVariant.stock} in Stock` 
+            availability: rawVariant.stock > 0
+                ? `${rawVariant.stock} in Stock`
                 : "Out of Stock",
             sku: rawVariant.sku || rawProduct.sku || (rawProduct._id ? `SKU-${rawProduct._id.slice(-4).toUpperCase()}` : "N/A"),
             rating: rawProduct.avgRating || rawProduct.rating || 5,
             reviews: rawProduct.totalRatings || rawProduct.reviews || 0,
-            weight: rawVariant.weight?.value 
+            weight: rawVariant.weight?.value
                 ? `${rawVariant.weight.value}${rawVariant.weight.unit || 'g'}`
                 : "N/A",
             deliveryDate: rawProduct.expectedDelivery || "3-5 Days",
             mrp: rawVariant.mrp || rawProduct.mrp || 0,
-            discount: rawVariant.discount 
-                ? `${rawVariant.discount}% Off` 
+            discount: rawVariant.discount
+                ? `${rawVariant.discount}% Off`
                 : "",
             price: rawVariant.finalPrice || rawProduct.price || 0,
-            images: rawProduct.images && rawProduct.images.length > 0 
-                ? rawProduct.images 
+            images: rawProduct.images && rawProduct.images.length > 0
+                ? rawProduct.images
                 : (rawProduct.icon ? [rawProduct.icon] : ["/bt.png"]),
             features: rawProduct.keyFeatures?.map((s: any) => ({
                 label: s.title,
@@ -164,7 +164,7 @@ const ProductDetailPage = () => {
             })) || [],
             specificationsList: rawProduct.specification || [],
             applicationsList: rawProduct.applications || []
-          }
+        }
         : {
             name: "BLUETOOTH HC-05 WIRELESS UART MODULE",
             category: "Bluetooth Module",
@@ -409,7 +409,7 @@ const ProductDetailPage = () => {
                                 </div>
                             </div>
                             <span className="text-gray-300">|</span>
-                             <button 
+                            <button
                                 onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="text-sm font-medium text-[#333333] hover:text-[#E47B25]"
                             >
@@ -469,11 +469,23 @@ const ProductDetailPage = () => {
                             {/* Buy Now & Cart Row */}
                             <div className="flex items-center gap-2 md:gap-4 w-full">
                                 <button
-                                    onClick={async () => {
-                                        const success = await handleAddToCart();
-                                        if (success) {
-                                            router.push('/cart');
+                                    onClick={() => {
+                                        const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
+                                        if(!vId) {
+                                            toast.error('Variant not selected');
+                                            return;
                                         }
+                                        const payload = {
+                                            itemType: 'variant',
+                                            itemId: vId,
+                                            quantity: quantity,
+                                            productDetails: {
+                                                name: product.name,
+                                                image: currentProduct?.images?.[0] || product.images?.[0]
+                                            }
+                                        };
+                                        sessionStorage.setItem('buyNowData', JSON.stringify(payload));
+                                        router.push('/checkout');
                                     }}
                                     className="flex-1 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white font-bold text-[13px] md:text-lg h-11 md:h-[54px] rounded-lg shadow-sm active:scale-95 transition-all whitespace-nowrap"
                                 >
@@ -485,7 +497,7 @@ const ProductDetailPage = () => {
                                 >
                                     <Image src="/shoppingcart.png" alt="Cart" width={20} height={20} className="md:w-6 md:h-6 brightness-0 invert object-contain" />
                                 </button>
-                                <button 
+                                <button
                                     onClick={toggleWishlist}
                                     className={`shrink-0 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white p-2 md:p-3.5 h-11 w-11 md:h-[54px] md:w-[54px] flex items-center justify-center rounded-lg shadow-sm active:scale-95 transition-all ${isInWishlist ? 'ring-2 ring-[#EE9C24] ring-offset-2' : ''}`}
                                 >
@@ -722,10 +734,10 @@ const ProductDetailPage = () => {
                                                     <span className="text-[#666666] font-medium text-lg">Rate Us</span>
                                                     <div className="flex gap-1.5">
                                                         {[1, 2, 3, 4, 5].map((star) => (
-                                                            <Star 
-                                                                key={star} 
-                                                                size={24} 
-                                                                className={`cursor-pointer transition-all hover:scale-110 ${star <= userRating ? "text-[#FFC107] fill-[#FFC107]" : "text-gray-300"}`} 
+                                                            <Star
+                                                                key={star}
+                                                                size={24}
+                                                                className={`cursor-pointer transition-all hover:scale-110 ${star <= userRating ? "text-[#FFC107] fill-[#FFC107]" : "text-gray-300"}`}
                                                                 onClick={() => setUserRating(star)}
                                                             />
                                                         ))}
@@ -733,23 +745,23 @@ const ProductDetailPage = () => {
                                                 </div>
                                                 <div className="space-y-2 pt-2 border-t border-[#E5E7EB]">
                                                     <label className="block text-[#666666] font-medium text-lg">Review</label>
-                                                    <textarea 
-                                                        rows={6} 
-                                                        placeholder="Enter Your Review" 
+                                                    <textarea
+                                                        rows={6}
+                                                        placeholder="Enter Your Review"
                                                         value={userComment}
                                                         onChange={(e) => setUserComment(e.target.value)}
-                                                        className="w-full bg-white border border-[#E5E7EB] rounded-xl px-5 py-4 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#EE9C24] transition-all resize-none placeholder:text-gray-300" 
+                                                        className="w-full bg-white border border-[#E5E7EB] rounded-xl px-5 py-4 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#EE9C24] transition-all resize-none placeholder:text-gray-300"
                                                     />
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                                    <button 
+                                                    <button
                                                         onClick={handleReviewSubmit}
                                                         disabled={ratingLoading}
                                                         className="cursor-pointer flex-1 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white font-bold py-4 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50"
                                                     >
                                                         {ratingLoading ? 'Submitting...' : 'Submit'}
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => setUserComment('')}
                                                         className="cursor-pointer flex-1 bg-white border border-[#EE9C24] text-[#191919] font-bold py-4 rounded-xl hover:bg-gray-50 transition-all font-bold"
                                                     >
@@ -776,68 +788,7 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                {/* Code Tab (Arduino Code) Section - Outside tab content but logically linked */}
-                {activeTab === 'Description' && (
-                    <div className=" px-0 mb-20 pt-10">
-                        <div className="border border-gray-100 rounded-md overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex flex-col md:flex-row md:items-center justify-center gap-4 md:gap-6 bg-[#D9D9D933] p-6 md:p-8 border-b border-gray-100">
-                                <h3 className="text-[0.8rem] md:text-3xl font-medium text-[#191919] text-center md:text-left ml-20">Code Tab (Arduino Code)</h3>
-                                <button className="hidden sm:flex items-center justify-center md:justify-start gap-3 md:gap-4 bg-white border border-gray-100 px-4 md:px-6 py-2 md:py-3 rounded-2xl shadow-sm hover:shadow-md transition-all group w-full md:w-auto">
-                                    <div className="bg-[#EE9C24] p-2.5 rounded-xl transition-colors group-hover:bg-[#EE9C24]">
-                                        <Image src="/dwnload.png" alt="Download" width={24} height={24} />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-bold text-gray-900 leading-none">Download PDF</p>
-                                        <p className="text-[11px] text-gray-500 mt-1">View Full Description</p>
-                                    </div>
-                                </button>
-                            </div>
-                            <div className="flex bg-white relative">
-                                <div className="w-16 md:w-24 bg-[#f8f9fa] border-r border-gray-100 py-6 flex flex-col items-center space-y-[210px] text-gray-400 font-bold select-none">
 
-                                </div>
-                                <div className="flex-1 p-10 md:p-6 relative">
-                                    <div className="absolute top-10 right-10 z-10">
-                                        <button onClick={() => {
-                                            const code = `const int gasSensor = A0;\nconst int buzzer = 8;\nint sensorValue = 0;\nint threshold = 400;\n\nvoid setup() {\n  pinMode(buzzer, OUTPUT);\n  Serial.begin(9600);\n}`;
-                                            navigator.clipboard.writeText(code);
-                                        }} className="flex items-center gap-3 bg-white border border-gray-200 px-6 py-2.5 rounded-xl text-sm font-bold text-[#666666] hover:bg-white hover:shadow-lg transition-all active:scale-95">
-                                            Copy Code
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
-                                        </button>
-                                    </div>
-                                    <div className="space-y-6 mt-4">
-                                        <div className="space-y-4">
-                                            <div className="text-gray-400 font-bold tracking-tight">CP</div>
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">const int</span> gasSensor = A0;<br />
-                                                <span className="text-[#EE9C24]">const int</span> buzzer = 8;<br />
-                                                <span className="text-[#EE9C24]">int</span> sensorValue = 0;<br />
-                                                <span className="text-[#EE9C24]">int</span> threshold = 400;
-                                            </pre>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">void</span> <span className="text-blue-500">setup</span>() {'{'}<br />
-                                                &nbsp;&nbsp;pinMode(buzzer, OUTPUT);<br />
-                                                &nbsp;&nbsp;Serial.<span className="text-blue-500">begin</span>(9600);<br />
-                                                {'}'}
-                                            </pre>
-                                        </div>
-                                        <div className="space-y-4 pt-4"><div className="text-gray-400 font-bold tracking-tight">CP</div>
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">const int</span> gasSensor = A0;<br />
-                                                <span className="text-[#EE9C24]">const int</span> buzzer = 8;<br />
-                                                <span className="text-[#EE9C24]">int</span> sensorValue = 0;<br />
-                                                <span className="text-[#EE9C24]">int</span> threshold = 400;
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

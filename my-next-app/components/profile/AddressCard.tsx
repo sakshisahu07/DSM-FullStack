@@ -144,6 +144,12 @@ function AddressForm({ initialData, onCancel, onSave }: AddressFormProps) {
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
                 <button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-[#E47B25] to-[#B3520A] px-5 py-3 text-sm font-medium text-white transition hover:shadow-md sm:px-7 sm:text-base"
+                >
+                    Save
+                </button>
+                <button
                     type="button"
                     onClick={onCancel}
                     className="text-sm font-medium text-[#8f8590] transition hover:text-heading"
@@ -170,15 +176,6 @@ export default function AddressCard({
             <ProfileCardWrapper
                 title={mode === "add" ? "Add Address" : `Edit Address ${index || ''}`.trim()}
                 description="Update only your address details in this section."
-                action={
-                    <button
-                        type="submit"
-                        form="address-info-form"
-                        className={`bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white rounded-lg px-6 py-1.5 text-[0.65rem] font-bold shadow-sm hover:shadow-md sm:rounded-xl sm:px-7 sm:py-3 sm:text-base`}
-                    >
-                        Save
-                    </button>
-                }
             >
                 <AddressForm
                     key={`${mode}-${data.city}-${data.zipCode}-${data.street}`}

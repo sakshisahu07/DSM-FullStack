@@ -45,6 +45,10 @@ import ticketRoutes from "./routes/ticket.routes.js";
 import roleRoutes from "./routes/role.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import membershipRoutes from "./routes/membership.routes.js";
+import variantModel from "./model/variant.model.js";
+import hotDealModel from "./model/hotDeal.model.js";
+import flashSaleModel from "./model/flashSale.model.js";
+import specialOfferModel from "./model/specialOffer.model.js";
 
 const app = express();
 
@@ -64,6 +68,96 @@ app.get("/", (req, res) => {
   res.send("API Running");
 });
 
+// ── Public utility route: re-sync variant flags from all active deals ──
+// No auth required — run this if hotDeals/flashSales/specialOffers are missing on the website
+app.post("/api/fix-flags", async (req, res) => {
+  try {
+    let fixed = { hotDeals: 0, flashSales: 0, specialOffers: 0 };
+
+    const activeHotDeals = await hotDealModel.find({ isActive: true }).lean();
+    for (const deal of activeHotDeals) {
+      const productIds = deal.products || [];
+      const variantIds = deal.variants || [];
+      if (productIds.length) {
+        const r = await variantModel.updateMany({ productId: { $in: productIds } }, { $set: { hotDeal: true } });
+        fixed.hotDeals += r.modifiedCount;
+      }
+      if (variantIds.length) {
+        const r = await variantModel.updateMany({ _id: { $in: variantIds } }, { $set: { hotDeal: true } });
+        fixed.hotDeals += r.modifiedCount;
+      }
+    }
+
+    const activeFlashSales = await flashSaleModel.find({ isActive: true }).lean();
+    for (const sale of activeFlashSales) {
+      const productIds = sale.products || [];
+      const variantIds = sale.variants || [];
+      if (productIds.length) {
+        const r = await variantModel.updateMany({ productId: { $in: productIds } }, { $set: { flashSale: true } });
+        fixed.flashSales += r.modifiedCount;
+      }
+      if (variantIds.length) {
+        const r = await variantModel.updateMany({ _id: { $in: variantIds } }, { $set: { flashSale: true } });
+        fixed.flashSales += r.modifiedCount;
+      }
+    }
+
+    const activeSpecialOffers = await specialOfferModel.find({ isActive: true }).lean();
+    for (const offer of activeSpecialOffers) {
+      const productIds = offer.products || [];
+      const variantIds = offer.variants || [];
+      if (productIds.length) {
+        const r = await variantModel.updateMany({ productId: { $in: productIds } }, { $set: { specialOffer: true } });
+        fixed.specialOffers += r.modifiedCount;
+      }
+      if (variantIds.length) {
+        const r = await variantModel.updateMany({ _id: { $in: variantIds } }, { $set: { specialOffer: true } });
+        fixed.specialOffers += r.modifiedCount;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Variant flags re-synced from all active deals",
+      fixed,
+      counts: {
+        activeHotDeals: activeHotDeals.length,
+        activeFlashSales: activeFlashSales.length,
+        activeSpecialOffers: activeSpecialOffers.length,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Public debug route: check variant flag state ──
+app.get("/api/debug-flags", async (req, res) => {
+  try {
+    const now = new Date();
+    const [hotDealVariants, flashSaleVariants, specialOfferVariants, hotDeals, flashSales, specialOffers] = await Promise.all([
+      variantModel.find({ hotDeal: true }).select("_id productId disable mrp").limit(10).lean(),
+      variantModel.find({ flashSale: true }).select("_id productId disable mrp").limit(10).lean(),
+      variantModel.find({ specialOffer: true }).select("_id productId disable mrp").limit(10).lean(),
+      hotDealModel.find({}).select("title isActive products variants startDate endDate").lean(),
+      flashSaleModel.find({}).select("title isActive products variants startDate endDate").lean(),
+      specialOfferModel.find({}).select("title isActive products variants startDate endDate").lean(),
+    ]);
+    res.json({
+      success: true,
+      variantsWithHotDeal: hotDealVariants.length,
+      variantsWithFlashSale: flashSaleVariants.length,
+      variantsWithSpecialOffer: specialOfferVariants.length,
+      sampleHotDeal: hotDealVariants,
+      sampleFlashSale: flashSaleVariants,
+      hotDealsInDB: hotDeals.map(d => ({ title: d.title, isActive: d.isActive, products: d.products?.length, variants: d.variants?.length, isExpired: d.endDate < now })),
+      flashSalesInDB: flashSales.map(d => ({ title: d.title, isActive: d.isActive, products: d.products?.length, variants: d.variants?.length, isExpired: d.endDate < now })),
+      specialOffersInDB: specialOffers.map(d => ({ title: d.title, isActive: d.isActive, products: d.products?.length, variants: d.variants?.length, isExpired: d.endDate < now })),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 app.use("/api/v1", optionalAuth);
 app.use("/api/v1", globalPermissionGuard);

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { BASE_URL } from './apiConfig';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export interface Video {
   _id: string;
@@ -47,7 +47,7 @@ export const fetchVideos = createAsyncThunk(
   'video/fetchVideos',
   async (params: string = '', { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}video?${params}`);
+      const response = await fetch(`${BASE_URL}/video?${params}`);
       const data = await response.json();
       if (!response.ok || !data.success) {
         return rejectWithValue(data.message || 'Failed to fetch videos');
@@ -63,7 +63,7 @@ export const recordVideoView = createAsyncThunk(
   'video/recordVideoView',
   async (videoId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}video/${videoId}/view`, {
+      const response = await fetch(`${BASE_URL}/video/${videoId}/view`, {
         method: 'POST',
       });
       const data = await response.json();

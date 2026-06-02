@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { BASE_URL } from './apiConfig';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export interface AtlData {
   _id: string;
@@ -86,7 +86,7 @@ export const createAtlInquiry = createAsyncThunk(
   'atl/createAtlInquiry',
   async (formData: any, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}alt/inquiry`, {
+      const response = await fetch(`${BASE_URL}/alt/inquiry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

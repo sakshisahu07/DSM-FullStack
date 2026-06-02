@@ -27,13 +27,13 @@ export const createComboSchema = Joi.object({
   weight: Joi.object({
     value: Joi.number().required(),
     unit: Joi.string().valid("g", "kg", "lb").default("kg"),
-  }),
+  }).optional(),
 
   // ✅ ADD THIS
   minDeliveryCharge: Joi.object({
     air: Joi.number().min(0).required(),
     road: Joi.number().min(0).required(),
-  }),
+  }).optional(),
 
   returnInDays: Joi.number().min(0).default(0).optional(),
 
@@ -53,4 +53,4 @@ export const createComboSchema = Joi.object({
   states: Joi.array().items(Joi.string().length(24).hex()),
   cities: Joi.array().items(Joi.string().length(24).hex()),
   pincodes: Joi.array().items(Joi.string().length(24).hex()),
-});
+}).unknown(true);

@@ -25,7 +25,7 @@ interface Banner {
   endDate?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("dsm_token");
@@ -42,8 +42,8 @@ function BannersPage() {
   const fetchBanners = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/banners/all?page=1&limit=100`, { 
-        headers: getAuthHeaders() 
+      const res = await fetch(`${API_BASE}/banners/all?page=1&limit=100`, {
+        headers: getAuthHeaders()
       });
       const json = await res.json();
       if (json.success) {
@@ -124,7 +124,7 @@ function BannersPage() {
       formData.append("position", String(v.position));
       formData.append("redirectUrl", v.redirectUrl || "");
       formData.append("isActive", String(!!v.isActive));
-      
+
       // Pass dates if editing or supply defaults to pass strict validations
       formData.append("startDate", editing?.startDate || v.startDate || new Date().toISOString());
       formData.append("endDate", editing?.endDate || v.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
@@ -214,10 +214,10 @@ function BannersPage() {
                   </Badge>
                   <span className="opacity-60">Position: {b.position}</span>
                   {b.redirectUrl && (
-                    <a 
-                      href={b.redirectUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
+                    <a
+                      href={b.redirectUrl}
+                      target="_blank"
+                      rel="noreferrer"
                       className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium truncate max-w-[200px]"
                     >
                       Link <ExternalLink className="h-3 w-3" />

@@ -20,7 +20,7 @@ const TermsPage = () => {
   }, [dispatch, companyData]);
 
   return (
-    <main className="bg-white min-h-screen font-sans">
+    <main className="bg-white min-h-screen ">
       
       {/* ───── MOBILE VIEW ───── */}
       <div className="lg:hidden">
@@ -45,10 +45,10 @@ const TermsPage = () => {
                <div className="h-1 w-24 bg-[#EE9C24] rounded-full"></div>
             </div>
 
-            <div className="max-w-full">
+            <div className="">
                {companyData?.term_condition ? (
                   <div 
-                     className="prose prose-orange max-w-none text-[#333333] text-[13px] font-bold leading-relaxed italic pr-2"
+                     className=" text-[#333333] text-[13px] font-medium pr-2"
                      dangerouslySetInnerHTML={{ __html: companyData.term_condition }}
                   />
                ) : (
@@ -81,10 +81,10 @@ const TermsPage = () => {
             <div className="h-[4px] w-32 bg-[#EE9C24] rounded-full"></div>
           </div>
 
-          <div className="max-w-5xl mx-auto">
+          <div className="">
             {companyData?.term_condition ? (
               <div 
-                className="prose prose-orange max-w-none text-[#333333] text-[1.2rem] font-bold leading-[1.8] opacity-90"
+                className=" text-[#333333] text-[1.2rem] font-medium  opacity-90"
                 dangerouslySetInnerHTML={{ __html: companyData.term_condition }}
               />
             ) : (

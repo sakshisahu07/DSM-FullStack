@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 interface AuthState {
   user: any | null;
   loading: boolean;
@@ -76,6 +76,37 @@ export const verifyOtp = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (payload: { id: string, data: any }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth?.token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+
+      if (!token) return rejectWithValue('No authorization token found');
+
+      const response = await fetch(`${BASE_URL}/auth/user/${payload.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload.data),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || 'Failed to update profile');
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -135,6 +166,23 @@ const authSlice = createSlice({
         }
       })
       .addCase(verifyOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        // The API returns the updated user object
+        state.user = { ...state.user, ...action.payload.data };
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        }
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

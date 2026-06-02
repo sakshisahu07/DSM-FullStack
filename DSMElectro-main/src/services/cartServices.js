@@ -21,6 +21,11 @@ export default class CartService {
       { new: true, upsert: true },
     );
 
+    // Reset applied coupon if cart is empty before adding items
+    if (!cart.items || cart.items.length === 0) {
+      cart.appliedCoupon = null;
+    }
+
     const failed = [];
 
     for (const item of items) {
@@ -269,6 +274,12 @@ export default class CartService {
     if (!item) throw new AppError("Cart item not found", 404);
 
     item.deleteOne();
+
+    // Clear coupon if the cart becomes empty
+    if (cart.items.length === 0) {
+      cart.appliedCoupon = null;
+    }
+
     await cart.save();
     await CartService._clearCartCache(userId);
     return true;
@@ -286,6 +297,11 @@ export default class CartService {
       item.quantity -= 1;
     } else {
       item.deleteOne();
+    }
+
+    // Clear coupon if the cart becomes empty
+    if (cart.items.length === 0) {
+      cart.appliedCoupon = null;
     }
 
     await cart.save();

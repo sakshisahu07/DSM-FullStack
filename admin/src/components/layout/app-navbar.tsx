@@ -91,7 +91,7 @@ export function AppNavbar({ onToggleSidebar }: Props) {
           </Button>
 
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="h-9 w-9 rounded-full">
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? <Sun className="h-4 w-4 text-yellow-400" /> : <Moon className="h-4 w-4 text-slate-700" />}
           </Button>
 
           <Link to="/notifications">

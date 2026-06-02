@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 export interface Job {
   _id: string;
   title: string;
@@ -40,12 +40,12 @@ export const fetchJobs = createAsyncThunk(
   'career/fetchJobs',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}jobs`);
+      const response = await fetch(`${BASE_URL}/jobs`);
       const data = await response.json();
       if (!response.ok || !data.success) {
         return rejectWithValue(data.message || 'Failed to fetch jobs');
       }
-      return data.data;
+      return data.data?.jobs || data.data || [];
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -56,7 +56,7 @@ export const fetchJobById = createAsyncThunk(
   'career/fetchJobById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}job/${id}`);
+      const response = await fetch(`${BASE_URL}/job/${id}`);
       const data = await response.json();
       if (!response.ok || !data.success) {
         return rejectWithValue(data.message || 'Failed to fetch job');
@@ -72,7 +72,7 @@ export const applyJob = createAsyncThunk(
   'career/applyJob',
   async (formData: FormData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}apply`, {
+      const response = await fetch(`${BASE_URL}/apply`, {
         method: 'POST',
         body: formData,
       });

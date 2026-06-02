@@ -9,7 +9,7 @@ import ProjectCard from "@/components/project/ProjectCard";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import PopularProjects from "@/components/project/PopularProjects";
 import { AppDispatch, RootState } from "@/redux/store";
-import { fetchProjects } from "@/redux/slices/projectSlice";
+import { fetchProjects, fetchProjectHero } from "@/redux/slices/projectSlice";
 import { useRouter } from "next/navigation";
 
 const steps = [
@@ -43,8 +43,9 @@ const DiamondSelect = ({ isSelected, onClick }: { isSelected: boolean, onClick: 
 export default function ProjectPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { projects, loading } = useSelector((state: RootState) => state.project);
+  const { projects, loading, hero } = useSelector((state: RootState) => state.project);
   const [projectType, setProjectType] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Mobile UI States
   const [isViewAll, setIsViewAll] = useState(false);
@@ -52,18 +53,23 @@ export default function ProjectPage() {
   const [isSortOpen, setIsSortOpen] = useState(false);
   
   // Filter States
-  const [selectedSort, setSelectedSort] = useState("Latest First");
-  const [selectedFeature, setSelectedFeature] = useState("Beginner Level");
-  const [selectedRating, setSelectedRating] = useState(5);
+  const [selectedSort, setSelectedSort] = useState("newest");
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState(50); // 0 to 100 for percentage slider
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (projectType) {
-      params.append("projectType", projectType);
-    }
+    if (projectType) params.append("projectType", projectType);
+    if (searchQuery) params.append("search", searchQuery);
+    if (selectedSort) params.append("sort", selectedSort);
+    if (selectedRating) params.append("rating", selectedRating.toString());
+    
     dispatch(fetchProjects(params.toString()));
-  }, [dispatch, projectType]);
+  }, [dispatch, projectType, searchQuery, selectedSort, selectedRating]);
+
+  useEffect(() => {
+    dispatch(fetchProjectHero());
+  }, [dispatch]);
 
   const renderStars = (rating: number) => (
     <div className="flex gap-0.5">
@@ -114,6 +120,8 @@ export default function ProjectPage() {
                  <div className="flex-1 bg-[#F9F9F9] rounded-xl border border-[#EE9C24] px-4 py-1.5 flex items-center justify-between">
                     <input 
                        type="text" 
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
                        placeholder="Search categories here" 
                        className="bg-transparent outline-none text-xs text-gray-600 font-bold w-full py-2 placeholder:text-gray-300"
                     />
@@ -129,31 +137,35 @@ export default function ProjectPage() {
             <div className="px-5 py-4 bg-white mb-6">
                <div className="flex justify-between gap-4 mb-4">
                   <div className="flex-1">
-                     <h2 className="text-[16px] font-black text-[#333] mb-1">Build Your Project – Learn by Doing!</h2>
-                     <p className="text-[10px] font-black text-gray-400 mb-3">Perfect for School & College Students</p>
+                     <h2 className="text-[16px] font-black text-[#333] mb-1">{hero?.pageTitle || "Build Your Project – Learn by Doing!"}</h2>
+                     <p className="text-[10px] font-black text-gray-400 mb-3">{hero?.subTitle || "Perfect for School & College Students"}</p>
                      <p className="text-[11px] font-bold text-gray-500 leading-relaxed opacity-80">
-                        Get ready-to-build electronics, robotics, and IoT projects designed for students of all levels.
+                        {hero?.description || "Get ready-to-build electronics, robotics, and IoT projects designed for students of all levels."}
                      </p>
                   </div>
                   <div className="shrink-0">
                      <div className="w-24 h-24 relative rounded-2xl overflow-hidden shadow-md">
-                        <Image src="/projecthero.png" alt="Student" fill className="object-cover bg-[#EE9C24]" />
+                        <Image src={hero?.pageIcon || "/projecthero.png"} alt="Student" fill className="object-cover bg-[#EE9C24]" />
                      </div>
                   </div>
                </div>
 
                {/* Steps Scroll */}
                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                  {steps.map((s, idx) => (
+                  {(hero?.cards || steps).map((s: any, idx: number) => (
                      <div key={idx} className="min-w-[150px] bg-white border border-gray-50 shadow-sm rounded-2xl p-3 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                            <div className="w-7 h-7 bg-[#EE9C24] rounded-lg flex items-center justify-center p-1.5">
-                              <Image src="/cat.png" alt="s" width={16} height={16} className="invert" />
+                              {s.icon ? (
+                                <Image src={s.icon} alt="s" width={16} height={16} className="invert" />
+                              ) : (
+                                <Image src="/cat.png" alt="s" width={16} height={16} className="invert" />
+                              )}
                            </div>
-                           <span className="text-[11px] font-black text-[#333]">{s.step}</span>
+                           <span className="text-[11px] font-black text-[#333]">{s.heading || s.step}</span>
                         </div>
-                        <h4 className="text-[11px] font-black text-[#333]">{s.title}</h4>
-                        <p className="text-[9px] font-bold text-gray-400 leading-tight">Select a project based on your class, subject, etc.</p>
+                        <h4 className="text-[11px] font-black text-[#333]">{s.subHeading || s.title}</h4>
+                        <p className="text-[9px] font-bold text-gray-400 leading-tight">{s.description || s.desc}</p>
                      </div>
                   ))}
                </div>
@@ -336,20 +348,26 @@ export default function ProjectPage() {
                </div>
                
                <div className="space-y-4">
-                  {["Latest First", "Oldest First", "Price: Low to High", "Price: High to Low", "Popular", "Top Rated"].map((opt) => (
+                  {[
+                     { label: "Latest First", value: "newest" },
+                     { label: "Price: Low to High", value: "low" },
+                     { label: "Price: High to Low", value: "high" },
+                     { label: "Popular", value: "popular" },
+                     { label: "Top Rated", value: "rating" }
+                  ].map((opt) => (
                     <div 
-                       key={opt}
-                       onClick={() => setSelectedSort(opt)}
+                       key={opt.value}
+                       onClick={() => setSelectedSort(opt.value)}
                        className="w-full flex items-center gap-4 py-2 cursor-pointer group"
                     >
-                       <DiamondSelect isSelected={selectedSort === opt} onClick={() => setSelectedSort(opt)} />
-                       <span className={`text-[16px] font-black transition-colors ${selectedSort === opt ? 'text-gray-900' : 'text-gray-500'}`}>{opt}</span>
+                       <DiamondSelect isSelected={selectedSort === opt.value} onClick={() => setSelectedSort(opt.value)} />
+                       <span className={`text-[16px] font-black transition-colors ${selectedSort === opt.value ? 'text-gray-900' : 'text-gray-500'}`}>{opt.label}</span>
                     </div>
                   ))}
                </div>
 
                <div className="flex gap-4 mt-10">
-                  <button onClick={() => { setSelectedSort("Latest First"); setIsSortOpen(false); }} className="flex-1 py-4 border border-gray-200 rounded-2xl text-[14px] font-black text-gray-400 active:bg-gray-50">Reset</button>
+                  <button onClick={() => { setSelectedSort("newest"); setIsSortOpen(false); }} className="flex-1 py-4 border border-gray-200 rounded-2xl text-[14px] font-black text-gray-400 active:bg-gray-50">Reset</button>
                   <button onClick={handleModalApply} className="flex-2 w-[60%] py-4 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white rounded-2xl text-[14px] font-black shadow-lg shadow-orange-200 active:scale-95 transition-transform">Apply</button>
                </div>
             </div>
@@ -412,12 +430,16 @@ export default function ProjectPage() {
                   <div>
                      <h3 className="text-[15px] font-black text-gray-800 mb-6 uppercase tracking-[1px]">feature</h3>
                      <div className="space-y-4">
-                        {["Beginner Level", "intermediate Level", "Advanced Level"].map((lv) => (
-                           <div key={lv} onClick={() => setSelectedFeature(lv)} className="flex items-center gap-4 cursor-pointer">
-                              <DiamondSelect isSelected={selectedFeature === lv} onClick={() => setSelectedFeature(lv)} />
-                              <span className={`text-[16px] font-black transition-colors ${selectedFeature === lv ? 'text-gray-900' : 'text-gray-500'}`}>{lv}</span>
-                           </div>
-                        ))}
+                         {[
+                           { label: "Beginner Level", value: "beginner" },
+                           { label: "Intermediate Level", value: "intermediate" },
+                           { label: "Advanced Level", value: "advance" },
+                         ].map((lv) => (
+                            <div key={lv.value} onClick={() => setProjectType(lv.value)} className="flex items-center gap-4 cursor-pointer">
+                               <DiamondSelect isSelected={projectType === lv.value} onClick={() => setProjectType(lv.value)} />
+                               <span className={`text-[16px] font-black transition-colors ${projectType === lv.value ? 'text-gray-900' : 'text-gray-500'}`}>{lv.label}</span>
+                            </div>
+                         ))}
                      </div>
                   </div>
 
@@ -443,7 +465,7 @@ export default function ProjectPage() {
                </div>
 
                <div className="flex gap-4 mt-12 pb-6">
-                  <button onClick={() => { setSelectedRating(5); setSelectedFeature("Beginner Level"); setPriceRange(50); setIsFilterOpen(false); }} className="flex-1 py-4 border border-gray-200 rounded-2xl text-[14px] font-black text-gray-400 active:bg-gray-50">Reset</button>
+                  <button onClick={() => { setSelectedRating(null); setProjectType(""); setPriceRange(50); setIsFilterOpen(false); }} className="flex-1 py-4 border border-gray-200 rounded-2xl text-[14px] font-black text-gray-400 active:bg-gray-50">Reset</button>
                   <button onClick={handleModalApply} className="flex-2 w-[60%] py-4 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white rounded-2xl text-[14px] font-black shadow-lg shadow-orange-200 active:scale-95 transition-transform">Apply</button>
                </div>
             </div>
@@ -463,48 +485,59 @@ export default function ProjectPage() {
           <div className="text-center mb-8">
             <h1 className="text-heading font-bold text-2xl md:text-3xl mb-5">Hello, What Do You Want To Learn?</h1>
             <div className="relative max-w-xl mx-auto">
-              <input type="text" placeholder="search Project what you want .." className="w-full border-2 border-orange-400 rounded-full pl-5 pr-14 py-3 text-sm text-gray-500 outline-none focus:ring-2 focus:ring-orange-200" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="search Project what you want .." className="w-full border-2 border-orange-400 rounded-full pl-5 pr-14 py-3 text-sm text-gray-500 outline-none focus:ring-2 focus:ring-orange-200" />
               <button className="absolute right-0 top-0 h-full bg-primary-gradient rounded-full px-4 flex items-center justify-center"><Search size={16} className="text-white" /></button>
             </div>
           </div>
           <div className="flex flex-col lg:flex-row items-start gap-8">
             <div className="flex-1">
-              <h2 className="text-heading font-bold text-2xl md:text-3xl mb-1">Build Your Project – Learn by Doing!</h2>
-              <p className="text-gray-500 text-sm mb-3">Perfect for School & College Students</p>
-              <p className="text-gray-600 text-sm leading-relaxed mb-7 max-w-xl">Get ready-to-build electronics, robotics, and IoT projects designed for students of all levels.</p>
+              <h2 className="text-heading font-bold text-2xl md:text-3xl mb-1">{hero?.pageTitle || "Build Your Project – Learn by Doing!"}</h2>
+              <p className="text-gray-500 text-sm mb-3">{hero?.subTitle || "Perfect for School & College Students"}</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-7 max-w-xl">{hero?.description || "Get ready-to-build electronics, robotics, and IoT projects designed for students of all levels."}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {steps.map((s, idx) => (
+                {(hero?.cards || steps).map((s: any, idx: number) => (
                   <div key={idx} className="card rounded-2xl p-4 flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-primary-gradient rounded-xl flex items-center justify-center shrink-0 text-white"><ThumbsUp size={22} /></div>
-                      <span className="text-heading font-bold text-base">{s.step}</span>
+                      {s.icon ? (
+                         <div className="w-11 h-11 bg-primary-gradient rounded-xl flex items-center justify-center shrink-0">
+                           <Image src={s.icon} alt={s.heading || s.step} width={22} height={22} className="invert" />
+                         </div>
+                      ) : (
+                         <div className="w-11 h-11 bg-primary-gradient rounded-xl flex items-center justify-center shrink-0 text-white"><ThumbsUp size={22} /></div>
+                      )}
+                      <span className="text-heading font-bold text-base">{s.heading || s.step}</span>
                     </div>
-                    <h4 className="text-heading font-semibold text-sm">{s.title}</h4>
-                    <p className="text-gray-500 text-xs leading-relaxed">{s.desc}</p>
+                    <h4 className="text-heading font-semibold text-sm">{s.subHeading || s.title}</h4>
+                    <p className="text-gray-500 text-xs leading-relaxed">{s.description || s.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
             <div className="lg:w-72 xl:w-80 shrink-0 self-end hidden lg:block">
-              <Image src="/projecthero.png" alt="Student" width={380} height={460} className="object-contain" />
+              <Image src={hero?.pageIcon || "/projecthero.png"} alt="Student" width={380} height={460} className="object-contain" />
             </div>
           </div>
         </section>
-        <section className="px-4 md:px-10 lg:px-20 py-8 bg-gray-50">
+        <section className="px-4 md:px-10 lg:px-20 py-8 ">
           <div className="flex gap-6">
             <div className="w-64 shrink-0 hidden md:block">
-              <ProjectSidebar activeCategory={projectType} onCategoryChange={setProjectType} />
+              <ProjectSidebar 
+                activeCategory={projectType} 
+                onCategoryChange={setProjectType} 
+                selectedRating={selectedRating}
+                onRatingChange={setSelectedRating}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-heading font-bold text-xl">Projects</h2>
                 <div className="relative">
-                  <select className="appearance-none border border-gray-200 rounded-lg px-4 py-2 text-sm text-heading font-medium pr-8 bg-white outline-none focus:ring-2 focus:ring-orange-200 cursor-pointer">
-                    <option>Newest First</option>
-                    <option>Oldest First</option>
-                    <option>Price: Low to High</option>
-                    <option>Price: High to Low</option>
-                    <option>Most Popular</option>
+                  <select value={selectedSort} onChange={(e) => setSelectedSort(e.target.value)} className="appearance-none border border-gray-200 rounded-lg px-4 py-2 text-sm text-heading font-medium pr-8 bg-white outline-none focus:ring-2 focus:ring-orange-200 cursor-pointer">
+                    <option value="newest">Newest First</option>
+                    <option value="low">Price: Low to High</option>
+                    <option value="high">Price: High to Low</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="rating">Top Rated</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                 </div>

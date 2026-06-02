@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem("dsm_token");

@@ -81,10 +81,10 @@ const ShippingDeliveryPage = () => {
             <div className="h-[4px] w-32 bg-[#EE9C24] rounded-full"></div>
           </div>
 
-          <div className="max-w-5xl mx-auto">
+          <div className="">
             {companyData?.shippingAndDelivery ? (
               <div 
-                className="prose prose-orange max-w-none text-[#333333] text-[1.2rem] font-bold leading-[1.8] opacity-90"
+                className="text-[#333333] text-[1.2rem] font-medium  opacity-90"
                 dangerouslySetInnerHTML={{ __html: companyData.shippingAndDelivery }}
               />
             ) : (

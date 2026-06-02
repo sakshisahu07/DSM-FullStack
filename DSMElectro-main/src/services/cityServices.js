@@ -44,15 +44,28 @@ export default class CityService {
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const filter = {};
+    if (query.stateId) {
+      filter.stateId = query.stateId;
+    }
+    if (query.countryId) {
+      filter.countryId = query.countryId;
+    }
+    if (query.disable !== undefined) {
+      filter.disable = query.disable === "true";
+    } else {
+      filter.disable = false; // Only active cities by default
+    }
+
     const data = await cityModel
-      .find()
+      .find(filter)
       .populate("stateId", "name")
       .populate("countryId", "name")
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await cityModel.countDocuments();
+    const total = await cityModel.countDocuments(filter);
 
     return {
       data,

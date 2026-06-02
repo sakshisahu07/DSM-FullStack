@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/orders/invoices")({
   component: InvoicesPage,

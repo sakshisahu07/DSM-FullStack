@@ -69,13 +69,21 @@ export default class WishlistService {
 
   // REMOVE
   static async removeFromWishlist(userId, payload) {
-    const { product, variant } = payload;
+    const { product, variant, wishlistId } = payload;
 
-    await wishlistModel.deleteOne({
-      user: userId,
-      product,
-      variant: variant || null,
-    });
+    if (wishlistId) {
+      await wishlistModel.deleteOne({
+        _id: wishlistId,
+        user: userId,
+      });
+    } else {
+      const query = { user: userId };
+      if (product) query.product = product;
+      if (variant) query.variant = variant;
+      else query.variant = null;
+
+      await wishlistModel.deleteOne(query);
+    }
 
     await redisClient.del(`wishlist:${userId}`);
 

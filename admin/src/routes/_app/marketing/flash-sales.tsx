@@ -53,7 +53,7 @@ interface CatalogItem {
 
 /* ─── Constants ──────────────────────────────────────────────── */
 const API_BASE =
-  import.meta.env.VITE_API_URL || "https://priyashu.in/api/v1";
+  import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 /* ─── Helper: map raw API flash-sale → Sale ─────────────────── */
 function mapFlashSale(
@@ -474,6 +474,7 @@ function FlashSalesPage() {
     {
       name: "startDate",
       label: "Start Date",
+      type: "date",
       required: true,
       span: 6,
       placeholder: "YYYY-MM-DD",
@@ -481,6 +482,7 @@ function FlashSalesPage() {
     {
       name: "endDate",
       label: "End Date",
+      type: "date",
       required: true,
       span: 6,
       placeholder: "YYYY-MM-DD",
@@ -668,7 +670,7 @@ function FlashSalesPage() {
               }
             : null
         }
-        defaultValues={{ discountType: "percentage", isActive: true }}
+        defaultValues={{ discountType: "percentage", isActive: true, startDate: new Date().toISOString().split("T")[0], endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }}
         onSubmit={handleSubmit}
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
+import { BASE_URL } from '@/redux/slices/apiConfig';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -34,7 +35,7 @@ const HeroSection = ({ categories: propCategories, loading: propLoading }: { cat
   const categories = categoriesList.length > 0 ? categoriesList.map(c => ({
     name: c.title,
     items: '0 Items', // Static for now as API doesn't provide counts
-    icon: c.icon || '/navImg.png'
+    icon: (c.icon && c.icon !== 'false' ? c.icon : null) || '/navImg.png'
   })) : [
     { name: 'Communication', items: '100 Items', icon: '/navImg.png' },
     { name: 'Arduino', items: '150 Items', icon: '/navImg.png' },
@@ -56,7 +57,7 @@ const HeroSection = ({ categories: propCategories, loading: propLoading }: { cat
     let isMounted = true;
     const fetchBanners = async () => {
       try {
-        const cleanBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://apiDev.dsmonline.in/api/v1/';
+        const cleanBaseUrl = BASE_URL;
         const url = `${cleanBaseUrl.endsWith('/') ? cleanBaseUrl : cleanBaseUrl + '/'}banners/active`;
         
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -85,7 +86,11 @@ const HeroSection = ({ categories: propCategories, loading: propLoading }: { cat
   // Group active banners into pairs of 2 for grid layout, fallback to static if empty
   const activeBanners = banners.length > 0 ? banners : [
     { _id: 'static-1', image: '/hero2.png', title: 'Spring Collection 1', redirectUrl: '#' },
-    { _id: 'static-2', image: '/hero1.png', title: 'Spring Collection 2', redirectUrl: '#' }
+    { _id: 'static-2', image: '/hero1.png', title: 'Spring Collection 2', redirectUrl: '#' },
+    { _id: 'static-3', image: '/hero2.png', title: 'Spring Collection 3', redirectUrl: '#' },
+    { _id: 'static-4', image: '/hero1.png', title: 'Spring Collection 4', redirectUrl: '#' },
+    { _id: 'static-5', image: '/hero2.png', title: 'Spring Collection 5', redirectUrl: '#' },
+    { _id: 'static-6', image: '/hero1.png', title: 'Spring Collection 6', redirectUrl: '#' }
   ];
 
   const bannerPairs: any[][] = [];
@@ -264,8 +269,8 @@ const HeroSection = ({ categories: propCategories, loading: propLoading }: { cat
           pagination={{
             clickable: true,
             el: '.banner-pagination',
-            bulletClass: 'w-3 h-3 rounded-full bg-gray-200 cursor-pointer transition-all duration-300',
-            bulletActiveClass: '!bg-primary-600',
+            bulletClass: 'w-3 h-3 rounded-full bg-gray-300 cursor-pointer transition-all duration-300',
+            bulletActiveClass: '!bg-[#E47B25]',
             renderBullet: (index, className) => {
               return `<div class="${className}"></div>`;
             },

@@ -26,19 +26,19 @@ const getItemImage = (item: any) => {
     if (item.itemType === 'combo') {
         const combo = item.comboId;
         if (combo) {
-            if (combo.images && combo.images.length > 0 && combo.images[0] && combo.images[0] !== 'null') {
+            if (combo.images && combo.images.length > 0 && combo.images[0] && combo.images[0] !== 'null' && combo.images[0] !== 'false') {
                 return combo.images[0];
             }
-            if (combo.icon && combo.icon !== 'null') {
+            if (combo.icon && combo.icon !== 'null' && combo.icon !== 'false') {
                 return combo.icon;
             }
             // Fallback to first combo item product image
             const firstItemProduct = combo.items?.[0]?.variantId?.productId;
             if (firstItemProduct) {
-                if (firstItemProduct.images && firstItemProduct.images.length > 0 && firstItemProduct.images[0] && firstItemProduct.images[0] !== 'null') {
+                if (firstItemProduct.images && firstItemProduct.images.length > 0 && firstItemProduct.images[0] && firstItemProduct.images[0] !== 'null' && firstItemProduct.images[0] !== 'false') {
                     return firstItemProduct.images[0];
                 }
-                if (firstItemProduct.icon && firstItemProduct.icon !== 'null') {
+                if (firstItemProduct.icon && firstItemProduct.icon !== 'null' && firstItemProduct.icon !== 'false') {
                     return firstItemProduct.icon;
                 }
             }
@@ -47,15 +47,15 @@ const getItemImage = (item: any) => {
     } else {
         const product = item.productId || item.variantId?.productId;
         if (product) {
-            if (product.images && product.images.length > 0 && product.images[0] && product.images[0] !== 'null') {
+            if (product.images && product.images.length > 0 && product.images[0] && product.images[0] !== 'null' && product.images[0] !== 'false') {
                 return product.images[0];
             }
-            if (product.icon && product.icon !== 'null') {
+            if (product.icon && product.icon !== 'null' && product.icon !== 'false') {
                 return product.icon;
             }
         }
         const variant = item.variantId;
-        if (variant && variant.image && variant.image !== 'null') {
+        if (variant && variant.image && variant.image !== 'null' && variant.image !== 'false') {
             return variant.image;
         }
         return "/btmodule.png";
@@ -85,7 +85,7 @@ const CartPage = () => {
     const [zipCode, setZipCode] = useState('');
     const [couponInput, setCouponInput] = useState('');
 
-    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5050/api/v1';
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://api.dsmelectro.com/api/v1';
 
     // Fetch Countries on Mount
     useEffect(() => {
@@ -388,8 +388,14 @@ const CartPage = () => {
                                     </div>
                                     <div className="flex justify-between items-center text-[#333333] font-medium">
                                         <span>Discount</span>
-                                        <span className="font-bold text-red-500">₹{totalSaving.toFixed(2)}</span>
+                                        <span className="font-bold text-red-500">₹{productSaving.toFixed(2)}</span>
                                     </div>
+                                    {couponDiscount > 0 && (
+                                        <div className="flex justify-between items-center text-[#333333] font-medium">
+                                            <span>Coupon Discount</span>
+                                            <span className="font-bold text-red-500">₹{couponDiscount.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center text-[#333333] font-medium">
                                         <span>Subtotal</span>
                                         <span className="font-bold text-[#333333]">₹{subtotal.toFixed(2)}</span>
@@ -676,10 +682,20 @@ const CartPage = () => {
                                 </div>
 
                                 {/* Checkout Button */}
-                                <Link href="/checkout" className="w-full bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white py-3 md:py-4 rounded-full font-bold text-base md:text-lg shadow-[0_4px_20px_rgba(238,156,36,0.3)] hover:shadow-[0_6px_25px_rgba(238,156,36,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 md:gap-4">
-                                    <CreditCard className="w-5 h-5 md:w-6 md:h-6" />
-                                    Checkout
-                                </Link>
+                                {(!cartItems || cartItems.length === 0) ? (
+                                    <button 
+                                        onClick={() => toast.error("Your cart is empty")}
+                                        className="w-full bg-gray-400 text-white py-3 md:py-4 rounded-full font-bold text-base md:text-lg cursor-not-allowed flex items-center justify-center gap-3 md:gap-4"
+                                    >
+                                        <CreditCard className="w-5 h-5 md:w-6 md:h-6" />
+                                        Checkout
+                                    </button>
+                                ) : (
+                                    <Link href="/checkout" className="w-full bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white py-3 md:py-4 rounded-full font-bold text-base md:text-lg shadow-[0_4px_20px_rgba(238,156,36,0.3)] hover:shadow-[0_6px_25px_rgba(238,156,36,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 md:gap-4">
+                                        <CreditCard className="w-5 h-5 md:w-6 md:h-6" />
+                                        Checkout
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -812,8 +828,14 @@ const CartPage = () => {
                                 </div>
                                 <div className="flex justify-between items-center text-xs font-semibold text-[#333333]">
                                     <span className="opacity-70">Discount</span>
-                                    <span className="text-red-500 font-bold">-₹{totalSaving.toFixed(2)}</span>
+                                    <span className="text-red-500 font-bold">-₹{productSaving.toFixed(2)}</span>
                                 </div>
+                                {couponDiscount > 0 && (
+                                    <div className="flex justify-between items-center text-xs font-semibold text-[#333333]">
+                                        <span className="opacity-70">Coupon Discount</span>
+                                        <span className="text-red-500 font-bold">-₹{couponDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center text-xs font-semibold text-[#333333]">
                                     <span className="opacity-70">Subtotal</span>
                                     <span>₹{subtotal.toFixed(2)}</span>
@@ -960,10 +982,17 @@ const CartPage = () => {
                                 <div className="text-2xl font-black text-[#333333]">₹{(subtotal + shippingFee).toFixed(2)}</div>
                             </div>
 
-                            <Link href="/checkout" className="w-full bg-gradient-to-r from-[#B3520A] to-[#EE9C24] text-white py-4 rounded-full font-bold text-sm shadow-[0_8px_25px_rgba(238,156,36,0.3)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
-                                 <Image src="/cart.png" width={18} height={18} alt="checkout" className="invert brightness-0" />
-                                 Checkout
-                            </Link>
+                            {(!cartItems || cartItems.length === 0) ? (
+                                <button onClick={() => toast.error("Your cart is empty")} className="w-full bg-gray-400 text-white py-4 rounded-full font-bold text-sm flex items-center justify-center gap-3 cursor-not-allowed">
+                                    <Image src="/cart.png" width={18} height={18} alt="checkout" className="invert brightness-0" />
+                                    Checkout
+                                </button>
+                            ) : (
+                                <Link href="/checkout" className="w-full bg-gradient-to-r from-[#B3520A] to-[#EE9C24] text-white py-4 rounded-full font-bold text-sm shadow-[0_8px_25px_rgba(238,156,36,0.3)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+                                     <Image src="/cart.png" width={18} height={18} alt="checkout" className="invert brightness-0" />
+                                     Checkout
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>

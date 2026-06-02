@@ -26,7 +26,7 @@ export default function WishlistItemCard({
     const description = product.description || category.description || "";
     const price = variant.finalPrice || variant.price || 0;
     const oldPrice = variant.mrp || 0;
-    const image = (product.images && product.images[0]) || product.icon || category.icon || variant.image || "/bluetooth.png";
+    const image = (product.images && product.images[0]) || (product.icon && product.icon !== 'false' ? product.icon : null) || (category.icon && category.icon !== 'false' ? category.icon : null) || variant.image || "/bluetooth.png";
 
     return (
         <article className="card p-5 sm:p-6 md:p-8 rounded-[20px] md:rounded-[28px]">
@@ -86,12 +86,12 @@ export default function WishlistItemCard({
                         <button
                             type="button"
                             onClick={() => {
-                                const pId = item.product?._id || item.variant?.productId;
-                                const vId = item.variant?._id;
-                                if (pId) {
-                                    dispatch(removeFromWishlist({ productId: pId, variantId: vId }));
+                                if (item._id) {
+                                    dispatch(removeFromWishlist({ wishlistId: item._id }));
                                 } else {
-                                    dispatch(removeFromWishlist({ wishlistId: item._id })); // Fallback
+                                    const pId = item.product?._id || item.variant?.productId;
+                                    const vId = item.variant?._id;
+                                    dispatch(removeFromWishlist({ productId: pId, variantId: vId }));
                                 }
                             }}
                             aria-label={`Remove ${title} from wishlist`}

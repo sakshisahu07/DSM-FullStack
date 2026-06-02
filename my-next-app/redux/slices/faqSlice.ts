@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { BASE_URL } from './apiConfig';
 export interface FaqItem {
   _id: string;
   question: string;
@@ -27,7 +27,7 @@ export const fetchFaqs = createAsyncThunk(
   'faq/fetchFaqs',
   async (params: string = '', { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}faq?${params}`);
+      const response = await fetch(`${BASE_URL}/faq?${params}`);
       const data = await response.json();
       if (!response.ok || !data.success) {
         return rejectWithValue(data.message || 'Failed to fetch FAQs');

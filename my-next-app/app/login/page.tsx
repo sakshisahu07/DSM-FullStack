@@ -70,6 +70,9 @@ const LoginPage = () => {
           const resultAction = await dispatch(verifyOtp({ number: phoneNumber, otp: otpValue }));
           if (verifyOtp.fulfilled.match(resultAction)) {
             setStep(4);
+            setTimeout(() => {
+              router.push('/');
+            }, 800); // Show success banner briefly then auto-redirect
           }
         } catch (err) {
           console.error("OTP Verification failed:", err);
@@ -209,7 +212,7 @@ const LoginPage = () => {
                     ref={el => { inputRefs.current[i] = el; }}
                     type="text" 
                     maxLength={1}
-                    value={step === 4 ? "1" : otp[i]}
+                    value={otp[i]}
                     onChange={(e) => handleOtpChange(e.target.value, i)}
                     onKeyDown={(e) => handleOtpKeyDown(e, i)}
                     className="relative z-10 w-full h-full bg-transparent text-center text-xl md:text-2xl font-bold text-[#333] outline-none"
@@ -250,13 +253,13 @@ const LoginPage = () => {
         {/* CONTINUE BUTTON */}
         <button 
           onClick={handleContinue}
-          disabled={loading}
+          disabled={loading || step === 4}
           className="md:mb-20 w-full h-[75px] md:h-[85px] rounded-[50px] text-white font-bold text-[18px] md:text-[22px] transition-all hover:opacity-95 shadow-lg shadow-[#EE9C24]/20 flex items-center justify-center cursor-pointer active:scale-[0.98] disabled:opacity-50"
           style={{ 
             background: 'linear-gradient(to right, #DE7420, #C25C13)' 
           }}
         >
-          {loading ? 'Processing...' : 'Continue'}
+          {loading ? 'Processing...' : step === 4 ? 'Redirecting...' : 'Continue'}
         </button>
 
         {/* Mobile-only Login Illustration */}

@@ -14,7 +14,7 @@ import { DashboardFilters } from "@/components/dashboard-filters";
 import { inrFormat } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://15.207.149.229:2000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/orders/all")({
   component: OrdersAll,
