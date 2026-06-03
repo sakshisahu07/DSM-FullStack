@@ -30,7 +30,7 @@ export default function ProfilePage() {
         { label: "Affiliate Dashboard", icon: Smile, href: "/affiliate-dashboard" },
         { label: "Refer & earn", icon: Users, href: "/refer-earn" },
         { label: "Wallet", icon: Smile, href: "/payments-wallet" },
-        { label: "Membership", icon: Gift, href: "/membership" },
+        { label: "Membership", icon: Gift, href: "/profile/my-membership" },
         { label: "Live Support", icon: Headphones, href: "/profile/live-support" },
         { label: "Log Out", icon: LogOut, action: "logout" },
     ];

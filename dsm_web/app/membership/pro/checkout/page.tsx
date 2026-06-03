@@ -1,10 +1,58 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useDispatch, useSelector } from 'react-redux';
 import { ProfileSidebar, MobileProfileLayout } from '@/components/profile';
+import { fetchMembershipPlans, purchaseMembership } from '@/redux/slices/membershipSlice';
+import { AppDispatch, RootState } from '@/redux/store';
 
 export default function ProMembershipCheckoutPage() {
-  const [selectedPayment, setSelectedPayment] = useState('upi');
+  const [selectedPayment, setSelectedPayment] = useState('razorpay');
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+  
+  const { plans, actionLoading } = useSelector((state: RootState) => state.membership);
+  
+  useEffect(() => {
+    if (plans.length === 0) {
+      dispatch(fetchMembershipPlans());
+    }
+  }, [dispatch, plans.length]);
+
+  const proPlan = plans.find(p => p.tier === 'gold' || p.name.toLowerCase().includes('pro'));
+
+  const handlePayment = async () => {
+    if (!proPlan) return alert("Plan details not loaded yet.");
+    
+    if (selectedPayment === 'wallet') {
+      const result = await dispatch(purchaseMembership({
+        planId: proPlan._id,
+        paymentId: 'wallet_mock_id',
+        paymentMethod: 'WALLET'
+      }));
+      if (purchaseMembership.fulfilled.match(result)) {
+        alert("Membership activated via Wallet!");
+        router.push("/profile");
+      } else {
+        alert(result.payload || "Wallet payment failed. Check your balance.");
+      }
+    } else {
+      // Mock Razorpay Flow
+      alert("Simulating Razorpay Payment... Success!");
+      const result = await dispatch(purchaseMembership({
+        planId: proPlan._id,
+        paymentId: 'pay_upgrade_mock_' + Date.now(),
+        paymentMethod: 'ONLINE'
+      }));
+      if (purchaseMembership.fulfilled.match(result)) {
+        alert("Membership activated via Razorpay!");
+        router.push("/profile");
+      } else {
+        alert(result.payload || "Razorpay payment failed.");
+      }
+    }
+  };
 
   const tableData = [
     { feature: "Membership Duration", details: "1 Year" },
@@ -123,9 +171,8 @@ export default function ProMembershipCheckoutPage() {
                 {/* Payment Options List */}
                 <div className="space-y-4 mb-6 relative w-full">
                   {[
-                    { id: 'upi', title: 'UPI | Wallets | EMI', offer: 'Extra 10% off', icon: '/upi.png', logos: '/payment.png' },
-                    { id: 'cards', title: 'Net Banking | Cards', offer: 'Extra 10% off', icon: '/wallet2.png', fee: '₹150' },
-                    { id: 'dsm', title: 'DSM Wallet', offer: 'Extra 15% off', icon: '/wallet.png', logos: '/logo.png' }
+                    { id: 'razorpay', title: 'Razorpay (Cards / UPI)', offer: 'Secure payment', icon: '/upi.png', logos: '/payment.png' },
+                    { id: 'wallet', title: 'DSM Wallet', offer: 'Instant Activation', icon: '/wallet.png', logos: '/logo.png' }
                   ].map((pay) => (
                     <label key={pay.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border cursor-pointer transition-all ${selectedPayment === pay.id ? 'border-gray-200 bg-white shadow-sm ring-1 ring-gray-100' : 'border-gray-100 bg-white hover:border-[#EE9C24]/50'}`}>
                       <div className="flex items-center gap-4">
@@ -138,11 +185,10 @@ export default function ProMembershipCheckoutPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-sm text-[#333333]">{pay.title}</p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Offer : Get {pay.offer}</p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">{pay.offer}</p>
                         </div>
                       </div>
                       {pay.logos && <Image src={pay.logos} alt="" width={80} height={24} className="object-contain" />}
-                      {pay.fee && <div className="text-right"><p className="text-[9px] font-bold text-gray-400 lowercase">Fee</p><p className="text-xs font-bold text-gray-800">{pay.fee}</p></div>}
                     </label>
                   ))}
                 </div>
@@ -153,8 +199,12 @@ export default function ProMembershipCheckoutPage() {
                       <span className="text-[#666666] text-[10px] font-semibold mb-0.5 uppercase tracking-wide">Pro Membership</span>
                       <p className="text-[#333333] text-[15px] font-bold leading-none">499 <span className="text-xs font-normal opacity-60">/ yr</span></p>
                     </div>
-                    <button className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white text-[13px] font-bold px-10 py-2.5 rounded-lg shadow-xl">
-                      Pay now
+                    <button 
+                      onClick={handlePayment} 
+                      disabled={actionLoading}
+                      className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white text-[13px] font-bold px-10 py-2.5 rounded-lg shadow-xl disabled:opacity-50"
+                    >
+                      {actionLoading ? "Processing..." : "Pay now"}
                     </button>
                 </div>
               </div>
@@ -175,9 +225,8 @@ export default function ProMembershipCheckoutPage() {
               <h2 className="text-lg font-black text-gray-900 mb-6">Payment Options</h2>
               <div className="space-y-4">
                  {[
-                   { id: 'upi', t: 'UPI / Google Pay', d: 'Get Extra 10% Off', i: '/upi.png' },
-                   { id: 'cards', t: 'Cards / Net Banking', d: 'Fast & Secure', i: '/wallet2.png' },
-                   { id: 'dsm', t: 'DSM Wallet', d: 'Earn 15% Cashback', i: '/wallet.png' },
+                   { id: 'razorpay', t: 'Razorpay (Cards / UPI)', d: 'Secure Payment', i: '/upi.png' },
+                   { id: 'wallet', t: 'DSM Wallet', d: 'Instant Activation', i: '/wallet.png' },
                  ].map((p, i) => (
                    <label key={i} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${selectedPayment === p.id ? 'border-[#EE9C24] bg-[#EE9C24]/30' : 'border-gray-100'}`}>
                       <input type="radio" name="pay_mob" checked={selectedPayment === p.id} onChange={() => setSelectedPayment(p.id)} className="hidden" />
@@ -213,8 +262,12 @@ export default function ProMembershipCheckoutPage() {
               </div>
            </div>
 
-           <button className="w-full bg-[#333333] text-white py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-all">
-             Pay Now
+           <button 
+             onClick={handlePayment} 
+             disabled={actionLoading}
+             className="w-full bg-[#333333] text-white py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-all disabled:opacity-50"
+           >
+             {actionLoading ? "Processing..." : "Pay Now"}
            </button>
         </div>
       </MobileProfileLayout>

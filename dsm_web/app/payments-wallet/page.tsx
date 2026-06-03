@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
 import { fetchWallet, fetchTransactions } from '@/redux/slices/walletSlice';
+import { getPointsBalance } from '@/redux/slices/membershipSlice';
 
 import { BASE_URL } from '@/redux/slices/apiConfig';
 
@@ -103,13 +104,27 @@ export default function PaymentsWalletPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { balance: walletData, transactions, historyLoading } = useSelector((state: RootState) => state.wallet);
 
-  const [activeTab, setActiveTab] = useState<'earn' | 'recent'>('earn');
+  const [activeTab, setActiveTab] = useState<'earn' | 'recent' | 'points'>('earn');
   const [showModal, setShowModal] = useState(false);
   const [razorpayLoading, setRazorpayLoading] = useState(false);
+  const [pointsData, setPointsData] = useState<any>(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchWallet());
     dispatch(fetchTransactions());
+    
+    // Fetch Membership Points Balance
+    setPointsLoading(true);
+    dispatch(getPointsBalance())
+      .unwrap()
+      .then((data) => {
+        setPointsData(data);
+        setPointsLoading(false);
+      })
+      .catch(() => {
+        setPointsLoading(false);
+      });
   }, [dispatch]);
 
   /* ─── Wallet stat cards data ─── */
@@ -117,7 +132,7 @@ export default function PaymentsWalletPage() {
     {
       icon: "/coin2.png",
       label: 'Purchase Point',
-      amount: walletData?.coins || 0,
+      amount: pointsData?.points_balance || walletData?.coins || 0,
       isMoney: false,
     },
     {
@@ -373,6 +388,16 @@ export default function PaymentsWalletPage() {
                   >
                     <Image src="/recent.png" alt="" width={20} height={20} /> Recent Transaction
                   </button>
+                  <button
+                    onClick={() => setActiveTab('points')}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold border transition-all ${
+                      activeTab === 'points'
+                        ? 'border-[#E47B25] text-[#E47B25] bg-white shadow-sm'
+                        : 'border-gray-200 text-[#555555] bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <Image src="/coin2.png" alt="" width={20} height={20} /> Points Ledger
+                  </button>
                 </div>
 
                 {/* ── Earn Money Tab ── */}
@@ -486,6 +511,63 @@ export default function PaymentsWalletPage() {
                   </div>
                 )}
 
+                {/* ── Points Ledger Tab ── */}
+                {activeTab === 'points' && (
+                  <div className="space-y-4">
+                    <h3 className="text-base font-bold text-[#222222] mb-2">Points Ledger</h3>
+                    {pointsLoading ? (
+                      <div className="flex justify-center items-center py-10">
+                        <span className="w-8 h-8 border-4 border-orange-100 border-t-[#E47B25] rounded-full animate-spin"></span>
+                      </div>
+                    ) : pointsData?.history?.length > 0 ? (
+                      pointsData.history.map((txn: any, idx: number) => (
+                        <div
+                          key={txn._id || `ptxn-desktop-${idx}`}
+                          className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between gap-4 hover:border-orange-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 shrink-0 bg-orange-50 rounded-full flex items-center justify-center">
+                              <Image src="/coin2.png" alt="points" width={24} height={24} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-[#222222] capitalize">
+                                {txn.description || 'Points Transaction'}
+                              </p>
+                              <p className="text-xs text-[#888888] mt-1">
+                                {new Date(txn.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right flex items-center gap-1.5">
+                            <span
+                              className={`text-sm font-medium ${
+                                txn.type === 'EARN' ? 'text-[#34C759]' : 'text-[#FF3B30]'
+                              }`}
+                            >
+                              {txn.type === 'EARN' ? 'Earned' : 'Redeemed'}
+                            </span>
+                            <span
+                              className={`text-base font-bold ${
+                                txn.type === 'EARN' ? 'text-[#34C759]' : 'text-[#FF3B30]'
+                              }`}
+                            >
+                              {txn.type === 'EARN' ? '+' : '-'}{txn.points} pts
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-10 bg-white rounded-2xl border border-dashed border-gray-200">
+                        No points history found.
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
             </div>
           </div>
@@ -552,6 +634,13 @@ export default function PaymentsWalletPage() {
               <Image src="/recent.png" alt="" width={16} height={16} className={activeTab === 'recent' ? '' : 'opacity-40 grayscale'} />
               Recent Transaction
             </button>
+            <button 
+              onClick={() => setActiveTab('points')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 transition-all font-black text-[10px] sm:text-xs ${activeTab === 'points' ? 'border-[#EE9C24] bg-white text-[#EE9C24] shadow-md shadow-orange-100' : 'border-gray-100 bg-white text-gray-400'}`}
+            >
+              <Image src="/coin2.png" alt="" width={16} height={16} className={activeTab === 'points' ? '' : 'opacity-40 grayscale'} />
+              Points
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -604,7 +693,7 @@ export default function PaymentsWalletPage() {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : activeTab === 'recent' ? (
               <div className="space-y-4">
                  <h3 className="text-base font-black text-gray-800 px-1">Recent Transaction</h3>
                 {historyLoading ? (
@@ -645,7 +734,48 @@ export default function PaymentsWalletPage() {
                   </div>
                 )}
               </div>
-            )}
+            ) : activeTab === 'points' ? (
+              <div className="space-y-4">
+                 <h3 className="text-base font-black text-gray-800 px-1">Points Ledger</h3>
+                {pointsLoading ? (
+                  <div className="flex justify-center p-10">
+                    <span className="w-8 h-8 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin"></span>
+                  </div>
+                ) : pointsData?.history?.length > 0 ? (
+                  pointsData.history.slice(0, 10).map((txn: any, idx: number) => (
+                    <div key={txn._id || `ptxn-mobile-${idx}`} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex items-center justify-between gap-3 group active:bg-orange-50/10 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center p-2.5 group-active:bg-orange-100/50 transition-colors">
+                          <Image src="/coin2.png" alt="" width={24} height={24} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-gray-800 capitalize leading-tight">
+                            {txn.description || 'Points Transaction'}
+                          </p>
+                          <p className="text-[10px] font-bold text-gray-400 mt-0.5">
+                            {new Date(txn.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider mb-1.5 ${
+                          txn.type === 'EARN' ? 'bg-[#E8F8EE] text-[#34C759]' : 'bg-[#FFF0F0] text-[#FF3B30]'
+                        }`}>
+                          {txn.type === 'EARN' ? 'Earned' : 'Redeemed'}
+                        </span>
+                        <p className={`text-sm font-black ${txn.type === 'EARN' ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
+                          {txn.type === 'EARN' ? '+' : '-'}{txn.points} pts
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-gray-200">
+                    <p className="text-gray-400 text-sm font-medium italic">No points record yet</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       </MobileProfileLayout>

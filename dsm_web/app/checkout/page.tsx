@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchAddresses, createAddress, getAddressById, updateAddress, deleteAddress } from '@/redux/slices/addressSlice';
 import { createOrder, verifyPayment, cancelOrder } from '@/redux/slices/orderSlice';
 import { clearCart } from '@/redux/slices/cartSlice';
+import { getActiveCoupon, validateCoupon } from '@/redux/slices/membershipSlice';
 import toast from 'react-hot-toast';
 
 // Add razorpay types globally
@@ -17,7 +18,7 @@ declare global {
     }
 }
 
-import { RootState } from '@/redux/store';
+import { RootState, AppDispatch } from '@/redux/store';
 import {
     CreditCard,
     ChevronRight,
@@ -87,9 +88,12 @@ const CheckoutPage = () => {
     const [selectedShipping, setSelectedShipping] = useState('air');
     const [selectedPayment, setSelectedPayment] = useState('upi');
     const [isSuccess, setIsSuccess] = useState(false);
-    const dispatch = useDispatch<any>();
+    const dispatch = useDispatch<AppDispatch>();
     const { addresses } = useSelector((state: RootState) => state.address);
     const { currentOrder, loading: orderLoading } = useSelector((state: RootState) => state.order);
+
+    const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+    const [membershipCouponDiscount, setMembershipCouponDiscount] = useState<number>(0);
 
     const [contactData, setContactData] = useState({
         street: '',
@@ -156,6 +160,16 @@ const CheckoutPage = () => {
     useEffect(() => {
         if (token) {
             dispatch(fetchAddresses());
+            
+            // Try fetching membership active coupon
+            dispatch(getActiveCoupon())
+                .unwrap()
+                .then((res: any) => {
+                    if (res && res.is_active) {
+                        setAppliedCoupon(res);
+                    }
+                })
+                .catch(() => {});
         }
     }, [token, dispatch]);
 
@@ -250,6 +264,8 @@ const CheckoutPage = () => {
                         street: contactData.street,
                         city: contactData.city,
                         pincode: contactData.pincode,
+                        companyName: contactData.companyName,
+                        gstNumber: contactData.gstNumber,
                     };
                     if (contactData.country) addressPayload.country = contactData.country;
                     if (contactData.state) addressPayload.state = contactData.state;
@@ -318,7 +334,8 @@ const CheckoutPage = () => {
                     paymentMethod,
                     address: { _id: addressId },
                     shippingMode,
-                    ...(paymentMethod === 'WALLET' ? { walletOption: 'BALANCE' } : {})
+                    ...(paymentMethod === 'WALLET' ? { walletOption: 'BALANCE' } : {}),
+                    ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {})
                 };
 
                 const orderResult = await dispatch(createOrder(orderPayload)).unwrap();
@@ -402,12 +419,33 @@ const CheckoutPage = () => {
 
     const itemsMRP = summary?.totalMRP || cartItems?.reduce((acc, item: any) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0) || 0;
     const subtotal = (summary?.subTotal !== undefined && summary?.subTotal !== null) ? summary.subTotal : (cartItems?.reduce((acc, item: any) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0);
-    const couponDiscount = summary?.couponDiscount || 0;
+
+    // Validate coupon dynamically against subtotal
+    useEffect(() => {
+        if (appliedCoupon && subtotal > 0) {
+            dispatch(validateCoupon({ code: appliedCoupon.code, orderValue: subtotal }))
+                .unwrap()
+                .then((res: any) => {
+                    if (res && res.discount_amount) {
+                        setMembershipCouponDiscount(res.discount_amount);
+                    } else {
+                        setMembershipCouponDiscount(0);
+                    }
+                })
+                .catch(() => {
+                    setMembershipCouponDiscount(0);
+                });
+        } else {
+            setMembershipCouponDiscount(0);
+        }
+    }, [appliedCoupon, subtotal, dispatch]);
+
+    const couponDiscount = (summary?.couponDiscount || 0) + membershipCouponDiscount;
     const productSaving = summary?.totalProductSaving || (itemsMRP - (cartItems?.reduce((acc, item: any) => acc + (Number(item.finalPrice) * Number(item.quantity) || 0), 0) || 0));
     const totalSaving = productSaving + couponDiscount;
     const totalQuantity = summary?.totalQuantity || cartItems?.reduce((acc, item: any) => acc + (Number(item.quantity) || 0), 0) || 0;
     const shippingFee = cartItems?.length > 0 ? (selectedShipping === 'air' ? (summary?.shipping?.air?.charge ?? 250) : (summary?.shipping?.road?.charge ?? 150)) : 0;
-    const grandTotal = subtotal + shippingFee;
+    const grandTotal = subtotal + shippingFee - membershipCouponDiscount;
 
     return (
         <div className="min-h-screen bg-white pb-6 px-1 md:px-12 font-sans">
@@ -431,6 +469,8 @@ const CheckoutPage = () => {
                 summary={summary}
                 grandTotal={grandTotal}
                 shippingFee={shippingFee}
+                itemsMRP={itemsMRP}
+                membershipCouponDiscount={membershipCouponDiscount}
                 addresses={addresses}
                 contactData={contactData}
                 setContactData={setContactData}
@@ -1277,6 +1317,8 @@ const MobileCheckoutView = ({
     summary,
     grandTotal,
     shippingFee,
+    itemsMRP,
+    membershipCouponDiscount,
     addresses,
     contactData,
     setContactData,
@@ -1309,6 +1351,8 @@ const MobileCheckoutView = ({
     summary: any;
     grandTotal: number;
     shippingFee: number;
+    itemsMRP: number;
+    membershipCouponDiscount: number;
     addresses?: any[];
     contactData?: any;
     setContactData?: any;
@@ -1939,8 +1983,14 @@ const MobileCheckoutView = ({
                     <div className="space-y-4 mb-6">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-400 font-bold text-xs uppercase tracking-tight">Items total(M.R.P)</span>
-                            <span className="text-gray-800 font-black text-sm">₹{cartItems?.reduce((acc, item: any) => acc + (Number(item.mrp) * Number(item.quantity) || 0), 0).toFixed(2)}</span>
+                            <span className="text-gray-800 font-black text-sm">₹{itemsMRP.toFixed(2)}</span>
                         </div>
+                        {membershipCouponDiscount > 0 && (
+                            <div className="flex justify-between items-center text-[#34C759]">
+                                <span className="font-bold text-xs uppercase tracking-tight">Membership Discount</span>
+                                <span className="font-black text-sm">-₹{membershipCouponDiscount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center">
                             <span className="text-gray-400 font-bold text-xs uppercase tracking-tight">Delivery Fee</span>
                             <span className="text-gray-800 font-black text-sm">₹{shippingFee.toFixed(2)}</span>

@@ -46,9 +46,9 @@ export const fetchMyMembership = createAsyncThunk(
 
 export const purchaseMembership = createAsyncThunk(
   'membership/purchase',
-  async ({ planId, paymentId }: { planId: string; paymentId: string }, { rejectWithValue }) => {
+  async ({ planId, paymentId, paymentMethod = 'ONLINE' }: { planId: string; paymentId: string; paymentMethod?: string }, { rejectWithValue }) => {
     try {
-      return await membershipService.purchasePlan(planId, paymentId);
+      return await membershipService.purchasePlan(planId, paymentId, paymentMethod);
     } catch (err: any) {
       return rejectWithValue(parseApiError(err));
     }
@@ -71,6 +71,61 @@ export const cancelMembership = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       return await membershipService.cancelMembership();
+    } catch (err: any) {
+      return rejectWithValue(parseApiError(err));
+    }
+  }
+);
+
+export const getActiveCoupon = createAsyncThunk(
+  'membership/coupon/get',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await membershipService.getActiveCoupon();
+    } catch (err: any) {
+      return rejectWithValue(parseApiError(err));
+    }
+  }
+);
+
+export const validateCoupon = createAsyncThunk(
+  'membership/coupon/validate',
+  async ({ code, orderValue }: { code: string; orderValue: number }, { rejectWithValue }) => {
+    try {
+      return await membershipService.validateCoupon(code, orderValue);
+    } catch (err: any) {
+      return rejectWithValue(parseApiError(err));
+    }
+  }
+);
+
+export const getPointsBalance = createAsyncThunk(
+  'membership/points/balance',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await membershipService.getPointsBalance();
+    } catch (err: any) {
+      return rejectWithValue(parseApiError(err));
+    }
+  }
+);
+
+export const earnPoints = createAsyncThunk(
+  'membership/points/earn',
+  async ({ orderId, orderValue }: { orderId: string; orderValue: number }, { rejectWithValue }) => {
+    try {
+      return await membershipService.earnPoints(orderId, orderValue);
+    } catch (err: any) {
+      return rejectWithValue(parseApiError(err));
+    }
+  }
+);
+
+export const redeemPoints = createAsyncThunk(
+  'membership/points/redeem',
+  async ({ orderId, pointsToRedeem }: { orderId: string; pointsToRedeem: number }, { rejectWithValue }) => {
+    try {
+      return await membershipService.redeemPoints(orderId, pointsToRedeem);
     } catch (err: any) {
       return rejectWithValue(parseApiError(err));
     }

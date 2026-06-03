@@ -49,7 +49,7 @@ export default function ProjectCard({
     <div className="card rounded-2xl overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow duration-200">
       {/* Image */}
       <div className="relative w-full h-44">
-        <Image src={image} alt={title} fill className="object-cover" />
+        <Image src={!image || image === "false" || image === "null" ? "/placeholder.png" : image} alt={title} fill className="object-cover" />
       </div>
 
       {/* Stats */}

@@ -331,7 +331,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {cat.icon && (
+                      {cat.icon && cat.icon !== "false" && cat.icon !== "null" && (
                         <div className={`w-5 h-5 relative shrink-0 rounded-lg overflow-hidden flex items-center justify-center p-0.5 ${isSelected ? 'bg-orange-100/50' : 'bg-gray-50'}`}>
                           <Image src={cat.icon} alt={cat.name} fill className="object-contain" />
                         </div>
@@ -475,7 +475,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
           {bannersList.map((banner, index) => (
             <div key={banner._id || banner.id || index} className="min-w-[85%] relative aspect-[1.3/1] rounded-[24px] overflow-hidden shadow-md group">
               <Image
-                src={banner.image}
+                src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
                 alt={banner.title || "Banner"}
                 fill
                 className="object-cover"
@@ -490,7 +490,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
           {bannersList.map((banner, index) => (
             <div key={banner._id || banner.id || index} className="relative aspect-[16/10] md:aspect-[1.3/1] rounded-[24px] overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
               <Image
-                src={banner.image}
+                src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
                 alt={banner.title || "Banner"}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"

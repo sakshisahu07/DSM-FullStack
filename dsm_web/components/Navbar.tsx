@@ -348,7 +348,7 @@ const Navbar = () => {
                 searchResults.map((product) => (
                   <Link href={`/product/${product.slug || product._id}`} onClick={() => setIsMobileSearchOpen(false)} key={product._id} className="flex items-center gap-3 p-2 border-b border-gray-50">
                     <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-                      {product.images?.[0] ? (
+                      {product.images?.[0] && product.images[0] !== "false" && product.images[0] !== "null" ? (
                         <Image src={product.images[0]} alt={product.name} width={32} height={32} className="object-contain w-full h-full" />
                       ) : (
                         <Image src="/btmodule.png" alt="p" width={32} height={32} className="object-contain" />
@@ -409,7 +409,7 @@ const Navbar = () => {
                           <Heart size={14} />
                         </div>
                         <div className="aspect-[4/3] flex items-center justify-center mb-3 overflow-hidden">
-                          {product.images?.[0] ? (
+                          {product.images?.[0] && product.images[0] !== "false" && product.images[0] !== "null" ? (
                             <Image src={product.images[0]} alt={product.name} width={100} height={100} className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
                           ) : (
                             <Image src="/bluetooth.png" alt="p" width={100} height={100} className="object-contain group-hover:scale-110 transition-transform" />
@@ -500,7 +500,7 @@ const Navbar = () => {
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        {category.icon && (
+                        {category.icon && category.icon !== "false" && category.icon !== "null" && (
                           <div className="w-6 h-6 relative shrink-0">
                             <Image src={category.icon} alt={category.name} fill className="object-contain" />
                           </div>

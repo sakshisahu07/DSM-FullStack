@@ -227,7 +227,7 @@ const SpecialCombosSection = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {cat.icon && (
+                      {cat.icon && cat.icon !== "false" && cat.icon !== "null" && (
                         <div className={`w-5 h-5 relative shrink-0 rounded-lg overflow-hidden flex items-center justify-center p-0.5 ${isSelected ? 'bg-orange-100/50' : 'bg-gray-50'}`}>
                           <Image src={cat.icon} alt={cat.name} fill className="object-contain" />
                         </div>

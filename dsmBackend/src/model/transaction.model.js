@@ -22,7 +22,7 @@ const transactionSchema = new mongoose.Schema(
 
     paymentGateway: {
       type: String,
-      enum: ["RAZORPAY"],
+      enum: ["RAZORPAY", "WALLET"],
     },
 
     razorpayOrderId: String,

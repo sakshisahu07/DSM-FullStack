@@ -17,8 +17,10 @@ export interface UserMembership {
   _id: string;
   user_id: string | any;
   plan_id: MembershipPlan;
+  planId?: MembershipPlan;
   start_date: string;
   expiry_date: string;
+  endDate?: string;
   status: 'active' | 'expired' | 'cancelled';
   coupon_code: string;
   createdAt?: string;

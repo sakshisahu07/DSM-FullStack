@@ -2,20 +2,66 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ProfileSidebar, MobileProfileLayout } from '@/components/profile';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
-import { fetchMembershipPlans } from '@/redux/slices/membershipSlice';
+import { fetchMembershipPlans, purchaseMembership, fetchMyMembership, upgradeMembership } from '@/redux/slices/membershipSlice';
 
 export default function MembershipPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { plans: apiPlans, loading } = useSelector((state: RootState) => state.membership);
+  const router = useRouter();
+  const { plans: apiPlans, myMembership, loading } = useSelector((state: RootState) => state.membership);
   const [mobileView, setMobileView] = useState<'plans' | 'details' | 'payment'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState('razorpay');
+
+  const handlePaymentSubmit = async () => {
+    if (!selectedPlan) return alert("Plan details not loaded yet.");
+    
+    const isUpgrade = getPlanAction(selectedPlan.tier) === 'Upgrade';
+
+    if (selectedPayment === 'wallet') {
+      const result = isUpgrade ? await dispatch(upgradeMembership({
+        newPlanId: selectedPlan._id,
+        paymentId: 'wallet_mock_id'
+      })) : await dispatch(purchaseMembership({
+        planId: selectedPlan._id,
+        paymentId: 'wallet_mock_id',
+        paymentMethod: 'WALLET'
+      }));
+
+      if (purchaseMembership.fulfilled.match(result as any) || upgradeMembership.fulfilled.match(result as any)) {
+        alert(`Membership ${isUpgrade ? 'upgraded' : 'activated'} via Wallet!`);
+        router.push("/profile/my-membership");
+      } else {
+        alert(result.payload || "Wallet payment failed. Check your balance.");
+      }
+    } else {
+      // Mock Razorpay Flow
+      alert("Simulating Razorpay Payment... Success!");
+      const result = isUpgrade ? await dispatch(upgradeMembership({
+        newPlanId: selectedPlan._id,
+        paymentId: 'pay_upgrade_mock_' + Date.now()
+      })) : await dispatch(purchaseMembership({
+        planId: selectedPlan._id,
+        paymentId: 'pay_upgrade_mock_' + Date.now(),
+        paymentMethod: 'ONLINE'
+      }));
+
+      if (purchaseMembership.fulfilled.match(result as any) || upgradeMembership.fulfilled.match(result as any)) {
+        alert(`Membership ${isUpgrade ? 'upgraded' : 'activated'} via Razorpay!`);
+        router.push("/profile/my-membership");
+      } else {
+        alert(result.payload || "Razorpay payment failed.");
+      }
+    }
+  };
 
   useEffect(() => {
     console.log("MembershipPage: Dispatching fetchMembershipPlans");
     dispatch(fetchMembershipPlans());
+    dispatch(fetchMyMembership());
   }, [dispatch]);
 
   const benefits = [
@@ -62,6 +108,17 @@ export default function MembershipPage() {
     pro: getTierDetails(plan.tier).pro
   }));
 
+  const getPlanAction = (planTier: string) => {
+    if (!myMembership || myMembership.status !== 'active') return 'Buy Now';
+    const tiers = ['silver', 'gold', 'platinum'];
+    const planTierStr = myMembership.plan_id?.tier || myMembership.planId?.tier || 'silver';
+    const currentIdx = tiers.indexOf(planTierStr.toLowerCase());
+    const planIdx = tiers.indexOf(planTier.toLowerCase());
+    if (planIdx > currentIdx) return 'Upgrade';
+    if (planIdx === currentIdx) return 'Current Plan';
+    return 'Unavailable';
+  };
+
   console.log("MembershipPage: Render", { loading, apiPlansCount: apiPlans?.length, formattedPlansCount: formattedPlans.length });
 
   const handleViewDetails = (plan: any) => {
@@ -70,6 +127,11 @@ export default function MembershipPage() {
   };
 
   const handleBuyNow = () => {
+    const action = getPlanAction(selectedPlan?.tier);
+    if (action === 'Current Plan' || action === 'Unavailable') {
+       alert(`You cannot purchase this plan. Your current plan is ${myMembership?.plan_id?.tier || myMembership?.planId?.tier}`);
+       return;
+    }
     setMobileView('payment');
   };
 
@@ -171,9 +233,16 @@ export default function MembershipPage() {
                             </li>
                           ))}
                         </ul>
-                        <button 
-                          onClick={() => handleViewDetails(p)}
-                          className={`border rounded-full px-5 py-2 text-[13px] font-bold w-max transition-colors ${p.pro ? 'border-white text-white hover:bg-white/10' : 'border-black text-[#333333] hover:bg-gray-50'}`}>View Details</button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleViewDetails(p)}
+                            className={`border rounded-full px-5 py-2 text-[13px] font-bold w-max transition-colors ${p.pro ? 'border-white text-white hover:bg-white/10' : 'border-black text-[#333333] hover:bg-gray-50'}`}>View Details</button>
+                          <button 
+                            onClick={() => { setSelectedPlan(p); handleBuyNow(); }}
+                            className={`border rounded-full px-5 py-2 text-[13px] font-bold w-max transition-colors ${p.pro ? 'bg-white text-[#B3520A]' : 'bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white border-transparent'}`}>
+                            {getPlanAction(p.tier)}
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -253,7 +322,7 @@ export default function MembershipPage() {
                         <button 
                           onClick={() => { setSelectedPlan(p); handleBuyNow(); }}
                           className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${p.pro ? 'bg-white text-[#B3520A]' : 'bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white shadow-sm'}`}>
-                          Buy Now
+                          {getPlanAction(p.tier)}
                         </button>
                       </div>
                     </div>
@@ -345,7 +414,7 @@ export default function MembershipPage() {
               <button 
                 onClick={handleBuyNow}
                 className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white px-10 py-3 rounded-full font-black text-xs shadow-lg shadow-[#EE9C24] active:scale-95 transition-all">
-                Buy Now
+                {getPlanAction(selectedPlan.tier)}
               </button>
             </div>
           </div>
@@ -384,30 +453,22 @@ export default function MembershipPage() {
               
               <div className="space-y-3">
                 {[
-                  { id: 'upi', label: 'UPI | Wallets | EMI | Amazon Pay', icon: '/pay2.png', desc: 'Offer - Get Extra 10% discount on UPI Payment' },
-                  { id: 'card', label: 'Net Banking | Credit | Debit Card', icon: '/pay3.png', desc: 'Offer - Get Extra 10% discount on Cards Payment', fee: '150' },
-                  { id: 'cod', label: 'Cash On Delivery', icon: '/pay1.png', desc: 'Offer - Get 5% discount on Pre-paid', fee: '150' },
-                  { id: 'wallet', label: 'DSM Wallet', icon: '/wallet.png', desc: 'Offer - Use your DSM wallet balance' },
+                  { id: 'razorpay', label: 'Razorpay (Cards / UPI)', icon: '/pay2.png', desc: 'Secure payment' },
+                  { id: 'wallet', label: 'DSM Wallet', icon: '/wallet.png', desc: 'Instant Activation' },
                 ].map((opt) => (
                   <label key={opt.id} className="flex items-center gap-4 bg-white border border-gray-50 rounded-2xl p-4 shadow-sm active:bg-orange-50/30 transition-colors cursor-pointer">
-                    <input type="radio" name="payment" className="w-5 h-5 accent-[#EE9C24] shrink-0" defaultChecked={opt.id === 'upi'} />
+                    <input type="radio" name="payment" value={opt.id} checked={selectedPayment === opt.id} onChange={() => setSelectedPayment(opt.id)} className="w-5 h-5 accent-[#EE9C24] shrink-0" />
                     <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 overflow-hidden p-2">
                        <Image src={opt.icon} alt={opt.label} width={40} height={40} className="object-contain" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">
                         <p className="text-[11px] font-black text-gray-800 truncate">{opt.label}</p>
-                        {opt.id === 'upi' && <Image src="/upi.png" alt="UPI" width={30} height={10} />}
+                        {opt.id === 'razorpay' && <Image src="/payment.png" alt="Razorpay" width={60} height={20} />}
                         {opt.id === 'wallet' && <Image src="/logo.png" alt="Wallet" width={25} height={10} />}
                       </div>
                       <p className="text-[8px] text-gray-400 font-medium">{opt.desc}</p>
                     </div>
-                    {opt.fee && (
-                      <div className="text-right shrink-0">
-                        <p className="text-[8px] text-gray-400 font-bold uppercase">Fee</p>
-                        <p className="text-[11px] font-black text-gray-800">₹{opt.fee}</p>
-                      </div>
-                    )}
                   </label>
                 ))}
               </div>
@@ -419,9 +480,9 @@ export default function MembershipPage() {
                 <p className="text-lg font-black text-gray-800">₹{selectedPlan.priceVal} <span className="text-xs text-gray-400 font-medium">/ year</span></p>
               </div>
               <button 
-                onClick={() => alert("Redirecting to payment...")}
+                onClick={handlePaymentSubmit}
                 className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white px-10 py-3 rounded-xl font-black text-xs shadow-lg shadow-[#EE9C24] active:scale-95 transition-all">
-                Pay Now
+                {getPlanAction(selectedPlan.tier)}
               </button>
             </div>
           </div>

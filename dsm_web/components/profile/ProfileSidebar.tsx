@@ -21,7 +21,7 @@ const menu: MenuItem[] = [
     { label: "Track My Order", icon: "/icons/track-order-icon.png", href: "/track-order" },
     { label: "Refer & Earn", icon: "/icons/refer-earn-icon.png", href: "/refer-earn" },
     { label: "Affiliate Dashboard", icon: "/icons/affiliate-dashboard-icon.png", href: "/affiliate-dashboard" },
-    { label: "Membership", icon: "/icons/membership-icon.png", href: "/membership" },
+    { label: "Membership", icon: "/icons/membership-icon.png", href: "/profile/my-membership" },
     { label: "Payments & Wallet", icon: "/icons/payments-wallet-icon.png", href: "/payments-wallet" },
     { label: "Live Support", icon: "/icons/logout-icon.png", href: "/profile/live-support" },
     { label: "Log Out", icon: "/icons/logout-icon.png" },

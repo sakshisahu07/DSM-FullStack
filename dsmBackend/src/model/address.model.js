@@ -26,6 +26,13 @@ const addressSchema = new mongoose.Schema({
     trim: true,
   },
 
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+  email: { type: String, trim: true },
+  phone: { type: String, trim: true },
+  companyName: { type: String, trim: true, required: false },
+  gstNumber: { type: String, trim: true, required: false },
+
   userId: {
     type: String,
     trim: true,

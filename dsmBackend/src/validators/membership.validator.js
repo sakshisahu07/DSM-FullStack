@@ -47,6 +47,7 @@ export const planUpdateSchema = Joi.object({
 export const purchaseSchema = Joi.object({
   plan_id: Joi.string().custom(objectId).required(),
   payment_id: Joi.string().trim().required(),
+  payment_method: Joi.string().trim().valid("ONLINE", "WALLET").optional().default("ONLINE"),
 });
 
 export const upgradeSchema = Joi.object({

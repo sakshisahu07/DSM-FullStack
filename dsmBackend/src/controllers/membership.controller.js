@@ -111,7 +111,8 @@ export default class MembershipController {
       const result = await MembershipService.purchaseMembership(
         req.user._id,
         value.plan_id,
-        value.payment_id
+        value.payment_id,
+        value.payment_method
       );
       return [{ data: result }, "Membership plan purchased successfully", 201];
     });

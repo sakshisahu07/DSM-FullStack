@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Crown, Star, Sparkles, Pencil, Trash2, Users as UsersIcon } from "lucide-react";
+import { Plus, Crown, Star, Sparkles, Pencil, Trash2, Users as UsersIcon, Download, TrendingUp, CreditCard } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
 import { apiFetch } from "@/lib/api";
 import { StatsSkeleton, CardGridSkeleton } from "@/components/loading-skeletons";
@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_app/users/membership")({
   component: MembershipPage,
@@ -74,6 +76,18 @@ export function MembershipPage() {
   const [items, setItems] = useState<Plan[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
+  const [activeTab, setActiveTab] = useState("plans");
+  const [stats, setStats] = useState<any>(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await apiFetch(`${API}/admin/stats`);
+      const json = await res.json();
+      if (json.success) setStats(json.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -124,7 +138,7 @@ export function MembershipPage() {
     }
   };
 
-  const totalMembers = 0; // Not in API response
+  const totalMembers = stats?.totalMembers || 0;
   const activePlans = items.filter((p) => p.active).length;
 
   return (
@@ -133,11 +147,22 @@ export function MembershipPage() {
         title="Membership"
         subtitle="Subscription plans, perks and active subscribers."
         actions={
-          <Button className="gap-1.5" onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-            <Plus className="h-4 w-4" /> New plan
-          </Button>
+          activeTab === "plans" && (
+            <Button className="gap-1.5" onClick={() => { setEditing(null); setDrawerOpen(true); }}>
+              <Plus className="h-4 w-4" /> New plan
+            </Button>
+          )
         }
       />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="plans" className="space-y-6">
 
       {loading ? (
         <>
@@ -215,6 +240,16 @@ export function MembershipPage() {
           )}
         </>
       )}
+      </TabsContent>
+
+      <TabsContent value="subscribers">
+        <SubscribersTab />
+      </TabsContent>
+
+      <TabsContent value="analytics">
+        <AnalyticsTab stats={stats} />
+      </TabsContent>
+    </Tabs>
 
       <PlanDrawer
         open={drawerOpen}
@@ -397,5 +432,173 @@ function PlanDrawer({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/* ─── Subscribers Tab ──────────────────────────────────────────────── */
+function SubscribersTab() {
+  const [loading, setLoading] = useState(true);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+
+  const fetchSubscribers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiFetch(`${API}/admin/subscribers?limit=100`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setSubscribers(json.data.subscribers || json.data);
+      }
+    } catch {
+      toast.error("Failed to load subscribers");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSubscribers(); }, [fetchSubscribers]);
+
+  const handleExport = async () => {
+    try {
+      const res = await apiFetch(`${API}/admin/subscribers/export`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "subscribers.csv";
+      a.click();
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button variant="outline" className="gap-2" onClick={handleExport}>
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
+      </div>
+      <Card>
+        {loading ? (
+          <div className="p-8 text-center text-muted-foreground">Loading...</div>
+        ) : subscribers.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">No subscribers found.</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expiry</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subscribers.map((s, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <div className="font-medium">{s.userId?.firstName || 'Unknown'} {s.userId?.lastName || ''}</div>
+                    <div className="text-xs text-muted-foreground">{s.userId?.email || 'N/A'}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{s.planId?.name || 'Unknown'}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={s.status === 'active' ? 'default' : 'secondary'}>{s.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {s.endDate ? new Date(s.endDate).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ─── Analytics Tab ────────────────────────────────────────────────── */
+function AnalyticsTab({ stats }: { stats: any }) {
+  const [loading, setLoading] = useState(true);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [revRes, txRes] = await Promise.all([
+          apiFetch(`${API}/admin/revenue`),
+          apiFetch(`${API}/admin/transactions?limit=10`)
+        ]);
+        const revJson = await revRes.json();
+        const txJson = await txRes.json();
+        
+        if (revJson.success) setRevenueData(revJson.data);
+        if (txJson.success) setTransactions(txJson.data.transactions || txJson.data);
+      } catch {
+        toast.error("Failed to load analytics");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <StatsCard label="Total Revenue" value={`₹${(stats?.totalRevenue || 0).toLocaleString()}`} icon={TrendingUp} tone="primary" />
+        <StatsCard label="Active Members" value={String(stats?.totalMembers || 0)} icon={UsersIcon} tone="success" />
+        <StatsCard label="Total Plans" value={String(stats?.totalPlans || 0)} icon={Crown} tone="default" />
+        <StatsCard label="Transactions" value={String(transactions.length)} icon={CreditCard} tone="default" />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="p-5">
+          <h3 className="font-semibold mb-4">Revenue History (Recent)</h3>
+          {loading ? (
+             <div className="h-32 flex items-center justify-center text-muted-foreground">Loading chart...</div>
+          ) : revenueData.length === 0 ? (
+             <div className="h-32 flex items-center justify-center text-muted-foreground">No revenue data.</div>
+          ) : (
+            <div className="space-y-3">
+              {revenueData.slice(0, 5).map((r, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <span className="text-sm font-medium">{r.month}/{r.year}</span>
+                  <span className="text-sm font-bold text-green-600">₹{(r.revenue || 0).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <h3 className="font-semibold mb-4">Recent Transactions</h3>
+          {loading ? (
+            <div className="h-32 flex items-center justify-center text-muted-foreground">Loading...</div>
+          ) : transactions.length === 0 ? (
+            <div className="h-32 flex items-center justify-center text-muted-foreground">No transactions found.</div>
+          ) : (
+            <div className="space-y-4">
+              {transactions.slice(0, 5).map((t, i) => (
+                <div key={i} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                  <div>
+                    <div className="text-sm font-medium">{t.userId?.firstName || 'User'}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">₹{t.amount}</div>
+                    <Badge variant="outline" className="text-[10px] uppercase">{t.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
   );
 }

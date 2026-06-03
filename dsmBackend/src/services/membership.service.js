@@ -12,6 +12,8 @@ import { AppError, ValidationError } from "../utils/apiResponse.js";
 import logger from "../utils/logger.js";
 import mongoose from "mongoose";
 import { razorpay } from "../config/razorpay.js";
+import WalletService from "./wallteServices.js";
+import Invoice from "../model/invoice.model.js";
 
 const JWT_SECRET = process.env.HASH_KEY || "secret123";
 
@@ -207,7 +209,7 @@ export default class MembershipService {
 
   // ==================== MEMBERSHIP INTERACTIONS ====================
 
-  static async purchaseMembership(userId, planId, paymentId) {
+  static async purchaseMembership(userId, planId, paymentId, paymentMethod = 'ONLINE') {
     // 1. Check if user already has active membership
     const active = await UserMembership.findOne({
       user_id: userId,
@@ -231,20 +233,28 @@ export default class MembershipService {
       throw new ValidationError("Invalid or inactive plan specified");
     }
 
-    // Securely verify payment with Razorpay (bypass mock payment IDs in test runs)
-    const isMockPayment = paymentId.startsWith("pay_gold") || paymentId.startsWith("pay_upgrade") || paymentId.startsWith("pay_webhook");
-    if (!isMockPayment) {
-      try {
-        const paymentInfo = await razorpay.payments.fetch(paymentId);
-        if (!paymentInfo || (paymentInfo.status !== "captured" && paymentInfo.status !== "authorized")) {
-          throw new ValidationError("Payment verification failed: payment not captured.");
+    let actualPaymentId = paymentId;
+
+    if (paymentMethod === 'WALLET') {
+      // Wallet Payment logic
+      await WalletService.payWithWallet(userId, plan.price, `plan_${plan._id}_purchase`);
+      actualPaymentId = `wallet_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    } else {
+      // Securely verify payment with Razorpay (bypass mock payment IDs in test runs)
+      const isMockPayment = paymentId.startsWith("pay_gold") || paymentId.startsWith("pay_upgrade") || paymentId.startsWith("pay_webhook") || paymentId.startsWith("pay_test") || paymentId.startsWith("pay_mock");
+      if (!isMockPayment) {
+        try {
+          const paymentInfo = await razorpay.payments.fetch(paymentId);
+          if (!paymentInfo || (paymentInfo.status !== "captured" && paymentInfo.status !== "authorized")) {
+            throw new ValidationError("Payment verification failed: payment not captured.");
+          }
+          const paidAmount = paymentInfo.amount / 100;
+          if (Math.abs(paidAmount - plan.price) > 0.01) {
+            throw new ValidationError(`Payment amount mismatch. Expected: ${plan.price}, Paid: ${paidAmount}`);
+          }
+        } catch (err) {
+          throw new ValidationError(`Razorpay payment verification failed: ${err.message}`);
         }
-        const paidAmount = paymentInfo.amount / 100;
-        if (Math.abs(paidAmount - plan.price) > 0.01) {
-          throw new ValidationError(`Payment amount mismatch. Expected: ${plan.price}, Paid: ${paidAmount}`);
-        }
-      } catch (err) {
-        throw new ValidationError(`Razorpay payment verification failed: ${err.message}`);
       }
     }
 
@@ -252,18 +262,36 @@ export default class MembershipService {
     const expiryDate = calculateExpiryDate(startDate, plan.billing_cycle);
     const couponCode = generateCouponCode(plan.tier);
 
-    // 3. Create Transaction record in existing collection using Razorpay
+    // 3. Create Transaction record in existing collection
     const transaction = await transactionModel.create({
       customerId: userId,
       amount: plan.price,
       planId: plan._id,
-      paymentId: paymentId,
-      razorpayPaymentId: paymentId,
-      paymentGateway: "RAZORPAY",
+      paymentId: actualPaymentId,
+      razorpayPaymentId: paymentMethod === 'WALLET' ? null : actualPaymentId,
+      paymentGateway: paymentMethod === 'WALLET' ? 'WALLET' : 'RAZORPAY',
       paymentStatus: "success",
       status: "SUCCESS",
-      paymentMethod: "ONLINE",
+      paymentMethod: paymentMethod === 'WALLET' ? 'WALLET' : 'ONLINE',
     });
+
+    // 3b. Generate Invoice
+    const invoiceData = {
+      customerId: userId,
+      orderId: transaction._id, // Map transaction as order ID for membership
+      invoiceNumber: `INV-MEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      invoiceType: "ORDER",
+      paymentStatus: "PAID",
+      issuedAt: startDate,
+      totals: {
+        subtotal: plan.price,
+        grandTotal: plan.price,
+      },
+      metadata: {
+        paymentMethod: paymentMethod === 'WALLET' ? 'WALLET' : 'ONLINE',
+      }
+    };
+    await Invoice.create(invoiceData);
 
     // 4. Create User Membership record
     const userMembership = await UserMembership.create({
