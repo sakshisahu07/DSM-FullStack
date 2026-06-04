@@ -477,7 +477,7 @@ export default class HomeService {
     const flashSales = finalFlashSales.map(item => ({
       ...item,
       flashSaleInfo: findDealInfo(item._id, item.variantId, flashSaleDocs)
-    }));
+    })).filter(item => item.flashSaleInfo && item.flashSaleInfo.remainingTimeMs > 0 && item.flashSaleInfo.isActive !== false);
     const specialOffers = finalSpecialOffers.map(item => ({
       ...item,
       specialOfferInfo: findDealInfo(item._id, item.variantId, specialOfferDocs)

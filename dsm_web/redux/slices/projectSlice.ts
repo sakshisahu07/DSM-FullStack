@@ -11,6 +11,24 @@ export interface ProjectSpecification {
   detail: string;
 }
 
+export interface ProjectHeroCard {
+  _id: string;
+  icon: string;
+  heading: string;
+  subHeading: string;
+  description: string;
+}
+
+export interface ProjectHero {
+  _id: string;
+  pageTitle: string;
+  subTitle: string;
+  description: string;
+  pageIcon: string;
+  cards: ProjectHeroCard[];
+  isActive: boolean;
+}
+
 export interface Project {
   _id: string;
   title: string;
@@ -82,6 +100,8 @@ interface ProjectState {
   currentProject: Project | null;
   loading: boolean;
   error: string | null;
+  hero: ProjectHero | null;
+  heroLoading: boolean;
   pagination: {
     total: number;
     page: number;
@@ -102,6 +122,8 @@ const initialState: ProjectState = {
   currentProject: null,
   loading: false,
   error: null,
+  hero: null,
+  heroLoading: false,
   pagination: null,
   
   ratings: [],
@@ -152,7 +174,7 @@ export const fetchProjectById = createAsyncThunk(
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${BASE_URL}project/${id}`, {
+      const response = await fetch(`${BASE_URL}/project/${id}`, {
         headers
       });
       const data = await response.json();
@@ -170,12 +192,28 @@ export const fetchProjectRatings = createAsyncThunk(
   'project/fetchProjectRatings',
   async (projectId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${BASE_URL}project/${projectId}/ratings`);
+      const response = await fetch(`${BASE_URL}/project/${projectId}/ratings`);
       const data = await response.json();
       if (!response.ok || !data.success) {
         return rejectWithValue(data.message || 'Failed to fetch project ratings');
       }
       return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchProjectHero = createAsyncThunk(
+  'project/fetchProjectHero',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${BASE_URL}/project-hero`);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        return rejectWithValue(data.message || 'Failed to fetch project hero');
+      }
+      return data.data;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -232,6 +270,17 @@ const projectSlice = createSlice({
       })
       .addCase(fetchProjectRatings.rejected, (state) => {
         state.ratingsLoading = false;
+      })
+      // Fetch Project Hero
+      .addCase(fetchProjectHero.pending, (state) => {
+        state.heroLoading = true;
+      })
+      .addCase(fetchProjectHero.fulfilled, (state, action) => {
+        state.heroLoading = false;
+        state.hero = action.payload;
+      })
+      .addCase(fetchProjectHero.rejected, (state) => {
+        state.heroLoading = false;
       });
   },
 });

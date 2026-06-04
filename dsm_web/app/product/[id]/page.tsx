@@ -22,6 +22,7 @@ import { addToCart } from '@/redux/slices/cartSlice';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/redux/slices/wishlistSlice';
 import DetailSkeleton from '@/components/DetailSkeleton';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '@/redux/slices/apiConfig';
 
 const ProductDetailPage = () => {
     const { id: productId } = useParams();
@@ -40,10 +41,30 @@ const ProductDetailPage = () => {
     // Review states
     const [userRating, setUserRating] = useState(5);
     const [userComment, setUserComment] = useState('');
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+
+    const fetchReviews = async () => {
+        if (!productId) return;
+        try {
+            setReviewsLoading(true);
+            const cleanBaseUrl = BASE_URL?.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+            const res = await fetch(`${cleanBaseUrl}/rating/${productId}`);
+            const json = await res.json();
+            if (json.success) {
+                setReviews(json.data?.ratings || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch reviews", err);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (productId) {
             dispatch(fetchProductById(productId as string));
+            fetchReviews();
         }
         dispatch(fetchWishlist());
     }, [productId, dispatch]);
@@ -54,6 +75,7 @@ const ProductDetailPage = () => {
             setUserComment('');
             setUserRating(5);
             dispatch(resetRatingStatus());
+            fetchReviews();
         }
         if (ratingError) {
             toast.error(ratingError);
@@ -648,54 +670,36 @@ const ProductDetailPage = () => {
                                 </div>
 
                                 <div className="space-y-12">
-                                    {[
-                                        {
-                                            name: "Rohit Sharma",
-                                            rating: 4.5,
-                                            title: "Good Quality Module",
-                                            comment: "Build quality is nice and communication range is decent. Value for money product.",
-                                            images: ["/bluetooth.png", "/bluetooth.png", "/bluetooth.png", "/product3.png", "/product4.png"],
-                                            avatar: "/bluetooth.png"
-                                        },
-                                        {
-                                            name: "Ankit Rai",
-                                            rating: 4.5,
-                                            title: "Good Quality Module",
-                                            comment: "Build quality is nice and communication range is decent. Value for money product.",
-                                            images: [],
-                                            avatar: "/bluetooth.png"
-                                        }
-                                    ].map((review, idx) => (
-                                        <div key={idx} className="space-y-2 border-b border-gray-100 last:border-0">
+                                    {reviewsLoading ? (
+                                        <div className="text-center py-10 text-gray-500">Loading reviews...</div>
+                                    ) : reviews.length === 0 ? (
+                                        <div className="text-center py-10 text-gray-500 font-medium">No reviews yet. Be the first to review this product!</div>
+                                    ) : reviews.map((review, idx) => (
+                                        <div key={review._id || idx} className="space-y-4 border-b border-gray-100 last:border-0 pb-6">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-gray-500 font-medium tracking-wide">Rating {review.rating}</span>
                                                     <div className="flex gap-0.5 text-[#FFC107]">
-                                                        {[...Array(5)].map((_, i) => <Star key={i} size={18} fill={i < 4 ? "currentColor" : "currentColor"} className={i === 4 ? "text-gray-300" : ""} />)}
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <Star 
+                                                                key={i} 
+                                                                size={18} 
+                                                                fill={i < Math.floor(review.rating) ? "currentColor" : "currentColor"} 
+                                                                className={i >= review.rating ? "text-gray-300" : ""} 
+                                                            />
+                                                        ))}
                                                     </div>
                                                 </div>
-                                                <h4 className="text-[#191919] text-lg">{review.title}</h4>
                                             </div>
-                                            <p className="text-[#000000]">{review.comment}</p>
-                                            {review.images.length > 0 && (
-                                                <div className="flex gap-4 pt-2">
-                                                    {review.images.slice(0, 3).map((img, i) => (
-                                                        <div key={i} className="w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 p-1 relative overflow-hidden group">
-                                                            <Image src={img} alt="Review product" fill className="object-cover group-hover:scale-110 transition-transform" />
-                                                            {i === 2 && review.images.length > 3 && (
-                                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-sm">
-                                                                    +{review.images.length - 2}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                            {review.comment && <p className="text-[#000000] mt-2">{review.comment}</p>}
+                                            <div className="flex items-center gap-3 pt-4">
+                                                <div className="w-8 h-8 rounded-full bg-gray-100 relative overflow-hidden border border-gray-200 shrink-0">
+                                                    <Image src={review.user?.image || "/hero2.png"} alt={review.user?.name || "User"} fill className="object-cover" />
                                                 </div>
-                                            )}
-                                            <div className="flex items-center gap-3 pt-2">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 relative overflow-hidden border border-gray-200">
-                                                    <Image src={review.avatar} alt={review.name} fill className="object-cover" />
-                                                </div>
-                                                <span className="text-[#191919]  text-sm">{review.name}</span>
+                                                <span className="text-[#191919] text-sm font-medium truncate">{review.user?.name || "Anonymous User"}</span>
+                                                <span className="text-gray-400 text-xs ml-auto whitespace-nowrap">
+                                                    {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''}
+                                                </span>
                                             </div>
                                         </div>
                                     ))}
@@ -788,68 +792,7 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                {/* Code Tab (Arduino Code) Section - Outside tab content but logically linked */}
-                {activeTab === 'Description' && (
-                    <div className=" px-0 mb-20 pt-10">
-                        <div className="border border-gray-100 rounded-md overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex flex-col md:flex-row md:items-center justify-center gap-4 md:gap-6 bg-[#D9D9D933] p-6 md:p-8 border-b border-gray-100">
-                                <h3 className="text-[0.8rem] md:text-3xl font-medium text-[#191919] text-center md:text-left ml-20">Code Tab (Arduino Code)</h3>
-                                <button className="hidden sm:flex items-center justify-center md:justify-start gap-3 md:gap-4 bg-white border border-gray-100 px-4 md:px-6 py-2 md:py-3 rounded-2xl shadow-sm hover:shadow-md transition-all group w-full md:w-auto">
-                                    <div className="bg-[#EE9C24] p-2.5 rounded-xl transition-colors group-hover:bg-[#EE9C24]">
-                                        <Image src="/dwnload.png" alt="Download" width={24} height={24} />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-bold text-gray-900 leading-none">Download PDF</p>
-                                        <p className="text-[11px] text-gray-500 mt-1">View Full Description</p>
-                                    </div>
-                                </button>
-                            </div>
-                            <div className="flex bg-white relative">
-                                <div className="w-16 md:w-24 bg-[#f8f9fa] border-r border-gray-100 py-6 flex flex-col items-center space-y-[210px] text-gray-400 font-bold select-none">
 
-                                </div>
-                                <div className="flex-1 p-10 md:p-6 relative">
-                                    <div className="absolute top-10 right-10 z-10">
-                                        <button onClick={() => {
-                                            const code = `const int gasSensor = A0;\nconst int buzzer = 8;\nint sensorValue = 0;\nint threshold = 400;\n\nvoid setup() {\n  pinMode(buzzer, OUTPUT);\n  Serial.begin(9600);\n}`;
-                                            navigator.clipboard.writeText(code);
-                                        }} className="flex items-center gap-3 bg-white border border-gray-200 px-6 py-2.5 rounded-xl text-sm font-bold text-[#666666] hover:bg-white hover:shadow-lg transition-all active:scale-95">
-                                            Copy Code
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
-                                        </button>
-                                    </div>
-                                    <div className="space-y-6 mt-4">
-                                        <div className="space-y-4">
-                                            <div className="text-gray-400 font-bold tracking-tight">CP</div>
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">const int</span> gasSensor = A0;<br />
-                                                <span className="text-[#EE9C24]">const int</span> buzzer = 8;<br />
-                                                <span className="text-[#EE9C24]">int</span> sensorValue = 0;<br />
-                                                <span className="text-[#EE9C24]">int</span> threshold = 400;
-                                            </pre>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">void</span> <span className="text-blue-500">setup</span>() {'{'}<br />
-                                                &nbsp;&nbsp;pinMode(buzzer, OUTPUT);<br />
-                                                &nbsp;&nbsp;Serial.<span className="text-blue-500">begin</span>(9600);<br />
-                                                {'}'}
-                                            </pre>
-                                        </div>
-                                        <div className="space-y-4 pt-4"><div className="text-gray-400 font-bold tracking-tight">CP</div>
-                                            <pre className="font-mono text-[#666666] text-[15px] leading-6 md:leading-8">
-                                                <span className="text-[#EE9C24]">const int</span> gasSensor = A0;<br />
-                                                <span className="text-[#EE9C24]">const int</span> buzzer = 8;<br />
-                                                <span className="text-[#EE9C24]">int</span> sensorValue = 0;<br />
-                                                <span className="text-[#EE9C24]">int</span> threshold = 400;
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

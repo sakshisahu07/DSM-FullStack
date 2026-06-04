@@ -4,7 +4,7 @@ import React, { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Heart, Star, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 
@@ -75,15 +75,15 @@ const SpecialCombo = ({ combos: propCombos, loading: propLoading }: { combos?: a
           {/* Navigation Arrows */}
           <div
             ref={prevRef}
-            className="absolute top-1/2 -left-2 md:-left-4 -translate-y-1/2 z-20 bg-[#E47B25]  rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+            className="absolute top-1/2 -left-3 md:-left-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
           >
-            <ChevronLeft size={20} />
+            <ChevronsLeft size={16} className="md:w-5 md:h-5" />
           </div>
           <div
             ref={nextRef}
-            className="absolute top-1/2 -right-2 md:-right-4 -translate-y-1/2 z-20 bg-[#E47B25]  rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+            className="absolute top-1/2 -right-3 md:-right-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
           >
-            <ChevronRight size={20} />
+            <ChevronsRight size={16} className="md:w-5 md:h-5" />
           </div>
 
           <Swiper
@@ -128,8 +128,7 @@ const SpecialCombo = ({ combos: propCombos, loading: propLoading }: { combos?: a
                   subcategory: combo.subCategories?.[0]?.title || "Sub category",
                   // Pass the entire combo object for slug and other info
                   ...combo,
-                  isCombo: true,
-                  isHot: true
+                  isCombo: true
                 } as any} />
               </SwiperSlide>
             ))}

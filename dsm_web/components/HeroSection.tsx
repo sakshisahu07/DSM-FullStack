@@ -58,8 +58,7 @@ const HeroSection = ({
     { id: '8', name: 'Development Boards', items: '120 Items', icon: '/navImg.png' },
     { id: '9', name: 'Programmers', items: '125 Items', icon: '/navImg.png' },
   ];
-  const prevRef = useRef<HTMLDivElement>(null);
-  const nextRef = useRef<HTMLDivElement>(null);
+
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const megaMenuRef = useRef<HTMLDivElement>(null);
   const [banners, setBanners] = useState<any[]>([]);
@@ -148,33 +147,11 @@ const HeroSection = ({
 
         {/* Categories Swiper (Mobile & Desktop) */}
         <div className="relative mb-4 md:mb-0">
-          {/* Navigation Arrows */}
-          <div
-            ref={prevRef}
-            className="hidden md:flex absolute top-1/2 -left-2 -translate-y-1/2 z-20 bg-white p-2 rounded-full text-primary-600 shadow-md border border-primary-100 cursor-pointer hover:bg-primary-600 hover:text-white transition-all disabled:opacity-0 pointer-events-auto opacity-100"
-          >
-            <ChevronLeft size={20} />
-          </div>
-          <div
-            ref={nextRef}
-            className="hidden md:flex absolute top-1/2 -right-2 -translate-y-1/2 z-20 bg-white p-2 rounded-full text-primary-600 shadow-md border border-primary-100 cursor-pointer hover:bg-primary-600 hover:text-white transition-all disabled:opacity-0 pointer-events-auto opacity-100"
-          >
-            <ChevronRight size={20} />
-          </div>
-
           <Swiper
-            modules={[Navigation, Autoplay]}
+            modules={[Autoplay]}
             autoplay={{
               delay: 4000,
               disableOnInteraction: false,
-            }}
-            onInit={(swiper: any) => {
-              // @ts-ignore
-              swiper.params.navigation.prevEl = prevRef.current;
-              // @ts-ignore
-              swiper.params.navigation.nextEl = nextRef.current;
-              swiper.navigation.init();
-              swiper.navigation.update();
             }}
             spaceBetween={8}
             slidesPerView={4.5}
@@ -273,7 +250,7 @@ const HeroSection = ({
       </div>
 
       {/* Featured Banners Swiper */}
-      <div className=" md:px-14">
+      <div className="px-4 md:px-4">
         <Swiper
           modules={[Autoplay, Pagination]}
           autoplay={{
@@ -284,19 +261,19 @@ const HeroSection = ({
             clickable: true,
             el: '.banner-pagination',
             bulletClass: 'w-3 h-3 rounded-full bg-gray-200 cursor-pointer transition-all duration-300',
-            bulletActiveClass: '!bg-primary-600',
+            bulletActiveClass: '!bg-[#E47B25]',
             renderBullet: (index, className) => {
               return `<div class="${className}"></div>`;
             },
           }}
-          className="hero-banner-swiper rounded-xl md:rounded-2xl"
+          className="hero-banner-swiper"
         >
           {bannerPairs.map((pair, index) => (
             <SwiperSlide key={index}>
-              <div className="flex md:grid md:grid-cols-12 gap-3 md:gap-6 md:h-[450px]">
+              <div className="flex md:grid md:grid-cols-12 gap-3 md:gap-6 md:h-[350px]">
                 {/* Hero Banner 1 */}
                 <div 
-                  className="flex-[2] md:col-span-8 relative overflow-hidden group cursor-pointer h-[120px] md:h-full border border-gray-100 shadow-sm"
+                  className="flex-[2] md:col-span-8 relative rounded-xl md:rounded-2xl overflow-hidden group cursor-pointer h-[120px] md:h-[22rem] border border-gray-100 shadow-sm"
                   onClick={() => pair[0]?.redirectUrl && window.open(pair[0].redirectUrl, '_blank')}
                 >
                   <Image
@@ -312,7 +289,7 @@ const HeroSection = ({
 
                 {/* Hero Banner 2 */}
                 <div 
-                  className="flex-1 md:col-span-4 relative md:rounded-2xl overflow-hidden group cursor-pointer h-[120px] md:h-full border border-gray-100 shadow-sm"
+                  className="flex-1 md:col-span-4 relative rounded-xl md:rounded-2xl overflow-hidden group cursor-pointer h-[120px] md:h-[22rem] border border-gray-100 shadow-sm"
                   onClick={() => pair[1]?.redirectUrl && window.open(pair[1].redirectUrl, '_blank')}
                 >
                   <Image

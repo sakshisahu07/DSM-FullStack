@@ -37,6 +37,7 @@ import { Route as AppProductsBestSellingRouteImport } from './routes/_app/produc
 import { Route as AppProductsAtlKitsRouteImport } from './routes/_app/products/atl-kits'
 import { Route as AppProductsAllRouteImport } from './routes/_app/products/all'
 import { Route as AppOrdersTrackerRouteImport } from './routes/_app/orders/tracker'
+import { Route as AppOrdersShippingMethodsRouteImport } from './routes/_app/orders/shipping-methods'
 import { Route as AppOrdersReturnsRouteImport } from './routes/_app/orders/returns'
 import { Route as AppOrdersInvoicesRouteImport } from './routes/_app/orders/invoices'
 import { Route as AppOrdersAllRouteImport } from './routes/_app/orders/all'
@@ -201,6 +202,12 @@ const AppOrdersTrackerRoute = AppOrdersTrackerRouteImport.update({
   path: '/orders/tracker',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrdersShippingMethodsRoute =
+  AppOrdersShippingMethodsRouteImport.update({
+    id: '/orders/shipping-methods',
+    path: '/orders/shipping-methods',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppOrdersReturnsRoute = AppOrdersReturnsRouteImport.update({
   id: '/orders/returns',
   path: '/orders/returns',
@@ -350,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/orders/all': typeof AppOrdersAllRoute
   '/orders/invoices': typeof AppOrdersInvoicesRoute
   '/orders/returns': typeof AppOrdersReturnsRoute
+  '/orders/shipping-methods': typeof AppOrdersShippingMethodsRoute
   '/orders/tracker': typeof AppOrdersTrackerRoute
   '/products/all': typeof AppProductsAllRoute
   '/products/atl-kits': typeof AppProductsAtlKitsRoute
@@ -402,6 +410,7 @@ export interface FileRoutesByTo {
   '/orders/all': typeof AppOrdersAllRoute
   '/orders/invoices': typeof AppOrdersInvoicesRoute
   '/orders/returns': typeof AppOrdersReturnsRoute
+  '/orders/shipping-methods': typeof AppOrdersShippingMethodsRoute
   '/orders/tracker': typeof AppOrdersTrackerRoute
   '/products/all': typeof AppProductsAllRoute
   '/products/atl-kits': typeof AppProductsAtlKitsRoute
@@ -456,6 +465,7 @@ export interface FileRoutesById {
   '/_app/orders/all': typeof AppOrdersAllRoute
   '/_app/orders/invoices': typeof AppOrdersInvoicesRoute
   '/_app/orders/returns': typeof AppOrdersReturnsRoute
+  '/_app/orders/shipping-methods': typeof AppOrdersShippingMethodsRoute
   '/_app/orders/tracker': typeof AppOrdersTrackerRoute
   '/_app/products/all': typeof AppProductsAllRoute
   '/_app/products/atl-kits': typeof AppProductsAtlKitsRoute
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/orders/all'
     | '/orders/invoices'
     | '/orders/returns'
+    | '/orders/shipping-methods'
     | '/orders/tracker'
     | '/products/all'
     | '/products/atl-kits'
@@ -562,6 +573,7 @@ export interface FileRouteTypes {
     | '/orders/all'
     | '/orders/invoices'
     | '/orders/returns'
+    | '/orders/shipping-methods'
     | '/orders/tracker'
     | '/products/all'
     | '/products/atl-kits'
@@ -615,6 +627,7 @@ export interface FileRouteTypes {
     | '/_app/orders/all'
     | '/_app/orders/invoices'
     | '/_app/orders/returns'
+    | '/_app/orders/shipping-methods'
     | '/_app/orders/tracker'
     | '/_app/products/all'
     | '/_app/products/atl-kits'
@@ -842,6 +855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrdersTrackerRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/orders/shipping-methods': {
+      id: '/_app/orders/shipping-methods'
+      path: '/orders/shipping-methods'
+      fullPath: '/orders/shipping-methods'
+      preLoaderRoute: typeof AppOrdersShippingMethodsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/orders/returns': {
       id: '/_app/orders/returns'
       path: '/orders/returns'
@@ -1034,6 +1054,7 @@ interface AppRouteChildren {
   AppOrdersAllRoute: typeof AppOrdersAllRoute
   AppOrdersInvoicesRoute: typeof AppOrdersInvoicesRoute
   AppOrdersReturnsRoute: typeof AppOrdersReturnsRoute
+  AppOrdersShippingMethodsRoute: typeof AppOrdersShippingMethodsRoute
   AppOrdersTrackerRoute: typeof AppOrdersTrackerRoute
   AppProductsAllRoute: typeof AppProductsAllRoute
   AppProductsAtlKitsRoute: typeof AppProductsAtlKitsRoute
@@ -1085,6 +1106,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOrdersAllRoute: AppOrdersAllRoute,
   AppOrdersInvoicesRoute: AppOrdersInvoicesRoute,
   AppOrdersReturnsRoute: AppOrdersReturnsRoute,
+  AppOrdersShippingMethodsRoute: AppOrdersShippingMethodsRoute,
   AppOrdersTrackerRoute: AppOrdersTrackerRoute,
   AppProductsAllRoute: AppProductsAllRoute,
   AppProductsAtlKitsRoute: AppProductsAtlKitsRoute,

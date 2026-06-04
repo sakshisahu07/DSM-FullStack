@@ -4,7 +4,7 @@ import React, { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Heart, Star, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 
@@ -17,14 +17,14 @@ import 'swiper/css/navigation';
 import ProductCard from '@/components/products/ProductCard';
 import ProductSwiperSkeleton from '@/components/products/ProductSwiperSkeleton';
 
-const FrequentlySaleProduct = ({ products: propProducts, loading = false }: { products?: any[], loading?: boolean }) => {
+const FrequentlySaleProduct = ({ title = "Frequently Sale Products", align = "center", products: propProducts, loading = false }: { title?: string, align?: "center" | "left", products?: any[], loading?: boolean }) => {
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
 
   const displayProducts = propProducts || [];
 
   if (loading && displayProducts.length === 0) {
-    return <ProductSwiperSkeleton title="Frequently Sale Products" />;
+    return <ProductSwiperSkeleton title={title} />;
   }
 
   // Hide section if no live data from API
@@ -38,16 +38,27 @@ const FrequentlySaleProduct = ({ products: propProducts, loading = false }: { pr
          {/* Mobile Header */}
         <div className="flex md:hidden items-center justify-between mb-6">
           <div className="relative">
-            <h2 className="text-[14px] font-medium text-[#000000]">Frequently Sale Products</h2>
+            <h2 className="text-[14px] font-medium text-[#000000]">{title}</h2>
             <div className="absolute -bottom-1 left-0 w-full h-[3px] bg-[#E47B25] rounded-full" />
           </div>
           <Link href="/allproduct" className="text-[#E47B25] font-semibold text-[15px] hover:underline transition-all">View All</Link>
         </div>
         {/* Header */}
-        <div className="hidden md:flex items-center justify-center gap-3 md:gap-6 mb-6 md:mb-10">
-          <div className="h-[1.5px] md:h-[1.5px] bg-[#E47B25] flex-1 max-w-[60px] md:max-w-[200px]" />
-          <h2 className="text-xl md:text-[1.5rem] font-medium text-gray-900  text-center">Frequently Sale Products</h2>
-          <div className="h-[1.5px] md:h-[1.5px] bg-[#E47B25] flex-1 max-w-[60px] md:max-w-[200px]" />
+        <div className={`hidden md:flex items-center mb-6 md:mb-10 ${align === 'center' ? 'justify-center gap-3 md:gap-6' : 'justify-between'}`}>
+          {align === 'center' ? (
+            <>
+              <div className="h-[1.5px] md:h-[1.5px] bg-[#E47B25] flex-1 max-w-[60px] md:max-w-[200px]" />
+              <h2 className="text-xl md:text-[1.5rem] font-medium text-gray-900 text-center">{title}</h2>
+              <div className="h-[1.5px] md:h-[1.5px] bg-[#E47B25] flex-1 max-w-[60px] md:max-w-[200px]" />
+            </>
+          ) : (
+            <div className="relative">
+              <h2 className="text-[14px] md:text-[1.5rem] font-medium text-[#000000] md:text-gray-900">
+                {title}
+              </h2>
+              <div className="absolute -bottom-1 md:-bottom-2 left-0 w-16 md:w-24 h-[3px] bg-[#E47B25] rounded-full" />
+            </div>
+          )}
         </div>
 
         {/* Swiper Container */}
@@ -55,15 +66,15 @@ const FrequentlySaleProduct = ({ products: propProducts, loading = false }: { pr
           {/* Navigation Arrows */}
           <div
             ref={prevRef}
-            className="absolute top-1/2 -left-2 md:-left-4 -translate-y-1/2 z-20 bg-[#B3520A] rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+            className="absolute top-1/2 -left-3 md:-left-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
           >
-            <ChevronLeft size={20} />
+            <ChevronsLeft size={16} className="md:w-5 md:h-5" />
           </div>
           <div
             ref={nextRef}
-            className="absolute top-1/2 -right-2 md:-right-4 -translate-y-1/2 z-20 bg-[#B3520A] rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+            className="absolute top-1/2 -right-3 md:-right-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
           >
-            <ChevronRight size={20} />
+            <ChevronsRight size={16} className="md:w-5 md:h-5" />
           </div>
 
           <Swiper

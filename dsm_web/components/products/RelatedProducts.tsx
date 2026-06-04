@@ -6,9 +6,10 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { fetchRelatedProducts, fetchProducts } from "@/redux/slices/productSlice";
 import ProductCard from "./ProductCard";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -72,14 +73,14 @@ export default function RelatedProducts({ categoryId: initialCategoryId, subCate
     }
 
     return (
-        <section className="px-4 md:px-14 py-8 md:py-12 bg-white">
+        <section className="px-4 md:px-14 pt-4 md:pt-6 pb-8 md:pb-0 bg-white">
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex items-center justify-between mb-6 md:mb-10">
                     <div className="relative">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                            {hasContext ? 'Related Products' : 'Featured Products'}
+                        <h2 className="text-[14px] md:text-[1.5rem] font-medium text-[#000000] md:text-gray-900">
+                            {hasContext ? 'Related Products' : 'Related Products'}
                         </h2>
-                        <div className="absolute -bottom-2 left-0 w-24 h-[3px] bg-[#E47B25] rounded-full" />
+                        <div className="absolute -bottom-1 md:-bottom-2 left-0 w-16 md:w-24 h-[3px] bg-[#E47B25] rounded-full" />
                     </div>
                 </div>
 
@@ -87,15 +88,15 @@ export default function RelatedProducts({ categoryId: initialCategoryId, subCate
                     {/* Navigation Arrows */}
                     <div
                         ref={prevRef}
-                        className="absolute top-1/2 -left-4 md:-left-6 -translate-y-1/2 z-20 bg-[#E47B25] rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+                        className="absolute top-1/2 -left-3 md:-left-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
                     >
-                        <ChevronLeft size={24} />
+                        <ChevronsLeft size={16} className="md:w-5 md:h-5" />
                     </div>
                     <div
                         ref={nextRef}
-                        className="absolute top-1/2 -right-4 md:-right-6 -translate-y-1/2 z-20 bg-[#E47B25] rounded-full text-white shadow-lg cursor-pointer hover:bg-black transition-colors disabled:opacity-50"
+                        className="absolute top-1/2 -right-3 md:-right-10 -translate-y-1/2 z-20 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-[#E47B25] rounded-full text-white shadow-md cursor-pointer hover:bg-[#B3520A] transition-colors disabled:opacity-50"
                     >
-                        <ChevronRight size={24} />
+                        <ChevronsRight size={16} className="md:w-5 md:h-5" />
                     </div>
 
                     <Swiper

@@ -368,6 +368,13 @@ export default function AllProductsPage() {
 
   const activeMobileCategories = dynamicMobileCategories.length > 0 ? dynamicMobileCategories : [];
 
+  const getValidImage = (img: any, fallback: string = "/navImg.png") => {
+    if (!img || typeof img !== 'string' || img === "false" || img === "null" || img.trim() === "") {
+      return fallback;
+    }
+    return img;
+  };
+
   return (
     <main className="bg-white min-h-screen">
       {/* Mobile View */}
@@ -417,7 +424,7 @@ export default function AllProductsPage() {
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-full border shrink-0 transition-all ${cat.title === (mobileHeaderTitle || activeCategory) ? "border-[#EE9C24] text-[#EE9C24] bg-[#EE9C24]" : "border-gray-200 text-gray-700"}`}
                 >
                   <div className="w-4 h-4 rounded-full bg-gray-200 overflow-hidden text-gray-500">
-                    <Image src={cat.icon || "/hero2.png"} alt="icon" width={16} height={16} className="object-cover" />
+                    <Image src={getValidImage(cat.icon, "/hero2.png")} alt="icon" width={16} height={16} className="object-cover" />
                   </div>
                   <span className="text-[13px] font-bold">{cat.title}</span>
                 </button>
@@ -444,7 +451,7 @@ export default function AllProductsPage() {
             {activeMobileCategories.map((cat, i) => (
               <div key={i} className="flex items-center bg-white border border-gray-100 rounded-3xl p-3 shadow-sm gap-3">
                 <div className="w-20 h-20 bg-[#F8F8F8] rounded-2xl flex items-center justify-center shrink-0 border border-gray-50 text-gray-300">
-                  <Image src={cat.icon} alt={cat.name} width={60} height={60} className="object-contain" />
+                  <Image src={getValidImage(cat.icon)} alt={cat.name} width={60} height={60} className="object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-[17px] font-bold text-gray-900 leading-tight">{cat.name}</h3>
@@ -498,7 +505,7 @@ export default function AllProductsPage() {
               {activeMobileCategories.map((cat, i) => (
                 <div key={i} className="flex items-center bg-white border border-gray-100 rounded-3xl p-3 shadow-md gap-3">
                   <div className="w-20 h-20 bg-[#F8F8F8] rounded-2xl flex items-center justify-center shrink-0 border border-gray-50 text-gray-300">
-                    <Image src={cat.icon} alt={cat.name} width={60} height={60} className="object-contain" />
+                    <Image src={getValidImage(cat.icon)} alt={cat.name} width={60} height={60} className="object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-[17px] font-bold text-gray-900 leading-tight">{cat.name}</h3>
@@ -547,7 +554,7 @@ export default function AllProductsPage() {
               {allSubcategories.filter(s => s.category?.title === mobileHeaderTitle).map((sub, i) => (
                 <div key={i} className="flex items-center bg-white border border-gray-100 rounded-3xl p-3 shadow-md gap-3">
                   <div className="w-20 h-20 bg-[#F8F8F8] rounded-2xl flex items-center justify-center shrink-0 border border-gray-50 text-gray-300">
-                    <Image src={sub.icon || "/navImg.png"} alt={sub.title} width={60} height={60} className="object-contain opacity-50" />
+                    <Image src={getValidImage(sub.icon)} alt={sub.title} width={60} height={60} className="object-contain opacity-50" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-[17px] font-bold text-gray-900 leading-tight">{sub.title}</h3>
@@ -962,7 +969,7 @@ export default function AllProductsPage() {
             {/* Hero Banner */}
             <div className="rounded-[2.5rem] overflow-hidden mb-8 shadow-sm">
               <Image
-                src={content.banner}
+                src={getValidImage(content.banner, "/hero2.png")}
                 alt="Category Banner"
                 width={900}
                 height={320}

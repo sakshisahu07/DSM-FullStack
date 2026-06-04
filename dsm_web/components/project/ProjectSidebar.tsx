@@ -13,10 +13,11 @@ const categories = [
 interface ProjectSidebarProps {
   activeCategory?: string;
   onCategoryChange?: (value: string) => void;
+  selectedRating?: number | null;
+  onRatingChange?: (rating: number | null) => void;
 }
 
-export default function ProjectSidebar({ activeCategory = "", onCategoryChange }: ProjectSidebarProps) {
-  const [selectedRating, setSelectedRating] = useState(5);
+export default function ProjectSidebar({ activeCategory = "", onCategoryChange, selectedRating = null, onRatingChange }: ProjectSidebarProps) {
 
   return (
     <aside className="w-full">
@@ -46,7 +47,7 @@ export default function ProjectSidebar({ activeCategory = "", onCategoryChange }
             <label
               key={star}
               className="flex items-center gap-2 cursor-pointer group"
-              onClick={() => setSelectedRating(star)}
+              onClick={() => onRatingChange && onRatingChange(selectedRating === star ? null : star)}
             >
               {/* Custom checkbox */}
               <div

@@ -23,8 +23,8 @@ export default function GlobalBottomSections() {
     const isCareerDetailRoute = pathname.startsWith('/career/') && pathname.split('/').length === 3;
 
     return (
-        <section className={`bg-white pt-10 md:pt-10 ${(isCustomHeaderPage || isProfileRoute || isBlogListingRoute || isVideoGalleryRoute || isProjectRoute || isCareerRoute || isCartRoute || isCheckoutRoute || isBlogDetailRoute || isProjectDetailRoute || isCareerDetailRoute) ? 'hidden md:block' : ''}`}>
-            <div className="mb-12 md:mb-20">
+        <section className={`bg-white ${(isCustomHeaderPage || isProfileRoute || isBlogListingRoute || isVideoGalleryRoute || isProjectRoute || isCareerRoute || isCartRoute || isCheckoutRoute || isBlogDetailRoute || isProjectDetailRoute || isCareerDetailRoute) ? 'hidden md:block' : ''}`}>
+            <div className="mb-12 md:mb-0">
                 <RelatedProducts />
                 <div className="mt-10 md:mt-16" />
                 <FeatureHighlights />

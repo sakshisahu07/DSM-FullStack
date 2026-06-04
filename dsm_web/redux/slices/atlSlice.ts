@@ -12,6 +12,16 @@ export interface AtlData {
   description: string;
   subTitle: string;
   subDescription: string;
+  processHeading?: string;
+  processImage?: {
+    url: string;
+    key: string;
+  };
+  setupHeading?: string;
+  setupImage?: {
+    url: string;
+    key: string;
+  };
   cards: {
     icon: {
       url: string;

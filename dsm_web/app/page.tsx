@@ -100,7 +100,7 @@ function HomeContent() {
       description: p.description || 'Latest top-quality product with special price.',
       price: p.price || p.mrp || 0,
       originalPrice: p.mrp || p.price || 0,
-      rating: p.avgRating || 5,
+      rating: p.avgRating ?? 0,
       category: p.categoryName || 'Electronics',
       subcategory: p.subCategoryName || 'Gadgets',
       image: p.images?.[0] || p.icon || '/bluetooth.png',
@@ -125,7 +125,7 @@ function HomeContent() {
       description: 'Mega Special Combo Offer with amazing discounts.',
       price: c.comboPrice || 0,
       originalPrice: c.totalMrp || 0,
-      rating: 5,
+      rating: c.avgRating ?? 0,
       category: 'Combo',
       subcategory: 'Offers',
       image: c.images?.[0] || c.icon || '/speacialoffer.png',
@@ -146,10 +146,19 @@ function HomeContent() {
 
   const categories = homeData?.categories || [];
   const hotProducts = (homeData?.hotDeals || []).map((p: any) => mapProduct(p, 'hot')).filter(Boolean);
-  const flashSales = (homeData?.flashSales || []).map((p: any) => mapProduct(p, 'flash')).filter(Boolean);
+  const flashSales = (homeData?.flashSales || [])
+    .filter((p: any) => p.flashSaleInfo?.remainingTimeMs > 0)
+    .map((p: any) => mapProduct(p, 'flash'))
+    .filter(Boolean);
   const specialOffers = (homeData?.specialOffers || []).map((p: any) => mapProduct(p, 'special')).filter(Boolean);
   const combos = (homeData?.combos || []).map((c: any) => mapCombo(c)).filter(Boolean);
   const frequentlySales = (homeData?.products?.data || []).map((p: any) => mapProduct(p, 'freq')).filter(Boolean);
+  
+  const newArrivals = (homeData?.newArrivals || []).map((p: any) => mapProduct(p, 'new')).filter(Boolean);
+  const bestSelling = (homeData?.trendingProducts || []).map((p: any) => mapProduct(p, 'trending')).filter(Boolean);
+
+  const dcGeneratorProducts = frequentlySales.filter((p: any) => (p.category || '').toLowerCase().includes('generator') || (p.name || '').toLowerCase().includes('generator') || (p.name || '').toLowerCase().includes('motor') || (p.category || '').toLowerCase().includes('motor'));
+  const eBikeProducts = frequentlySales.filter((p: any) => (p.category || '').toLowerCase().includes('bike') || (p.name || '').toLowerCase().includes('bike'));
 
   return (
     <main className="min-h-screen bg-white">
@@ -163,11 +172,21 @@ function HomeContent() {
       <FlashSale products={flashSales} loading={isLoading} />
       <SpecialOffers products={specialOffers} loading={isLoading} />
       <MobilePromoSection />
-      <FrequentlySaleProduct products={frequentlySales} loading={isLoading} />
-      <MobileBottomPromoSection />
+      
       <div className="hidden md:block">
         <PromotionGrid banners={banners} />
+      </div>
+      
+      <FrequentlySaleProduct title="New Arrivals" products={newArrivals.length ? newArrivals : frequentlySales} loading={isLoading} />
+      <FrequentlySaleProduct title="Best Selling" products={bestSelling.length ? bestSelling : frequentlySales} loading={isLoading} />
+      <FrequentlySaleProduct title="Frequently Sale Products" products={frequentlySales} loading={isLoading} />
+      
+      <MobileBottomPromoSection />
+      
+      <div className="hidden md:block">
         <SpecialCombo combos={combos} loading={isLoading} />
+        <FrequentlySaleProduct title="DC Generator motor" align="left" products={dcGeneratorProducts.length ? dcGeneratorProducts : frequentlySales} loading={isLoading} />
+        <FrequentlySaleProduct title="E-Bike parts" align="left" products={eBikeProducts.length ? eBikeProducts : frequentlySales} loading={isLoading} />
       </div>
     </main>
   );

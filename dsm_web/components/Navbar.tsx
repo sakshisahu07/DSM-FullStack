@@ -13,6 +13,13 @@ import { fetchUnseenCount } from '@/redux/slices/notificationSlice';
 import MobileSidebar from './MobileSidebar';
 import WishlistModal from './WishlistModal';
 
+const getValidImageUrl = (url: string | null | undefined, fallback: string) => {
+  if (!url || url === 'false' || url === 'null' || url === 'undefined') return fallback;
+  if (typeof url !== 'string') return fallback;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/') || url.startsWith('data:')) return url;
+  return `/${url}`;
+};
+
 const staticCategories = [
   {
     name: 'Communication',
@@ -54,7 +61,6 @@ const staticCategories = [
 
 const Navbar = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
   const { categories: dynamicCategories } = useSelector((state: RootState) => state.bulkInquiry);
   const { unseenCount } = useSelector((state: RootState) => state.notification);
   const { token: rawToken } = useSelector((state: RootState) => state.auth);
@@ -66,6 +72,16 @@ const Navbar = () => {
 
   const token = isMounted ? rawToken : null;
   const pathname = usePathname() || '';
+  const router = useRouter();
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim().length >= 2) {
+      router.push(`/allproduct?search=${encodeURIComponent(searchQuery)}`);
+      setIsSearchFocused(false);
+      setIsMobileSearchOpen(false);
+    }
+  };
 
   const isCustomHeaderPage = pathname === '/faq' || pathname === '/about-us' || pathname === '/contact-us' || pathname === '/affiliate' || pathname === '/support-policy' || pathname === '/return-policy' || pathname === '/privacy-policy' || pathname === '/terms' || pathname === '/shipping-delivery';
   const isBulkInquiryPage = pathname === '/bulk-inquiry';
@@ -78,6 +94,8 @@ const Navbar = () => {
   const isCareerDetailRoute = pathname.startsWith('/career/') && pathname.split('/').length === 3;
   const isProductDetailRoute = pathname.startsWith('/product/') && pathname.split('/').length === 3;
   const isComboDetailRoute = pathname.startsWith('/combo/') && pathname.split('/').length === 3;
+  const isOrderActive = pathname === '/my-orders';
+  const isTrackActive = pathname === '/track-order';
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -121,7 +139,7 @@ const Navbar = () => {
           uniqueMap.set(key, {
             ...c,
             name: c.title,
-            subcategories: c.subcategories || []
+            subcategories: []
           });
         }
       });
@@ -147,6 +165,13 @@ const Navbar = () => {
     if (activeToken) {
       dispatch(fetchWishlist());
       dispatch(fetchUnseenCount());
+      
+      // Add polling mechanism for notifications to update dynamically
+      const intervalId = setInterval(() => {
+        dispatch(fetchUnseenCount());
+      }, 30000); // 30 seconds polling
+      
+      return () => clearInterval(intervalId);
     }
   }, [dispatch, rawToken]);
 
@@ -174,18 +199,18 @@ const Navbar = () => {
             <Image src="/logo.png" alt="Logo" width={140} height={36} className="h-auto w-[140px]" />
           </Link>
           <div className="flex-1 max-w-2xl relative group mx-4" ref={searchRef}>
-            <div className="flex items-center border-[1.5px] border-[#EE9C24] rounded-full overflow-hidden hover:border-[#EE9C24] transition-colors bg-white pr-1 py-0.5 pl-4 shadow-sm w-full">
+            <form onSubmit={handleSearchSubmit} className="flex items-center border-[1.5px] border-[#EE9C24] rounded-full overflow-hidden hover:border-[#EE9C24] transition-colors bg-white pr-1 py-0.5 pl-4 shadow-sm w-full">
               <input type="text" placeholder="Search components..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setIsSearchFocused(true)} className="w-full py-2 outline-none text-sm text-gray-600" />
-              <button className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-2 rounded-full"><Search size={20} /></button>
-            </div>
+              <button type="submit" className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-2 rounded-full"><Search size={20} /></button>
+            </form>
           </div>
           <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
-            <Link href={token ? "/my-orders" : "/login"} className="flex items-center gap-2 cursor-pointer hover:text-[#EE9C24]">
-              <Image src="/order.png" alt="order" width={22} height={22} className='grayscale opacity-70' />
+            <Link href={token ? "/my-orders" : "/login"} className={`flex items-center gap-2 cursor-pointer transition-colors ${isOrderActive ? 'text-[#EE9C24]' : 'hover:text-[#EE9C24]'}`}>
+              <Package size={20} className={isOrderActive ? 'text-[#EE9C24]' : 'text-gray-600'} />
               <span>My Order</span>
             </Link>
-            <Link href={token ? "/track-order" : "/login"} className="flex items-center gap-2 cursor-pointer hover:text-[#EE9C24]">
-              <Truck size={20} />
+            <Link href={token ? "/track-order" : "/login"} className={`flex items-center gap-2 cursor-pointer transition-colors ${isTrackActive ? 'text-[#EE9C24]' : 'hover:text-[#EE9C24]'}`}>
+              <Truck size={20} className={isTrackActive ? 'text-[#EE9C24]' : 'text-gray-600'} />
               <span>Track My Order</span>
             </Link>
             {!token && (
@@ -204,13 +229,13 @@ const Navbar = () => {
                 <ChevronDown size={16} />
               </div>
               <div className="flex items-center gap-4 lg:gap-8 px-4 lg:px-8 h-full text-sm">
-                <Link href="/" className="hover:text-orange-200 transition-colors">Home</Link>
-                <Link href="/allproduct" className="hover:text-orange-200 transition-colors">Shop By</Link>
-                <Link href="/bulk-inquiry" className="hover:text-orange-200 transition-colors hidden lg:inline">Bulk Inquiry</Link>
-                <Link href="/special-offers" className="hover:text-orange-200 transition-colors">Special Offers</Link>
-                <Link href="/special-combos" className="hover:text-orange-200 transition-colors">Special Combos</Link>
-                <Link href="/atl-kits" className="hover:text-orange-200 transition-colors hidden xl:inline">ATL Kits</Link>
-                <Link href="/blog" className="hover:text-orange-200 transition-colors">Blog</Link>
+                <Link href="/" className="transition-colors text-white/80 hover:text-white">Home</Link>
+                <Link href="/allproduct" className="transition-colors text-white font-bold">Shop By</Link>
+                <Link href="/bulk-inquiry" className="hidden lg:inline transition-colors text-white/80 hover:text-white">Bulk Inquiry</Link>
+                <Link href="/special-offers" className="transition-colors text-white/80 hover:text-white">Special Offers</Link>
+                <Link href="/special-combos" className="transition-colors text-white/80 hover:text-white">Special Combos</Link>
+                <Link href="/atl-kits" className="hidden xl:inline transition-colors text-white/80 hover:text-white">ATL Kits</Link>
+                <Link href="/blog" className="transition-colors text-white/80 hover:text-white">Blog</Link>
                 <Link 
                   href="/project" 
                   className="transition-all duration-300 px-3 py-1 rounded-full font-semibold border border-white/30 text-white hover:bg-white/10 hover:border-white/60"
@@ -257,7 +282,7 @@ const Navbar = () => {
               <Image src="/logo.png" alt="Logo" width={80} height={24} className="h-auto w-[35px]" />
             </Link>
             <div className="flex-1 max-w-[200px] relative">
-              <div className="flex items-center border border-orange-200 rounded-full overflow-hidden bg-white pr-1 py-0.5 pl-3 shadow-sm w-full">
+              <form onSubmit={handleSearchSubmit} className="flex items-center border border-orange-200 rounded-full overflow-hidden bg-white pr-1 py-0.5 pl-3 shadow-sm w-full">
                 <input
                   type="text"
                   placeholder="Search..."
@@ -269,10 +294,10 @@ const Navbar = () => {
                   }}
                   className="w-full  outline-none text-[10px] text-gray-600 placeholder:text-gray-400"
                 />
-                <button className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-1 rounded-full shrink-0">
+                <button type="submit" className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-1 rounded-full shrink-0">
                   <Search size={12} />
                 </button>
-              </div>
+              </form>
             </div>
             {!token && (
               <Link
@@ -317,8 +342,8 @@ const Navbar = () => {
       {isMobileSearchOpen && (
         <div className="md:hidden fixed inset-0 bg-white z-[120] animate-in fade-in duration-300">
           <div className="flex items-center px-4  gap-3 border-b border-gray-100 h-[60px]">
-            <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2 border border-orange-100">
-              <Search size={18} className="text-[#E47B25]" />
+            <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2 border border-orange-100">
+              <button type="submit" className="shrink-0"><Search size={18} className="text-[#E47B25]" /></button>
               <input
                 type="text"
                 placeholder="Search components..."
@@ -328,7 +353,7 @@ const Navbar = () => {
                 autoFocus
                 onFocus={() => setIsSearchFocused(true)}
               />
-            </div>
+            </form>
             <button
               onClick={() => {
                 setIsMobileSearchOpen(false);
@@ -348,8 +373,8 @@ const Navbar = () => {
                 searchResults.map((product) => (
                   <Link href={`/product/${product.slug || product._id}`} onClick={() => setIsMobileSearchOpen(false)} key={product._id} className="flex items-center gap-3 p-2 border-b border-gray-50">
                     <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-                      {product.images?.[0] && product.images[0] !== "false" && product.images[0] !== "null" ? (
-                        <Image src={product.images[0]} alt={product.name} width={32} height={32} className="object-contain w-full h-full" />
+                      {product.images?.[0] && product.images[0] !== 'false' ? (
+                        <Image src={getValidImageUrl(product.images[0], "/btmodule.png")} alt={product.name} width={32} height={32} className="object-contain w-full h-full" />
                       ) : (
                         <Image src="/btmodule.png" alt="p" width={32} height={32} className="object-contain" />
                       )}
@@ -373,7 +398,7 @@ const Navbar = () => {
           <Image src="/logo.png" alt="Logo" width={140} height={36} className="h-auto w-[140px]" style={{ width: 'auto', height: 'auto' }} />
         </Link>
         <div className="flex-1 max-w-2xl relative group mx-4" ref={searchRef}>
-          <div className="flex items-center border-[1.5px] border-orange-200 rounded-full overflow-hidden hover:border-orange-400 transition-colors bg-white pr-1 py-0.5 pl-4 shadow-sm w-full">
+          <form onSubmit={handleSearchSubmit} className="flex items-center border-[1.5px] border-orange-200 rounded-full overflow-hidden hover:border-orange-400 transition-colors bg-white pr-1 py-0.5 pl-4 shadow-sm w-full">
             <input
               type="text"
               placeholder="Search components..."
@@ -382,10 +407,10 @@ const Navbar = () => {
               onFocus={() => setIsSearchFocused(true)}
               className="w-full py-2 outline-none text-sm text-gray-600 placeholder:text-gray-400"
             />
-            <button className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-2 rounded-full hover:opacity-90 transition-opacity shrink-0">
+            <button type="submit" className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-2 rounded-full hover:opacity-90 transition-opacity shrink-0">
               <Search size={20} />
             </button>
-          </div>
+          </form>
           {isSearchFocused && (
             <div className="absolute top-[110%] mt-2 left-0 w-[700px] bg-white rounded-md shadow-[0_20px_60px_rgba(0,0,0,0.15)] z-[110] border border-gray-50 p-4 animate-in fade-in slide-in-from-top-2 duration-300 max-h-[70vh] overflow-y-auto">
               <div>
@@ -409,8 +434,8 @@ const Navbar = () => {
                           <Heart size={14} />
                         </div>
                         <div className="aspect-[4/3] flex items-center justify-center mb-3 overflow-hidden">
-                          {product.images?.[0] && product.images[0] !== "false" && product.images[0] !== "null" ? (
-                            <Image src={product.images[0]} alt={product.name} width={100} height={100} className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
+                          {product.images?.[0] && product.images[0] !== 'false' ? (
+                            <Image src={getValidImageUrl(product.images[0], "/bluetooth.png")} alt={product.name} width={100} height={100} className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
                           ) : (
                             <Image src="/bluetooth.png" alt="p" width={100} height={100} className="object-contain group-hover:scale-110 transition-transform" />
                           )}
@@ -444,12 +469,12 @@ const Navbar = () => {
           )}
         </div>
         <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
-          <Link href={token ? "/my-orders" : "/login"} className="flex items-center gap-2 cursor-pointer hover:text-[#EE9C24] transition-colors">
-            <Image src="/order.png" alt="order" width={22} height={22} className='grayscale opacity-70' style={{ width: 'auto', height: 'auto' }} />
+          <Link href={token ? "/my-orders" : "/login"} className={`flex items-center gap-2 cursor-pointer transition-colors ${isOrderActive ? 'text-[#EE9C24]' : 'hover:text-[#EE9C24]'}`}>
+            <Package size={20} className={isOrderActive ? 'text-[#EE9C24]' : 'text-gray-600'} />
             <span>My Order</span>
           </Link>
-          <Link href={token ? "/track-order" : "/login"} className="flex items-center gap-2 cursor-pointer hover:text-[#EE9C24] transition-colors">
-            <Truck size={20} className="text-gray-600" />
+          <Link href={token ? "/track-order" : "/login"} className={`flex items-center gap-2 cursor-pointer transition-colors ${isTrackActive ? 'text-[#EE9C24]' : 'hover:text-[#EE9C24]'}`}>
+            <Truck size={20} className={isTrackActive ? 'text-[#EE9C24]' : 'text-gray-600'} />
             <span>Track My Order</span>
           </Link>
           {!token && (
@@ -476,31 +501,19 @@ const Navbar = () => {
             </div>
 
             {isDropdownOpen && (
-              <div className="absolute top-[100%] left-0 w-[600px] bg-white rounded-b-2xl shadow-2xl z-[100] border border-gray-100 flex overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 ease-out">
+              <div className="absolute top-[100%] left-0 w-[600px] bg-white rounded-b-2xl shadow-2xl z-[100] border border-gray-100 flex overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="w-[300px] bg-white border-r border-gray-100 py-4 max-h-[500px] overflow-y-auto">
                   {displayCategories.map((category) => (
                     <div
                       key={category._id || category.name}
                       onMouseEnter={() => setActiveCategory(category)}
-                      onClick={() => {
-                        const catId = category._id || category.id;
-                        const subCount = category.subcategories?.length || 0;
-                        if (subCount === 0) {
-                          setIsDropdownOpen(false);
-                          if (catId) {
-                            router.push(`/?category=${catId}`);
-                          }
-                        } else {
-                          setActiveCategory(category);
-                        }
-                      }}
-                      className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-all duration-300 group/item mx-2 rounded-xl ${activeCategory?.name === category.name
-                        ? 'bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white shadow-md'
-                        : 'text-gray-700 hover:bg-orange-50/60 hover:text-[#E47B25]'
+                      className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-all duration-200 group/item ${activeCategory?.name === category.name
+                        ? 'bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white mx-2 rounded-xl shadow-md'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        {category.icon && category.icon !== "false" && category.icon !== "null" && (
+                        {category.icon && category.icon !== 'false' && (
                           <div className="w-6 h-6 relative shrink-0">
                             <Image src={category.icon} alt={category.name} fill className="object-contain" />
                           </div>
@@ -515,54 +528,36 @@ const Navbar = () => {
                     </div>
                   ))}
                 </div>
-                <div 
-                  key={activeCategory?._id || activeCategory?.name}
-                  className="flex-1 bg-white py-6 px-8 overflow-y-auto max-h-[500px] animate-in fade-in slide-in-from-left-3 duration-300 ease-out"
-                >
+                <div className="flex-1 bg-white py-4 px-6 overflow-y-auto max-h-[500px]">
                   <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-4">
                     {activeCategory?.name}
                   </h3>
-                  <div className="grid grid-cols-1 gap-1">
-                    {activeCategory?.subcategories?.map((sub: any) => {
-                      const subName = typeof sub === 'string' ? sub : sub.title;
-                      const subId = typeof sub === 'string' ? null : sub._id;
-                      const catId = activeCategory._id || activeCategory.id;
-
-                      return (
-                        <div
-                          key={subId || subName}
-                          onClick={() => {
-                            setIsDropdownOpen(false);
-                            if (catId && subId) {
-                              router.push(`/?category=${catId}&subCategory=${subId}`);
-                            } else if (catId) {
-                              router.push(`/?category=${catId}`);
-                            }
-                          }}
-                          className="py-2 px-3 text-[14px] text-gray-600 hover:text-[#E47B25] hover:bg-orange-50/50 rounded-xl cursor-pointer transition-all duration-200 hover:translate-x-1.5 flex items-center gap-2 group/sub"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 scale-0 group-hover/sub:scale-100 transition-all duration-200 shrink-0" />
-                          {subName}
-                        </div>
-                      );
-                    })}
+                  <div className="grid grid-cols-1 gap-2">
+                    {activeCategory?.subcategories?.map((sub: string) => (
+                      <div
+                        key={sub}
+                        className="py-1 px-2 text-[14px] text-gray-600 hover:text-orange-600 cursor-pointer transition-colors"
+                      >
+                        {sub}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
 
             <div className="flex items-center gap-4 lg:gap-8 px-4 lg:px-8 h-full overflow-x-auto no-scrollbar whitespace-nowrap text-sm">
-              <Link href="/" className="hover:text-orange-200 transition-colors">Home</Link>
-              <Link href="/allproduct" className="hover:text-orange-200 transition-colors">Shop By</Link>
-              <Link href="/bulk-inquiry" className="hover:text-orange-200 transition-colors hidden lg:inline">Bulk Inquiry</Link>
-              <Link href="/special-offers" className="hover:text-orange-200 transition-colors">Special Offers</Link>
-              <Link href="/special-combos" className="hover:text-orange-200 transition-colors">Special Combos</Link>
-              <Link href="/atl-kits" className="hover:text-orange-200 transition-colors hidden xl:inline">ATL Kits</Link>
-              <Link href="/blog" className="hover:text-orange-200 transition-colors">Blog</Link>
+              <Link href="/" className={`transition-colors ${String(pathname) === '/' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Home</Link>
+              <Link href="/allproduct" className={`transition-colors ${String(pathname) === '/allproduct' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Shop By</Link>
+              <Link href="/bulk-inquiry" className={`hidden lg:inline transition-colors ${String(pathname) === '/bulk-inquiry' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Bulk Inquiry</Link>
+              <Link href="/special-offers" className={`transition-colors ${String(pathname) === '/special-offers' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Special Offers</Link>
+              <Link href="/special-combos" className={`transition-colors ${String(pathname) === '/special-combos' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Special Combos</Link>
+              <Link href="/atl-kits" className={`hidden xl:inline transition-colors ${String(pathname).startsWith('/atl-kits') ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>ATL Kits</Link>
+              <Link href="/blog" className={`transition-colors ${String(pathname) === '/blog' ? 'text-white font-bold' : 'text-white/80 hover:text-white'}`}>Blog</Link>
               <Link 
                 href="/project" 
                 className={`transition-all duration-300 px-3 py-1 rounded-full font-semibold ${
-                  pathname === '/project' 
+                  String(pathname) === '/project' 
                     ? 'bg-white text-orange-600 shadow-md font-bold' 
                     : 'border border-white/30 text-white hover:bg-white/10 hover:border-white/60'
                 }`}

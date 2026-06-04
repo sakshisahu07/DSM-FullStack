@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post("/rating", authUser, RatingController.addRating);
 
-router.get("/rating/:productId", authUser, RatingController.getRatings);
+router.get("/rating/:productId", RatingController.getRatings);
 
 export default router;

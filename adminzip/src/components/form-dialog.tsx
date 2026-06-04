@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "switch" | "email" | "url" | "file";
+export type FieldType = "text" | "number" | "textarea" | "select" | "switch" | "email" | "url" | "file" | "dynamic-list";
 
 export interface FormField {
   name: string;
@@ -24,6 +24,7 @@ export interface FormField {
   /** Width in 12-col grid; default 12 (full width) */
   span?: 6 | 12;
   disabled?: boolean;
+  listKeys?: { key: string; label: string; type?: FieldType }[];
 }
 
 export interface FormDialogProps<T extends Record<string, any>> {
@@ -174,6 +175,78 @@ export function FormDialog<T extends Record<string, any>>({
                     disabled={f.disabled}
                     className="cursor-pointer file:cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                   />
+                </div>
+              );
+            }
+
+            if (f.type === "dynamic-list") {
+              const listStr = values[f.name];
+              let list: any[] = [];
+              try {
+                list = listStr ? JSON.parse(listStr) : [];
+              } catch (e) {
+                list = [];
+              }
+              if (!Array.isArray(list)) list = [];
+
+              return (
+                <div key={f.name} className={`${colClass} space-y-3 p-4 border rounded-md bg-white`}>
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-sm">{f.label}{f.required && " *"}</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={() => {
+                       const newList = [...list, {}];
+                       set(f.name, JSON.stringify(newList));
+                    }}>Add Item</Button>
+                  </div>
+                  {list.length === 0 && <p className="text-xs text-gray-400 italic">No items added yet.</p>}
+                  {list.map((item: any, idx: number) => (
+                    <div key={idx} className="space-y-3 p-3 border rounded-md relative bg-gray-50/50">
+                      <Button type="button" variant="ghost" size="sm" className="absolute top-2 right-2 h-6 w-6 p-0 text-red-500 hover:text-red-700 bg-white" onClick={() => {
+                        const newList = [...list];
+                        newList.splice(idx, 1);
+                        set(f.name, JSON.stringify(newList));
+                      }}>×</Button>
+                      <div className="grid grid-cols-1 gap-3 pr-8">
+                         {f.listKeys?.map((lk) => {
+                            const val = item[lk.key];
+                            return (
+                              <div key={lk.key} className="space-y-1">
+                                 <Label className="text-xs text-gray-500 font-medium">{lk.label}</Label>
+                                 {lk.type === 'textarea' ? (
+                                   <Textarea value={val ?? ''} onChange={(e) => {
+                                     const newList = [...list];
+                                     newList[idx] = { ...newList[idx], [lk.key]: e.target.value };
+                                     set(f.name, JSON.stringify(newList));
+                                   }} rows={2} className="text-sm" />
+                                 ) : lk.type === 'file' ? (
+                                   <div className="space-y-1">
+                                     {val && typeof val === 'string' && !item[`_hasNewFile_${lk.key}`] && (
+                                       <div className="text-xs text-blue-500 break-all truncate">{val}</div>
+                                     )}
+                                     <Input type="file" onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const newList = [...list];
+                                          newList[idx] = { ...newList[idx], [`_hasNewFile_${lk.key}`]: true };
+                                          set(f.name, JSON.stringify(newList));
+                                          // Set the actual file in external values using the naming convention expected by atl-kits
+                                          set(`${f.name}_file_${idx}_${lk.key}`, file);
+                                        }
+                                     }} className="text-xs cursor-pointer file:cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                                   </div>
+                                 ) : (
+                                   <Input type="text" value={val ?? ''} onChange={(e) => {
+                                     const newList = [...list];
+                                     newList[idx] = { ...newList[idx], [lk.key]: e.target.value };
+                                     set(f.name, JSON.stringify(newList));
+                                   }} className="text-sm" />
+                                 )}
+                              </div>
+                            );
+                         })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               );
             }
