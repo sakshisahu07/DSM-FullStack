@@ -47,6 +47,9 @@ const affiliateSchema = new mongoose.Schema(
     rejectionReason: { type: String, default: null },
     affiliateCode: { type: String, unique: true, sparse: true },
 
+    currentTierId: { type: mongoose.Schema.Types.ObjectId, ref: "affiliateTier", default: null },
+    tierGraceExpiresAt: { type: Date, default: null },
+
     // null = use global commission from Redis
     commissionPercent: { type: Number, default: null, min: 0, max: 100 },
 

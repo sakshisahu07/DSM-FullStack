@@ -13,17 +13,20 @@ const affiliateTierSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
-    commissionAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    benefits: [
+    commissionAmount: { type: Number, required: true },
+    commissionType: { type: String, enum: ["flat", "percentage"], default: "flat" },
+    maxCap: { type: Number, default: null },
+
+    categories: [
       {
-        type: String,
-        trim: true,
-      },
+        categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+        commissionType: { type: String, enum: ["flat", "percentage"], default: "flat" },
+        commissionAmount: { type: Number, required: true },
+        maxCap: { type: Number, default: null }
+      }
     ],
+
+    benefits: { type: [String], default: [] },
     isActive: {
       type: Boolean,
       default: true,

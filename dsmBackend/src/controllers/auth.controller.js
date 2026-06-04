@@ -13,10 +13,9 @@ import AuthService from "../services/authServices.js";
 const JWT_SECRET = process.env.HASH_KEY || "secret123";
 
 export default class AuthController {
-  //  REGISTER + LOGIN
   static async registerAndLoginUser(req, res) {
     return handleApiRequest(req, res, async () => {
-      const { number, firstName, lastName, email, fcmToken } = req.body;
+      const { number, firstName, lastName, email, fcmToken, referralCode } = req.body;
 
       if (!number) {
         throw new ValidationError("Phone number is required");
@@ -36,6 +35,18 @@ export default class AuthController {
         await user.save();
       } else {
         const userRole = await mongoose.model("Role").findOne({ name: "User" });
+        
+        let referredById = null;
+        if (referralCode) {
+          const referrer = await userModel.findOne({ referralCode });
+          if (referrer) {
+            referredById = referrer._id;
+          }
+        }
+        
+        const crypto = await import("crypto");
+        const newReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+
         user = await userModel.create({
           firstName,
           lastName,
@@ -43,11 +54,38 @@ export default class AuthController {
           number,
           fcmToken,
           role: userRole?._id,
+          referralCode: newReferralCode,
+          referredBy: referredById,
           otp: {
             code: otp,
             expiresAt: expiry,
           },
         });
+        
+        if (referredById) {
+          const AppReferralConfig = (await import("../model/appReferralConfig.model.js")).default;
+          const WalletService = (await import("../services/wallteServices.js")).default;
+          
+          const config = await AppReferralConfig.findOne();
+          const rfrWallet = config?.isActive ? (config.referrerSignupWalletReward || 0) : 0;
+          const refWallet = config?.isActive ? (config.referredSignupWalletReward || 0) : 0;
+
+          if (rfrWallet > 0) {
+            await WalletService.topUp(referredById, rfrWallet);
+          }
+          if (refWallet > 0) {
+            await WalletService.topUp(user._id, refWallet);
+          }
+
+          const AppReferralTransaction = (await import("../model/appReferralTransaction.model.js")).default;
+          await AppReferralTransaction.create({
+            referrerId: referredById,
+            referredUserId: user._id,
+            status: "PENDING",
+            referrerWalletAwarded: rfrWallet,
+            referredWalletAwarded: refWallet
+          });
+        }
       }
 
       console.log("OTP:", otp);

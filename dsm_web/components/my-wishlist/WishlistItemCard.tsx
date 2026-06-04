@@ -26,7 +26,20 @@ export default function WishlistItemCard({
     const description = product.description || category.description || "";
     const price = variant.finalPrice || variant.price || 0;
     const oldPrice = variant.mrp || 0;
-    const image = (product.images && product.images[0]) || product.icon || category.icon || variant.image || "/bluetooth.png";
+    const rawImage = (product.images && product.images[0]) || product.icon || category.icon || variant.image;
+    // Safely extract string if it's an object (just in case), and ensure it's a valid string
+    let tempImage = "/bluetooth.png";
+    if (typeof rawImage === 'string' && rawImage.trim() !== '') {
+        tempImage = rawImage.trim();
+    } else if (rawImage && typeof rawImage === 'object' && rawImage.url) {
+        tempImage = rawImage.url.trim();
+    }
+    
+    // Next.js Image component requires absolute URLs or paths starting with '/'
+    let image = tempImage;
+    if (!image.startsWith('http') && !image.startsWith('data:') && !image.startsWith('/')) {
+        image = `/${image}`;
+    }
 
     return (
         <article className="card p-5 sm:p-6 md:p-8 rounded-[20px] md:rounded-[28px]">

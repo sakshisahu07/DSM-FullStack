@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 
 import GlobalBottomSections from "@/components/shared/GlobalBottomSections";
 import { Providers } from "@/redux/providers";
+import AffiliateTracker from "@/components/AffiliateTracker";
 
 export default function RootLayout({
   children,
@@ -38,6 +39,7 @@ export default function RootLayout({
       >
         <Providers>
           <Toaster position="bottom-center" reverseOrder={false} />
+          <AffiliateTracker />
           <Navbar />
           {children}
           <GlobalBottomSections />

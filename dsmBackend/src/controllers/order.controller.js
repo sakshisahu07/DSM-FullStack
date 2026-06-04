@@ -32,6 +32,7 @@ export default class OrderController {
         shippingMode,
         walletOption,
         refToken,
+        affiliateCode
       );
 
       return [{ data: result }, "Order created", 201];

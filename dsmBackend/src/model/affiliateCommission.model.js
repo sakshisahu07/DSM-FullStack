@@ -34,7 +34,7 @@ const commissionSchema = new mongoose.Schema(
     },
 
     orderAmount:       { type: Number, required: true },
-    commissionPercent: { type: Number, required: true },
+    commissionPercent: { type: Number, default: null },
     commissionAmount:  { type: Number, required: true },
 
     status: {
