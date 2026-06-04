@@ -161,7 +161,17 @@ export const rejectSchema = Joi.object({
 export const createTierSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   minSales: Joi.number().min(0).required(),
+  commissionType: Joi.string().valid("flat", "percentage").optional(),
   commissionAmount: Joi.number().min(0).required(),
+  maxCap: Joi.number().min(0).allow(null).optional(),
+  categories: Joi.array().items(
+    Joi.object({
+      categoryId: Joi.string().required(),
+      commissionType: Joi.string().valid("flat", "percentage").required(),
+      commissionAmount: Joi.number().min(0).required(),
+      maxCap: Joi.number().min(0).allow(null).optional(),
+    })
+  ).optional(),
   benefits: Joi.array().items(Joi.string().trim()).optional(),
   isActive: Joi.boolean().optional(),
   themeColor: Joi.string().optional().allow(null, ""),
@@ -171,7 +181,18 @@ export const createTierSchema = Joi.object({
 export const updateTierSchema = Joi.object({
   name: Joi.string().min(2).max(50).optional(),
   minSales: Joi.number().min(0).optional(),
+  commissionType: Joi.string().valid("flat", "percentage").optional(),
   commissionAmount: Joi.number().min(0).optional(),
+  maxCap: Joi.number().min(0).allow(null).optional(),
+  categories: Joi.array().items(
+    Joi.object({
+      _id: Joi.any().optional(), // In case the frontend sends existing subdocument IDs
+      categoryId: Joi.string().required(),
+      commissionType: Joi.string().valid("flat", "percentage").required(),
+      commissionAmount: Joi.number().min(0).required(),
+      maxCap: Joi.number().min(0).allow(null).optional(),
+    })
+  ).optional(),
   benefits: Joi.array().items(Joi.string().trim()).optional(),
   isActive: Joi.boolean().optional(),
   themeColor: Joi.string().optional().allow(null, ""),

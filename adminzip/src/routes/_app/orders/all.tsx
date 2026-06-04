@@ -11,10 +11,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import { DashboardFilters } from "@/components/dashboard-filters";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { inrFormat } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://api.dsmelectro.com/api/v1";
 
 export const Route = createFileRoute("/_app/orders/all")({
   component: OrdersAll,
@@ -76,11 +75,21 @@ function OrdersAll() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<Order | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [filter, setFilter] = useState("all");
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiFetch(`${API_BASE}/order?limit=50&allOrders=true`);
+      const queryParams = new URLSearchParams({
+        limit: "50",
+        allOrders: "true"
+      });
+      if (filter !== "all") {
+        queryParams.append("status", filter);
+      }
+      
+      const res = await apiFetch(`/order?${queryParams.toString()}`);
       const json = await res.json();
       if (json.success) {
         setItems(json.data.orders || []);
@@ -94,12 +103,12 @@ function OrdersAll() {
 
   useEffect(() => {
     fetchOrders();
-  }, [fetchOrders]);
+  }, [fetchOrders, filter]);
 
   const verifyPayment = async (orderId: string) => {
     try {
       setVerifying(true);
-      const res = await apiFetch(`${API_BASE}/order/verify-payment`, {
+      const res = await apiFetch(`/order/verify-payment`, {
         method: "POST",
         body: JSON.stringify({ orderId }),
       });
@@ -115,6 +124,30 @@ function OrdersAll() {
       toast.error("Error verifying payment");
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      setUpdatingStatus(true);
+      const res = await apiFetch(`/order/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Order status updated");
+        fetchOrders();
+        if (view && view._id === orderId) {
+           setView({ ...view, status: newStatus });
+        }
+      } else {
+        toast.error(json.message || "Failed to update status");
+      }
+    } catch (err) {
+      toast.error("Error updating status");
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -156,7 +189,7 @@ function OrdersAll() {
          title="All Orders" 
          subtitle={`${items.length} orders across all statuses`} 
        />
-       <DashboardFilters />
+       <DashboardFilters filter={filter} onFilterChange={setFilter} />
        
        {loading ? (
          <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -209,7 +242,25 @@ function OrdersAll() {
                  </div>
                  <div className="space-y-2 text-right">
                     <div className="text-[10px] uppercase text-muted-foreground font-bold">Current Status</div>
-                    <div><StatusBadge variant={statusVariant(view.status)}>{view.status}</StatusBadge></div>
+                    <div className="flex items-center justify-end gap-2">
+                       <StatusBadge variant={statusVariant(view.status)}>{view.status}</StatusBadge>
+                       <Select 
+                          value={view.status.toUpperCase()} 
+                          onValueChange={(val) => updateStatus(view._id, val)}
+                          disabled={updatingStatus}
+                       >
+                          <SelectTrigger className="h-8 w-[130px] text-xs">
+                             {updatingStatus ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <SelectValue placeholder="Change Status" />}
+                          </SelectTrigger>
+                          <SelectContent>
+                             <SelectItem value="PENDING">PENDING</SelectItem>
+                             <SelectItem value="ORDERED">ORDERED</SelectItem>
+                             <SelectItem value="SHIPPED">SHIPPED</SelectItem>
+                             <SelectItem value="DELIVERED">DELIVERED</SelectItem>
+                             <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                          </SelectContent>
+                       </Select>
+                    </div>
                  </div>
               </div>
 
@@ -238,7 +289,7 @@ function OrdersAll() {
 
 function Timeline({ status }: { status: string }) {
   const s = status.toLowerCase();
-  const steps = ["ordered", "confirmed", "processing", "shipping", "delivered"];
+  const steps = ["pending", "ordered", "shipped", "delivered"];
   const idx = steps.indexOf(s);
   
   return (

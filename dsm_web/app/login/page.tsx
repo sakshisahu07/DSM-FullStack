@@ -50,8 +50,10 @@ const LoginPage = () => {
     if (step === 1) {
       if (phoneNumber.length === 10) {
         try {
+          const refCode = localStorage.getItem("referralCode") || undefined;
           const resultAction = await dispatch(registerLoginUser({
-            number: phoneNumber
+            number: phoneNumber,
+            referralCode: refCode
           }));
 
           if (registerLoginUser.fulfilled.match(resultAction)) {

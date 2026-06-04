@@ -16,6 +16,7 @@ import walletTransactionModel from "../model/walletTransaction.model.js";
 import { applyFreeDelivery } from "../utils/shippingHelper.js"; // ← ADDED
 import { calculateOrderWeight, calculateShippingCharge } from "../utils/shippingCalculator.js";
 import AffiliateService from "../services/affiliateServices.js";
+import AppReferralService from "../services/appReferralServices.js";
 import CouponService from "../services/couponServices.js";
 import couponModel from "../model/coupon.model.js";
 import { calculateCouponDiscount } from "../utils/couponCalculator.js";
@@ -204,6 +205,9 @@ export default class OrderService {
           }
         }
 
+        // 🟢 APP REFERRAL FIRST PURCHASE REWARD
+        await AppReferralService.processFirstOrderReward(userId, createdOrder._id, session);
+
         // ── Deduct stock ──
         const stockDeductions = orderProducts.map((p) => ({
           type: p.itemType,
@@ -254,6 +258,9 @@ export default class OrderService {
               await CouponService.recordUsage(coupon._id, userId, createdOrder._id, createdOrder.couponDiscount);
             }
           }
+
+          // 🟢 APP REFERRAL FIRST PURCHASE REWARD
+          await AppReferralService.processFirstOrderReward(userId, createdOrder._id, session);
 
           // ── Deduct stock ──
           const stockDeductions = orderProducts.map((p) => ({
@@ -497,6 +504,9 @@ export default class OrderService {
           itemId: item.itemType === "combo" ? item.comboId : item.variantId,
         });
       }
+
+      // 🟢 APP REFERRAL FIRST PURCHASE REWARD
+      await AppReferralService.processFirstOrderReward(order.customerId, order._id, session);
 
       await session.commitTransaction();
       session.endSession();

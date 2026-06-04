@@ -276,6 +276,32 @@ export default function AffiliateDashboardPage() {
                   </div>
                 )}
 
+                {/* Affiliate Link Section */}
+                {activeTab === 'Dashboard' && summary.affiliateCode && (
+                  <div className="mt-8 bg-white rounded-[24px] p-6 border border-[#EE9C24] shadow-[0_10px_40px_rgb(0,0,0,0.03)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-[#333333] mb-1">Your Affiliate Link</h3>
+                      <p className="text-sm text-gray-500">Share this link to earn commissions on sales.</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="bg-[#FAFAFA] border border-gray-200 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 truncate max-w-[250px] sm:max-w-xs">
+                        {typeof window !== 'undefined' ? `${window.location.origin}/?aff=${summary.affiliateCode}` : `https://dsmelectro.com/?aff=${summary.affiliateCode}`}
+                      </div>
+                      <button 
+                        onClick={() => {
+                           const link = typeof window !== 'undefined' ? `${window.location.origin}/?aff=${summary.affiliateCode}` : `https://dsmelectro.com/?aff=${summary.affiliateCode}`;
+                           navigator.clipboard.writeText(link);
+                           const toast = require('react-hot-toast').toast;
+                           toast.success('Affiliate link copied!');
+                        }}
+                        className="bg-[#EE9C24] hover:bg-[#d68b20] text-white px-5 py-3 rounded-xl font-bold transition-colors whitespace-nowrap"
+                      >
+                        Copy Link
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Earnings Overview Section */}
                 {(activeTab === 'Dashboard' || activeTab === 'Earnings') && (
                   <div className="mt-8 bg-white rounded-[40px] p-6 border border-gray-50 shadow-[0_10px_40px_rgb(0,0,0,0.02)] relative group/chart overflow-hidden">
@@ -444,6 +470,30 @@ export default function AffiliateDashboardPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Affiliate Link Section */}
+              {summary.affiliateCode && (
+                 <div className="bg-white rounded-[32px] p-5 border border-[#EE9C24] shadow-sm transition-all mb-4 mt-4">
+                    <h3 className="text-sm font-black text-gray-800 mb-1">Your Affiliate Link</h3>
+                    <p className="text-[10px] text-gray-400 font-medium mb-3">Share to earn commissions on sales.</p>
+                    <div className="flex items-center gap-2">
+                       <div className="flex-1 bg-[#FAFAFA] border border-gray-200 px-3 py-3 rounded-xl text-[11px] font-medium text-gray-700 truncate">
+                          {typeof window !== 'undefined' ? `${window.location.origin}/?aff=${summary.affiliateCode}` : `https://dsmelectro.com/?aff=${summary.affiliateCode}`}
+                       </div>
+                       <button 
+                         onClick={() => {
+                            const link = typeof window !== 'undefined' ? `${window.location.origin}/?aff=${summary.affiliateCode}` : `https://dsmelectro.com/?aff=${summary.affiliateCode}`;
+                            navigator.clipboard.writeText(link);
+                            const toast = require('react-hot-toast').toast;
+                            toast.success('Copied!');
+                         }}
+                         className="bg-[#EE9C24] hover:bg-[#d68b20] text-white px-4 py-3 rounded-xl font-bold text-xs"
+                       >
+                          Copy
+                       </button>
+                    </div>
+                 </div>
+              )}
 
               {/* Earnings History */}
               <div className="bg-white rounded-[40px] p-6 shadow-sm border border-gray-100 relative overflow-hidden">
