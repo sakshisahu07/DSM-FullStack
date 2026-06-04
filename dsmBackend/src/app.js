@@ -45,6 +45,7 @@ import ticketRoutes from "./routes/ticket.routes.js";
 import roleRoutes from "./routes/role.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import membershipRoutes from "./routes/membership.routes.js";
+import appReferralRoutes from "./routes/appReferral.routes.js";
 import variantModel from "./model/variant.model.js";
 import hotDealModel from "./model/hotDeal.model.js";
 import flashSaleModel from "./model/flashSale.model.js";
@@ -205,6 +206,7 @@ app.use("/api/v1", projectDashboardRoutes);
 app.use("/api/v1", ticketRoutes);
 app.use("/api/v1", roleRoutes);
 app.use("/api/v1", notificationRoutes);
+app.use("/api/v1", appReferralRoutes);
 app.use(errorHandler);
 
 export default app;

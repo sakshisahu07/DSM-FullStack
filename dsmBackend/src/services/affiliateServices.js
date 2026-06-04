@@ -6,6 +6,8 @@ import affiliateClickModel from "../model/affiliateClick.model.js";
 import affiliateTierModel from "../model/affiliateTier.model.js";
 import userModel from "../model/user.model.js";
 import roleModel from "../model/role.model.js";
+import productModel from "../model/product.model.js";
+import variantModel from "../model/variant.model.js";
 import redisClient from "../config/redis.js";
 import jwt from "jsonwebtoken";
 import { AppError } from "../utils/apiResponse.js";
@@ -111,7 +113,7 @@ async function resolveCodeToId(affiliateCode) {
   // 2. Hit DB — lean + minimal projection
   const affiliate = await affiliateModel
     .findOne({ affiliateCode, status: "approved" })
-    .select("_id userId commissionPercent")
+    .select("_id userId commissionPercent currentTierId tierGraceExpiresAt")
     .lean();
 
   if (!affiliate) return null;
@@ -120,6 +122,8 @@ async function resolveCodeToId(affiliateCode) {
     _id: affiliate._id.toString(),
     userId: affiliate.userId.toString(),
     commissionPercent: affiliate.commissionPercent,
+    currentTierId: affiliate.currentTierId ? affiliate.currentTierId.toString() : null,
+    tierGraceExpiresAt: affiliate.tierGraceExpiresAt ? affiliate.tierGraceExpiresAt.toISOString() : null,
   };
   await cacheSet(cacheKey, payload, TTL.AFFILIATE_CODE);
   return payload;
@@ -654,6 +658,70 @@ export default class AffiliateService {
     return true;
   }
 
+  // ── TIER EVALUATION ────────────────────────────────────────────────────────
+  static async _evaluateAffiliateTier(affiliatePayload) {
+    const affiliateId = new mongoose.Types.ObjectId(affiliatePayload._id);
+
+    // 1. Calculate rolling 30-day sales
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const currentMonthSales = await affiliateCommissionModel.countDocuments({
+      affiliateId,
+      status: "credited",
+      createdAt: { $gte: thirtyDaysAgo },
+    });
+
+    // 2. Projected sales including this current order
+    const projectedSales = currentMonthSales + 1;
+
+    // 3. Find true tier
+    const trueTier = await affiliateTierModel
+      .findOne({ isActive: true, minSales: { $lte: projectedSales } })
+      .sort({ minSales: -1 })
+      .lean();
+
+    const now = new Date();
+    const graceExpiresAt = affiliatePayload.tierGraceExpiresAt ? new Date(affiliatePayload.tierGraceExpiresAt) : null;
+
+    if (!trueTier) {
+      if (affiliatePayload.currentTierId) {
+        if (!graceExpiresAt) {
+          const newGrace = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          await affiliateModel.updateOne({ _id: affiliateId }, { tierGraceExpiresAt: newGrace });
+          return await affiliateTierModel.findById(affiliatePayload.currentTierId).lean();
+        } else if (graceExpiresAt > now) {
+          return await affiliateTierModel.findById(affiliatePayload.currentTierId).lean();
+        } else {
+          await affiliateModel.updateOne({ _id: affiliateId }, { currentTierId: null, tierGraceExpiresAt: null });
+          return null;
+        }
+      }
+      return null;
+    }
+
+    let currentTier = null;
+    if (affiliatePayload.currentTierId) {
+      currentTier = await affiliateTierModel.findById(affiliatePayload.currentTierId).lean();
+    }
+
+    if (!currentTier || trueTier.minSales >= currentTier.minSales) {
+      if (!currentTier || currentTier._id.toString() !== trueTier._id.toString() || graceExpiresAt) {
+        await affiliateModel.updateOne({ _id: affiliateId }, { currentTierId: trueTier._id, tierGraceExpiresAt: null });
+      }
+      return trueTier;
+    } else {
+      if (!graceExpiresAt) {
+        const newGrace = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        await affiliateModel.updateOne({ _id: affiliateId }, { tierGraceExpiresAt: newGrace });
+        return currentTier;
+      } else if (graceExpiresAt > now) {
+        return currentTier;
+      } else {
+        await affiliateModel.updateOne({ _id: affiliateId }, { currentTierId: trueTier._id, tierGraceExpiresAt: null });
+        return trueTier;
+      }
+    }
+  }
+
   // ── COMMISSION RECORDING — called from order service ─────────────────────
   /**
    * COMMISSION CALCULATION FLOW:
@@ -717,45 +785,55 @@ export default class AffiliateService {
     let amount  = 0;
     let percent = null;
 
-    if (cached.commissionPercent !== null) {
+    if (cached.commissionPercent !== null && cached.commissionPercent !== undefined && cached.commissionPercent > 0) {
       // A) Manual override
       percent = cached.commissionPercent;
       amount  = parseFloat(((orderAmount * percent) / 100).toFixed(2));
     } else {
-      // B) Tier-based: count this month's sales for this affiliate
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      // B) Tier-based: rolling 30-day window with grace period downgrade logic
+      const effectiveTier = await AffiliateService._evaluateAffiliateTier(cached);
 
-      const [currentMonthSales, activeTier] = await Promise.all([
-        affiliateCommissionModel.countDocuments({
-          affiliateId,
-          status:    "credited",
-          createdAt: { $gte: startOfMonth },
-        }),
-        affiliateTierModel
-          .findOne({ isActive: true, minSales: { $lte: 0 } }) // placeholder, overridden below
-          .sort({ minSales: -1 })
-          .select("commissionAmount minSales")
-          .lean(),
-      ]);
+      if (effectiveTier) {
+        // Resolve category if item is a variant
+        let categoryIdStr = null;
+        if (itemType === "variant") {
+          const variant = await variantModel.findById(itemId).select("productId").lean();
+          if (variant && variant.productId) {
+            const product = await productModel.findById(variant.productId).select("categoryId").lean();
+            if (product && product.categoryId) {
+              categoryIdStr = product.categoryId.toString();
+            }
+          }
+        }
 
-      // Re-query with actual projected sales (can't be done in one query above)
-      const projectedSales = currentMonthSales + 1;
+        // Check for category override
+        let override = null;
+        if (categoryIdStr && effectiveTier.categories && effectiveTier.categories.length > 0) {
+          override = effectiveTier.categories.find(c => c.categoryId.toString() === categoryIdStr);
+        }
 
-      const matchedTier = await affiliateTierModel
-        .findOne({ isActive: true, minSales: { $lte: projectedSales } })
-        .sort({ minSales: -1 })
-        .select("commissionAmount")
-        .lean();
+        const typeToUse = override ? override.commissionType : effectiveTier.commissionType;
+        const amountToUse = override ? override.commissionAmount : effectiveTier.commissionAmount;
+        const maxCapToUse = override ? override.maxCap : effectiveTier.maxCap;
 
-      if (matchedTier) {
-        amount = matchedTier.commissionAmount;
+        if (typeToUse === "percentage") {
+          percent = amountToUse;
+          amount = parseFloat(((orderAmount * percent) / 100).toFixed(2));
+          if (maxCapToUse !== null && maxCapToUse !== undefined && amount > maxCapToUse) {
+            amount = maxCapToUse;
+          }
+        } else {
+          percent = null;
+          amount = amountToUse;
+        }
+
       } else {
         // C) Global fallback
         try {
           const global = await redisClient.get("affiliate:globalCommission");
-          percent = global ? parseFloat(global) : 0;
+          percent = global ? parseFloat(global) : 5; // Default to 5% if missing
         } catch {
-          percent = 0;
+          percent = 5; // Default to 5% if error
         }
         amount = parseFloat(((orderAmount * percent) / 100).toFixed(2));
       }

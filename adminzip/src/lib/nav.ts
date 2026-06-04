@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Megaphone, ShoppingCart, Handshake, Users,
-  Building2, FileText, Settings, Bell, FolderKanban, Headphones,
+  Building2, FileText, Settings, Bell, FolderKanban, Headphones, Share2
 } from "lucide-react";
 
 export type NavItem = { title: string; url: string };
@@ -51,6 +51,11 @@ export const navGroups: NavGroup[] = [
       { title: "Commission Tiers", url: "/affiliate/commission-tiers" },
       { title: "Payouts", url: "/affiliate/payouts" },
       { title: "Referral Tracking", url: "/affiliate/referral-tracking" },
+    ],
+  },
+  {
+    title: "Refer & Earn", icon: Share2, items: [
+      { title: "App Referrals", url: "/refer-earn" },
     ],
   },
   {

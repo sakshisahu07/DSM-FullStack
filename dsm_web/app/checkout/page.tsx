@@ -330,12 +330,15 @@ const CheckoutPage = () => {
                 }
 
                 // 2. Create order
+                const storedAffiliateCode = typeof window !== 'undefined' ? localStorage.getItem('affiliateCode') : null;
+                
                 const orderPayload = {
                     paymentMethod,
                     address: { _id: addressId },
                     shippingMode,
                     ...(paymentMethod === 'WALLET' ? { walletOption: 'BALANCE' } : {}),
-                    ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {})
+                    ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
+                    ...(storedAffiliateCode ? { affiliateCode: storedAffiliateCode } : {})
                 };
 
                 const orderResult = await dispatch(createOrder(orderPayload)).unwrap();

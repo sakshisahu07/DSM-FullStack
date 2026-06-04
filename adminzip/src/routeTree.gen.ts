@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
+import { Route as AppReferEarnRouteImport } from './routes/_app/refer-earn'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -79,6 +80,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppSupportRoute = AppSupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReferEarnRoute = AppReferEarnRouteImport.update({
+  id: '/refer-earn',
+  path: '/refer-earn',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/refer-earn': typeof AppReferEarnRoute
   '/support': typeof AppSupportRoute
   '/affiliate/all': typeof AppAffiliateAllRoute
   '/affiliate/commission-tiers': typeof AppAffiliateCommissionTiersRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/refer-earn': typeof AppReferEarnRoute
   '/support': typeof AppSupportRoute
   '/affiliate/all': typeof AppAffiliateAllRoute
   '/affiliate/commission-tiers': typeof AppAffiliateCommissionTiersRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/refer-earn': typeof AppReferEarnRoute
   '/_app/support': typeof AppSupportRoute
   '/_app/affiliate/all': typeof AppAffiliateAllRoute
   '/_app/affiliate/commission-tiers': typeof AppAffiliateCommissionTiersRoute
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/profile'
+    | '/refer-earn'
     | '/support'
     | '/affiliate/all'
     | '/affiliate/commission-tiers'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/profile'
+    | '/refer-earn'
     | '/support'
     | '/affiliate/all'
     | '/affiliate/commission-tiers'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/_app/refer-earn'
     | '/_app/support'
     | '/_app/affiliate/all'
     | '/_app/affiliate/commission-tiers'
@@ -685,6 +697,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AppSupportRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/refer-earn': {
+      id: '/_app/refer-earn'
+      path: '/refer-earn'
+      fullPath: '/refer-earn'
+      preLoaderRoute: typeof AppReferEarnRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -1030,6 +1049,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppReferEarnRoute: typeof AppReferEarnRoute
   AppSupportRoute: typeof AppSupportRoute
   AppAffiliateAllRoute: typeof AppAffiliateAllRoute
   AppAffiliateCommissionTiersRoute: typeof AppAffiliateCommissionTiersRoute
@@ -1082,6 +1102,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppReferEarnRoute: AppReferEarnRoute,
   AppSupportRoute: AppSupportRoute,
   AppAffiliateAllRoute: AppAffiliateAllRoute,
   AppAffiliateCommissionTiersRoute: AppAffiliateCommissionTiersRoute,

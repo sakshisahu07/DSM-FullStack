@@ -498,7 +498,8 @@ export default function PaymentsWalletPage() {
                                 txn.credit ? 'text-[#34C759]' : 'text-[#FF3B30]'
                               }`}
                             >
-                              {txn.credit ? '+' : '-'}₹{txn.amount}
+                              {txn.credit ? '+' : '-'}
+                              {txn.bucket === 'coins' ? `${txn.amount} Coins` : `₹${txn.amount}`}
                             </span>
                           </div>
                         </div>
@@ -723,7 +724,8 @@ export default function PaymentsWalletPage() {
                           {txn.type === 'TOPUP' ? 'Bank Account' : (txn.bucket === 'referralBalance' ? 'Referral' : (txn.bucket === 'coins' ? 'Coins' : 'Wallet'))}
                         </span>
                         <p className={`text-sm font-black ${txn.credit ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
-                          {txn.credit ? '+' : '-'}₹{txn.amount}
+                          {txn.credit ? '+' : '-'}
+                          {txn.bucket === 'coins' ? `${txn.amount} Coins` : `₹${txn.amount}`}
                         </p>
                       </div>
                     </div>
