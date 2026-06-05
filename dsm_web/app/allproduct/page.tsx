@@ -830,7 +830,7 @@ export default function AllProductsPage() {
 
         <div className="flex flex-col md:flex-row gap-8">
           {/* ── Sidebar ── */}
-          <div id="filter-sidebar" className="w-full md:w-72 shrink-0 flex flex-col gap-6">
+          <div id="filter-sidebar" className="w-full md:w-56 lg:w-72 shrink-0 flex flex-col gap-6">
             <div className="bg-[#F8F8F8]/50 rounded-[2.5rem] border border-gray-100/50 shadow-sm overflow-hidden pb-8">
 
               {/* Category + subcategory list */}
@@ -1006,13 +1006,13 @@ export default function AllProductsPage() {
 
             {/* Cards grid — 6 default, 9 when subcategory active */}
             {productLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array(6).fill(0).map((_, idx) => (
                   <ProductCardSkeleton key={`skeleton-desktop-${idx}`} />
                 ))}
               </div>
             ) : visibleProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {visibleProducts.map((product) => (
                   <ProductCard key={product._id} product={product} />
                 ))}

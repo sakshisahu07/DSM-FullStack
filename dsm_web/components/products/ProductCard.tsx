@@ -175,7 +175,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       </div>
 
       {/* Product Image Area */}
-      <div className="relative w-full aspect-[4/3] bg-white p-2 md:p-6 flex items-center justify-center overflow-hidden rounded-t-[20px] md:rounded-t-3xl">
+      <div className="relative w-full aspect-[4/3] bg-white p-2 lg:p-6 flex items-center justify-center overflow-hidden rounded-t-[20px] md:rounded-t-3xl">
         {/* Main Image */}
         <Image
           src={getValidImage(product.image || images[0])}
@@ -192,34 +192,34 @@ const ProductCard = ({ product }: { product: Product }) => {
             alt={name ? `${name} hover` : "Product Image Hover"}
             width={280}
             height={180}
-            className={`absolute inset-0 object-cover w-full h-full p-2 md:p-6 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 object-cover w-full h-full p-2 lg:p-6 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
           />
         )}
       </div>
 
       {/* Product Info */}
-      <div className="p-3 md:p-6 pt-1 md:pt-2 flex-1 flex flex-col space-y-2 md:space-y-4 border-t border-gray-50">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-1">
-          <h3 className="text-[11px] md:text-[14px] font-bold text-[#000000] leading-tight flex-1 line-clamp-2 md:line-clamp-2">
+      <div className="p-3 lg:p-6 pt-1 lg:pt-2 flex-1 flex flex-col space-y-2 lg:space-y-4 border-t border-gray-50">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-1">
+          <h3 className="text-[11px] lg:text-[14px] font-bold text-[#000000] leading-tight flex-1 line-clamp-2">
             {name}
           </h3>
           <div className="flex gap-0.5 text-[#FFC107] pt-0.5">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={10} className="md:w-[14px] md:h-[14px]" fill={i < rating ? "currentColor" : "none"} />
+              <Star key={i} size={10} className="lg:w-[14px] lg:h-[14px]" fill={i < rating ? "currentColor" : "none"} />
             ))}
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 md:gap-2">
-          <span className="text-[8px] md:text-[8px] font-medium text-[#000000] border border-[#000000] px-1.5 py-0.5 md:px-1 md:py-1 rounded-[4px] md:rounded-md ">
+        <div className="flex flex-nowrap items-center gap-1 lg:gap-2 overflow-hidden">
+          <span className="text-[8px] lg:text-[10px] font-medium text-[#000000] border border-[#000000] px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-[4px] lg:rounded-md whitespace-nowrap truncate max-w-full">
             {product.category || "Category"}
           </span>
-          <span className="text-[8px] md:text-[8px] font-medium text-[#000000] border border-[#000000] px-1.5 py-0.5 md:px-1 md:py-1 rounded-[4px] md:rounded-md ">
+          <span className="text-[8px] lg:text-[10px] font-medium text-[#000000] border border-[#000000] px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-[4px] lg:rounded-md whitespace-nowrap truncate max-w-[50%]">
             {product.subcategory || "Sub"}
           </span>
         </div>
 
-        <p className="hidden md:block text-[13px] text-[#000000] w-full md:w-[80%] line-clamp-2 font-medium leading-relaxed">
+        <p className="hidden md:block text-[10px] lg:text-[13px] text-[#000000] w-full lg:w-[80%] line-clamp-2 font-medium leading-relaxed">
           {description}
         </p>
 

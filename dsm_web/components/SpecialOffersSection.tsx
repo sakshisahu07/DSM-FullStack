@@ -277,15 +277,15 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
         {/* Premium Accordion Header "All Categories" matching screenshot */}
         <div 
           onClick={() => setIsCategoryListExpanded(!isCategoryListExpanded)}
-          className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out select-none font-bold text-white shadow-md bg-gradient-to-r from-[#E47B25] to-[#B3520A] active:scale-[0.98]`}
+          className={`flex items-center justify-between px-2.5 lg:px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out select-none font-bold text-white shadow-md bg-gradient-to-r from-[#E47B25] to-[#B3520A] active:scale-[0.98] flex-nowrap`}
         >
-          <div className="flex items-center gap-3">
-            <Grid size={18} strokeWidth={2.5} />
-            <span className="text-[14px] tracking-tight">All Categories</span>
+          <div className="flex items-center gap-2 lg:gap-3 overflow-hidden">
+            <Grid size={16} className="lg:w-[18px] lg:h-[18px] shrink-0" strokeWidth={2.5} />
+            <span className="text-[13px] lg:text-[14px] tracking-tight whitespace-nowrap truncate">All Categories</span>
           </div>
           <ChevronDown 
-            size={18} 
-            className={`transition-transform duration-300 ${isCategoryListExpanded ? 'rotate-180' : ''}`}
+            size={16} 
+            className={`lg:w-[18px] lg:h-[18px] shrink-0 transition-transform duration-300 ${isCategoryListExpanded ? 'rotate-180' : ''}`}
             strokeWidth={3}
           />
         </div>
@@ -720,7 +720,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
               <div className="-mx-1.5 md:-mx-3 lg:-mx-4">
                 
                 {/* Sidebar - Floated left on desktop */}
-                <aside className="hidden md:block float-left w-[25%] px-1.5 md:px-3 lg:px-4 pb-6">
+                <aside className="hidden md:block float-left md:w-1/3 lg:w-[25%] px-1.5 md:px-3 lg:px-4 pb-6">
                   <div className="flex flex-col gap-6 lg:gap-8">
                     {/* Categories Card */}
                     <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6">
@@ -763,13 +763,13 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
                 <div className="w-full">
                   {isDataLoading || loading ? (
                     Array(6).fill(0).map((_, idx) => (
-                      <div key={`skeleton-default-${idx}`} className="inline-block w-[50%] md:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top">
+                      <div key={`skeleton-default-${idx}`} className="inline-block w-[50%] md:w-1/3 lg:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top">
                         <ProductCardSkeleton />
                       </div>
                     ))
                   ) : products.length > 0 ? (
                     products.map((product, idx) => (
-                      <div key={`${activeTabId}-${idx}`} className="inline-block w-[50%] md:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top animate-in fade-in zoom-in duration-300">
+                      <div key={`${activeTabId}-${idx}`} className="inline-block w-[50%] md:w-1/3 lg:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top animate-in fade-in zoom-in duration-300">
                         <ProductCard product={{ 
                           ...product, 
                           isTrending: activeTabId === 'new-arrivals' || activeTabId === 'hot-deals',

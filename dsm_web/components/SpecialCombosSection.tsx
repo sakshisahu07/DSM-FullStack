@@ -174,15 +174,15 @@ const SpecialCombosSection = () => {
         {/* Premium Accordion Header "All Categories" matching SpecialOffers design */}
         <div
           onClick={() => setIsCategoryListExpanded(!isCategoryListExpanded)}
-          className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out select-none font-bold text-white shadow-md bg-gradient-to-r from-[#E47B25] to-[#B3520A] active:scale-[0.98]`}
+          className={`flex items-center justify-between px-2.5 lg:px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out select-none font-bold text-white shadow-md bg-gradient-to-r from-[#E47B25] to-[#B3520A] active:scale-[0.98] flex-nowrap`}
         >
-          <div className="flex items-center gap-3">
-            <Grid size={18} strokeWidth={2.5} />
-            <span className="text-[14px] tracking-tight">All Categories</span>
+          <div className="flex items-center gap-2 lg:gap-3 overflow-hidden">
+            <Grid size={16} className="lg:w-[18px] lg:h-[18px] shrink-0" strokeWidth={2.5} />
+            <span className="text-[13px] lg:text-[14px] tracking-tight whitespace-nowrap truncate">All Categories</span>
           </div>
           <ChevronDown
-            size={18}
-            className={`transition-transform duration-300 ${isCategoryListExpanded ? 'rotate-180' : ''}`}
+            size={16}
+            className={`lg:w-[18px] lg:h-[18px] shrink-0 transition-transform duration-300 ${isCategoryListExpanded ? 'rotate-180' : ''}`}
             strokeWidth={3}
           />
         </div>
@@ -403,7 +403,7 @@ const SpecialCombosSection = () => {
 
         {showFilterView ? (
           /* --- FILTERED VIEW (Aligned Grid to prevent Layout Shift) --- */
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-10 animate-in fade-in duration-500">
             {/* Complex Sidebar */}
             <aside className="hidden md:block md:col-span-1 space-y-6">
               <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden p-5 space-y-6">
@@ -551,7 +551,7 @@ const SpecialCombosSection = () => {
             </aside>
 
             {/* Dynamic Combo Grid */}
-            <div className="md:col-span-3 space-y-8">
+            <div className="md:col-span-2 lg:col-span-3 space-y-8">
 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -590,7 +590,7 @@ const SpecialCombosSection = () => {
           </div>
         ) : (
           /* --- DEFAULT VIEW --- */
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-10">
             {/* Sidebar - Hidden on mobile, shown on desktop */}
             <aside className="hidden md:block md:col-span-1">
               <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 mb-8">
@@ -617,8 +617,8 @@ const SpecialCombosSection = () => {
             </aside>
 
             {/* Default Combo Cards Grid */}
-            <div className="md:col-span-3">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-10">
+            <div className="md:col-span-2 lg:col-span-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-10">
                 {loading ? (
                   Array(6).fill(0).map((_, idx) => (
                     <div key={`skeleton-${idx}`} className="h-full">
