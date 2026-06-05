@@ -903,7 +903,7 @@ export default function BulkInquiryPage() {
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <button
                     type="button"
-                    className="w-full py-4 border-2 border-[#EE9C24] text-[#EE9C24] font-black text-[13px] rounded-3xl active:bg-orange-50 transition-all"
+                    className="w-full py-4 border-2 border-[#EE9C24] text-[#EE9C24] font-black text-[13px] rounded-3xl  transition-all cursor-pointer"
                   >
                     Back
                   </button>

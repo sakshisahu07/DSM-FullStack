@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 import GlobalBottomSections from "@/components/shared/GlobalBottomSections";
 import { Providers } from "@/redux/providers";
 import AffiliateTracker from "@/components/AffiliateTracker";
+import GlobalLoader from "@/components/shared/GlobalLoader";
 
 export default function RootLayout({
   children,
@@ -38,13 +39,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          <GlobalLoader />
           <Toaster position="bottom-center" reverseOrder={false} />
           <AffiliateTracker />
-          <Navbar />
+          <div className="relative z-[999999]">
+            <Navbar />
+          </div>
           {children}
-          <GlobalBottomSections />
-          <Footer />
-          <MobileNavbar />
+          <div className="relative z-[999999]">
+            <GlobalBottomSections />
+            <Footer />
+            <MobileNavbar />
+          </div>
         </Providers>
       </body>
     </html>

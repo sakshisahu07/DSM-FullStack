@@ -210,7 +210,7 @@ const WishlistModal: React.FC<WishlistModalProps> = ({ isOpen, onClose }) => {
                                   const success = await handleAddToCart(variant._id || product.variants?.[0]?._id || product._id);
                                   if (success) {
                                     onClose();
-                                    router.push('/cart');
+                                    router.push('/checkout');
                                   }
                                 }}
                                 className="w-full py-1.5 md:py-2 bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white text-[8px] md:text-[11px] font-black rounded shadow-md hover:opacity-90 transition-opacity uppercase"

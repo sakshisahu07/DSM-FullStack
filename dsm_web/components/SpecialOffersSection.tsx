@@ -70,7 +70,7 @@ const fallbackBrands = [
 const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [showFilterView, setShowFilterView] = useState(false);
-  const [isCategoryListExpanded, setIsCategoryListExpanded] = useState(false);
+  const [isCategoryListExpanded, setIsCategoryListExpanded] = useState(true);
 
   // Price Range State
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
@@ -233,7 +233,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
         const json = await res.json();
         
         if (json.success && isMounted) {
-          const offers = json.data?.specialOffers || json.data || [];
+          const offers = json.data?.specialOffers || json.data?.products || (Array.isArray(json.data) ? json.data : []);
           const mapped = offers.map((p: any) => ({
             id: p._id,
             variantId: p.variantId || p._id,
@@ -470,35 +470,39 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
           </button>
         </div>
 
-        {/* Mobile Banners Carousel (Image 1) */}
-        <div className="md:hidden flex overflow-x-auto no-scrollbar gap-4 mb-10 pb-2 -mx-4 px-4">
-          {bannersList.map((banner, index) => (
-            <div key={banner._id || banner.id || index} className="min-w-[85%] relative aspect-[1.3/1] rounded-[24px] overflow-hidden shadow-md group">
-              <Image
-                src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
-                alt={banner.title || "Banner"}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        {!showFilterView && (
+          <>
+            {/* Mobile Banners Carousel (Image 1) */}
+            <div className="md:hidden flex overflow-x-auto no-scrollbar gap-4 mb-10 pb-2 -mx-4 px-4">
+              {bannersList.map((banner, index) => (
+                <div key={banner._id || banner.id || index} className="min-w-[85%] relative aspect-[1.3/1] rounded-[24px] overflow-hidden shadow-md group">
+                  <Image
+                    src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
+                    alt={banner.title || "Banner"}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Promo Banners Grid (Desktop Only) */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-5 mb-16 animate-in fade-in duration-700">
-          {bannersList.map((banner, index) => (
-            <div key={banner._id || banner.id || index} className="relative aspect-[16/10] md:aspect-[1.3/1] rounded-[24px] overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-              <Image
-                src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
-                alt={banner.title || "Banner"}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Promo Banners Grid (Desktop Only) */}
+            <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-5 mb-16 animate-in fade-in duration-700">
+              {bannersList.map((banner, index) => (
+                <div key={banner._id || banner.id || index} className="relative aspect-[16/10] md:aspect-[1.3/1] rounded-[24px] overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                  <Image
+                    src={!banner.image || banner.image === "false" || banner.image === "null" ? "/motor1.png" : banner.image}
+                    alt={banner.title || "Banner"}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         {showFilterView ? (
           /* --- FILTERED VIEW (Same to same as image) --- */
@@ -711,72 +715,80 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
           /* --- DEFAULT VIEW (Simple with banners) --- */
           <>
 
-            {/* Main Content: Sidebar + Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10">
-
-              {/* Sidebar - Hidden on mobile, shown on desktop */}
-              <aside className="hidden md:block md:col-span-1 md:row-span-2">
-                {/* Categories Card */}
-                <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 mb-8">
-                  {renderCategoriesList()}
-                </div>
-
-                {/* Rating Filter Card */}
-                <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
-                  <h3 className="text-[18px] font-bold text-[#000000] mb-8">Rating</h3>
-                  <div className="space-y-5">
-                    {[5, 4, 3, 2, 1].map((rating) => (
-                      <div
-                        key={rating}
-                        className="flex items-center gap-4 cursor-pointer group"
-                        onClick={() => setSelectedRating(rating)}
-                      >
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${selectedRating === rating
-                          ? 'bg-[#E47B25] border-[#E47B25] shadow-sm shadow-orange-100'
-                          : 'border-gray-200 group-hover:border-[#E47B25]'
-                          }`}>
-                          {selectedRating === rating && <Check size={16} className="text-white" strokeWidth={4} />}
-                        </div>
-                        <div className="flex gap-1.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={18}
-                              className={i < rating ? 'fill-[#FFC107] text-[#FFC107]' : 'text-gray-200'}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </aside>
-
-              {/* Product Cards - Grid (2 cols on mobile) */}
-              <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-10">
-                {isDataLoading || loading ? (
-                  Array(6).fill(0).map((_, idx) => (
-                    <ProductCardSkeleton key={`skeleton-default-${idx}`} />
-                  ))
-                ) : products.length > 0 ? (
-                  products.map((product, idx) => (
-                    <div key={`${activeTabId}-${idx}`} className="h-full animate-in fade-in zoom-in duration-300">
-                      <ProductCard product={{ 
-                        ...product, 
-                        isTrending: activeTabId === 'new-arrivals' || activeTabId === 'hot-deals',
-                        isHot: false 
-                      }} />
+            {/* Main Content: Sidebar + Flowing Grid */}
+            <div className="block w-full clear-both pb-10">
+              <div className="-mx-1.5 md:-mx-3 lg:-mx-4">
+                
+                {/* Sidebar - Floated left on desktop */}
+                <aside className="hidden md:block float-left w-[25%] px-1.5 md:px-3 lg:px-4 pb-6">
+                  <div className="flex flex-col gap-6 lg:gap-8">
+                    {/* Categories Card */}
+                    <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6">
+                      {renderCategoriesList()}
                     </div>
-                  ))
-                ) : (
-                  <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 w-full animate-in fade-in duration-300">
-                    <Tag size={40} className="text-gray-400 mb-3 animate-bounce text-[#E47B25]" />
-                    <h3 className="text-gray-800 font-bold text-lg mb-1">No Special Offers</h3>
-                    <p className="text-gray-500 text-sm max-w-xs">There are no special offers currently active in this category.</p>
-                  </div>
-                )}
-              </div>
 
+                    {/* Rating Filter Card */}
+                    <div className="bg-white rounded-[24px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
+                      <h3 className="text-[18px] font-bold text-[#000000] mb-8">Rating</h3>
+                      <div className="space-y-5">
+                        {[5, 4, 3, 2, 1].map((rating) => (
+                          <div
+                            key={rating}
+                            className="flex items-center gap-4 cursor-pointer group"
+                            onClick={() => setSelectedRating(rating)}
+                          >
+                            <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${selectedRating === rating
+                              ? 'bg-[#E47B25] border-[#E47B25] shadow-sm shadow-orange-100'
+                              : 'border-gray-200 group-hover:border-[#E47B25]'
+                              }`}>
+                              {selectedRating === rating && <Check size={16} className="text-white" strokeWidth={4} />}
+                            </div>
+                            <div className="flex gap-1.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={18}
+                                  className={i < rating ? 'fill-[#FFC107] text-[#FFC107]' : 'text-gray-200'}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* Product Cards Container */}
+                <div className="w-full">
+                  {isDataLoading || loading ? (
+                    Array(6).fill(0).map((_, idx) => (
+                      <div key={`skeleton-default-${idx}`} className="inline-block w-[50%] md:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top">
+                        <ProductCardSkeleton />
+                      </div>
+                    ))
+                  ) : products.length > 0 ? (
+                    products.map((product, idx) => (
+                      <div key={`${activeTabId}-${idx}`} className="inline-block w-[50%] md:w-[25%] px-1.5 md:px-3 lg:px-4 mb-4 md:mb-6 lg:mb-8 align-top animate-in fade-in zoom-in duration-300">
+                        <ProductCard product={{ 
+                          ...product, 
+                          isTrending: activeTabId === 'new-arrivals' || activeTabId === 'hot-deals',
+                          isHot: false 
+                        }} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="inline-block w-full px-1.5 md:px-3 lg:px-4">
+                      <div className="w-full py-16 flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 animate-in fade-in duration-300">
+                        <Tag size={40} className="text-gray-400 mb-3 animate-bounce text-[#E47B25]" />
+                        <h3 className="text-gray-800 font-bold text-lg mb-1">No Special Offers</h3>
+                        <p className="text-gray-500 text-sm max-w-xs">There are no special offers currently active in this category.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
             </div>
           </>
         )}

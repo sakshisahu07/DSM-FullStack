@@ -88,9 +88,9 @@ export default function AtlInquiryPage() {
         
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-black text-gray-800 mb-2">ATL Setup Inquiry</h1>
-          <p className="text-[#EE9C24] font-bold text-sm uppercase tracking-wide">Request For ATL Setup Inquiry</p>
-          <div className="w-full h-px bg-gray-100 mt-6 max-w-4xl mx-auto"></div>
+          <h1 className="text-3xl md:text-lg font-medium text-gray-800 ">ATL Setup Inquiry</h1>
+          <p className="text-[#EE9C24] font-medium text-md ">Request For ATL Setup Inquiry</p>
+          <div className="w-full h-[1px] bg-gradient-to-r from-[#EE9C24] to-[#B8420E] mt-6 mb-8 max-w-[1200px] mx-auto"></div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -100,7 +100,7 @@ export default function AtlInquiryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* First Name */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   First Name
                 </label>
                 <input
@@ -109,14 +109,14 @@ export default function AtlInquiryPage() {
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="Enter Your Name"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4  text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                   required
                 />
               </div>
 
               {/* Last Name */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   Last Name
                 </label>
                 <input
@@ -125,14 +125,14 @@ export default function AtlInquiryPage() {
                   value={formData.lastName}
                   onChange={handleChange}
                   placeholder="Enter Your Name"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4  text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                 />
               </div>
             </div>
 
             {/* Phone Number */}
             <div className="relative group">
-              <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+              <label className="absolute -top-2.5 left-4 z-10 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                 Phone Number
               </label>
               <div className="relative">
@@ -143,17 +143,17 @@ export default function AtlInquiryPage() {
                   onChange={handleChange}
                   placeholder="Enter Your Number"
                   maxLength={10}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] pl-4 pr-12 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                   required
                 />
-                <Pencil size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#EE9C24]" />
+                <Image src="/editicon.png" alt="edit icon" width={24} height={24} className="absolute right-4 top-4 cursor-pointer" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* School Name */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   School Name
                 </label>
                 <input
@@ -162,14 +162,14 @@ export default function AtlInquiryPage() {
                   value={formData.schoolName}
                   onChange={handleChange}
                   placeholder="Enter School Name"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                   required
                 />
               </div>
 
               {/* City */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   City
                 </label>
                 <input
@@ -178,7 +178,7 @@ export default function AtlInquiryPage() {
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="Enter City"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                   required
                 />
               </div>
@@ -187,7 +187,7 @@ export default function AtlInquiryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Available Area */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   Available Area (sq ft)
                 </label>
                 <input
@@ -196,13 +196,13 @@ export default function AtlInquiryPage() {
                   value={formData.areaSqFt}
                   onChange={handleChange}
                   placeholder="Enter Area"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                 />
               </div>
 
               {/* Budget Range */}
               <div className="relative group">
-                <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+                <label className="absolute -top-2.5 left-4 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                   Budget Range
                 </label>
                 <input
@@ -211,14 +211,14 @@ export default function AtlInquiryPage() {
                   value={formData.budgetRange}
                   onChange={handleChange}
                   placeholder="Enter Budget"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300"
+                  className="w-full border border-[#EE9C24] rounded-[8px] px-4 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999]"
                 />
               </div>
             </div>
 
             {/* Message */}
             <div className="relative group">
-              <label className="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-gray-400 group-focus-within:text-[#EE9C24] transition-colors">
+              <label className="absolute -top-2.5 left-4 z-10 bg-white px-2 text-[16px] font-medium text-[#333333] group-focus-within:text-[#EE9C24] transition-colors">
                 Message
               </label>
               <div className="relative">
@@ -228,9 +228,9 @@ export default function AtlInquiryPage() {
                   onChange={handleChange}
                   placeholder="Enter Your Message"
                   rows={5}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-4 text-sm focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-gray-300 resize-none"
+                  className="w-full border border-[#EE9C24] rounded-[8px] pl-4 pr-12 py-4 text-[16px] focus:border-[#EE9C24] focus:ring-1 focus:ring-[#EE9C24] outline-none transition-all placeholder:text-[#999999] resize-none"
                 ></textarea>
-                <Pencil size={18} className="absolute right-4 top-4 text-gray-300 group-focus-within:text-[#EE9C24]" />
+                <Image src="/editicon.png" alt="edit icon" width={24} height={24} className="absolute right-4 top-4 cursor-pointer" />
               </div>
             </div>
 
@@ -243,24 +243,24 @@ export default function AtlInquiryPage() {
                 onChange={(e) => setSaveInfo(e.target.checked)}
                 className="w-5 h-5 rounded border-gray-300 text-[#EE9C24] focus:ring-[#EE9C24] cursor-pointer"
               />
-              <label htmlFor="saveInfo" className="text-sm font-bold text-gray-400 cursor-pointer">
+              <label htmlFor="saveInfo" className="text-[142x] font-medium text-[#333333] cursor-pointer">
                 Save this information for next time
               </label>
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 ">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 py-4 px-6 border border-[#EE9C24] text-[#EE9C24] font-black rounded-full hover:bg-orange-50 transition-colors uppercase tracking-tight text-sm"
+                className="flex-1 py-3 px-6 border border-[#EE9C24] text-[#EE9C24] rounded-full hover:bg-orange-50 transition-colors  text-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 py-4 px-6 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white font-black rounded-full shadow-lg hover:opacity-90 transition-opacity uppercase tracking-tight text-sm flex items-center justify-center gap-2"
+                className="flex-1 py-3 px-6 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white  rounded-full shadow-lg hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <Loader2 size={20} className="animate-spin" />
@@ -272,16 +272,16 @@ export default function AtlInquiryPage() {
           </form>
 
           {/* Right Side Illustration */}
-          <div className="hidden lg:flex justify-center items-center relative h-full min-h-[600px]">
+          <div className="hidden lg:flex justify-center items-end relative h-full min-h-[600px] pb-10">
              {/* Background Shape */}
-             <div className="absolute w-[110%] h-[80%] bg-[#EE9C24] rounded-[60px_120px_40px_180px] -z-10 translate-x-10 rotate-3 opacity-90"></div>
+             <div className=""></div>
              
-             <div className="relative w-full aspect-square max-w-lg">
+             <div className="">
                 <Image 
-                    src="/atl_inquiry_girl.png" 
+                    src="/inquiryy.png" 
                     alt="ATL Setup" 
                     fill 
-                    className="object-contain transform scale-110 -translate-y-10"
+                    className=""
                     priority
                 />
              </div>

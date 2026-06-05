@@ -491,23 +491,11 @@ const ProductDetailPage = () => {
                             {/* Buy Now & Cart Row */}
                             <div className="flex items-center gap-2 md:gap-4 w-full">
                                 <button
-                                    onClick={() => {
-                                        const vId = currentProduct?.variants?.[0]?._id || currentProduct?.variantId || currentProduct?.variant?._id || currentProduct?._id;
-                                        if(!vId) {
-                                            toast.error('Variant not selected');
-                                            return;
+                                    onClick={async () => {
+                                        const success = await handleAddToCart();
+                                        if (success) {
+                                            router.push('/checkout');
                                         }
-                                        const payload = {
-                                            itemType: 'variant',
-                                            itemId: vId,
-                                            quantity: quantity,
-                                            productDetails: {
-                                                name: product.name,
-                                                image: currentProduct?.images?.[0] || product.images?.[0]
-                                            }
-                                        };
-                                        sessionStorage.setItem('buyNowData', JSON.stringify(payload));
-                                        router.push('/checkout');
                                     }}
                                     className="flex-1 bg-gradient-to-b from-[#EE9C24] to-[#B3520A] text-white font-bold text-[13px] md:text-lg h-11 md:h-[54px] rounded-lg shadow-sm active:scale-95 transition-all whitespace-nowrap"
                                 >

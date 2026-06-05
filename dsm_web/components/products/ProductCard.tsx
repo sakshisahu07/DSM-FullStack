@@ -223,13 +223,13 @@ const ProductCard = ({ product }: { product: Product }) => {
           {description}
         </p>
 
-        <div className="flex items-center justify-between pt-1 md:pt-2 mt-auto">
-          <div className="flex flex-col">
+        <div className="flex items-end justify-between pt-1 md:pt-2 mt-auto gap-1">
+          <div className="flex flex-col min-w-0">
             <span className="text-[8px] md:text-[8px] text-[#000000] font-bold ">Price</span>
-            <div className="flex items-baseline gap-1 md:gap-2">
-              <span className="text-[12px] md:text-[1rem] text-[#000000] leading-none font-bold">₹{product.price}</span>
+            <div className="flex flex-wrap items-baseline gap-x-1 lg:gap-x-2">
+              <span className="text-[11px] md:text-[13px] lg:text-[1rem] text-[#000000] leading-none font-bold">₹{product.price}</span>
               {originalPrice > product.price && (
-                <span className="text-[9px] md:text-xs text-gray-400 line-through font-medium">₹{originalPrice}</span>
+                <span className="text-[8px] md:text-[9px] lg:text-xs text-gray-400 line-through font-medium truncate">₹{originalPrice}</span>
               )}
             </div>
           </div>
@@ -252,9 +252,9 @@ const ProductCard = ({ product }: { product: Product }) => {
                 toast.error("Failed to add to cart");
               }
             }}
-            className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white p-1.5 md:px-4 md:py-2 rounded-lg md:rounded-md flex items-center justify-center gap-1 md:gap-2 text-[10px] md:text-xs font-bold hover:shadow-lg transition-all active:scale-95 group/btn shadow-sm whitespace-nowrap min-w-fit"
+            className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white px-2 py-1.5 md:px-2 md:py-1.5 lg:px-4 lg:py-2 rounded-[4px] lg:rounded-lg flex items-center justify-center gap-1 lg:gap-2 text-[8px] md:text-[8px] lg:text-xs font-bold hover:shadow-lg transition-all active:scale-95 group/btn shadow-sm whitespace-nowrap shrink-0"
           >
-            <ShoppingCart size={14} className="md:w-4 md:h-4 shrink-0" />
+            <ShoppingCart size={12} className="w-3 h-3 md:w-3 md:h-3 lg:w-4 lg:h-4 shrink-0" />
             <span className="whitespace-nowrap">Add to cart</span>
           </button>
         </div>

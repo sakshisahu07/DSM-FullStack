@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import axiosInstance from "../../api/axiosInstance";
+import { RootState } from "../../redux/store";
+import { updateCredentials } from "../../redux/slices/authSlice";
 import AddressCard from "./AddressCard";
 import CompanyInfoCard from "./CompanyInfoCard";
 import PersonalInfoCard from "./PersonalInfoCard";
@@ -76,11 +81,28 @@ function formatAddress(addressInfo: AddressInfo) {
 
 export default function ProfileEditableSections() {
     const router = useRouter();
+    const dispatch = useDispatch();
+    const user = useSelector((state: RootState) => state.auth.user);
+    const token = useSelector((state: RootState) => state.auth.token);
+    
     const [activeSection, setActiveSection] = useState<EditableSection>(null);
     const [addressMode, setAddressMode] = useState<"edit" | "add">("edit");
     const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(() =>
         getInitialValue(PERSONAL_STORAGE_KEY, defaultPersonalInfo)
     );
+
+    useEffect(() => {
+        if (user) {
+            setPersonalInfo(prev => ({
+                ...prev,
+                firstName: user.firstName || prev.firstName,
+                lastName: user.lastName || prev.lastName,
+                email: user.email || prev.email,
+                mobileNumber: user.number || prev.mobileNumber,
+            }));
+        }
+    }, [user]);
+
     const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() =>
         getInitialValue(COMPANY_STORAGE_KEY, defaultCompanyInfo)
     );
@@ -100,13 +122,37 @@ export default function ProfileEditableSections() {
         setEditingAddressIndex(null);
     };
 
-    const handlePersonalSave = (nextPersonalInfo: PersonalInfo) => {
-        setPersonalInfo(nextPersonalInfo);
-        window.localStorage.setItem(
-            PERSONAL_STORAGE_KEY,
-            JSON.stringify(nextPersonalInfo)
-        );
-        closeEditor();
+    const handlePersonalSave = async (nextPersonalInfo: PersonalInfo) => {
+        try {
+            if (user && user._id) {
+                const payload = {
+                    firstName: nextPersonalInfo.firstName,
+                    lastName: nextPersonalInfo.lastName,
+                    email: nextPersonalInfo.email,
+                    number: nextPersonalInfo.mobileNumber,
+                };
+                
+                const response = await axiosInstance.put(`/auth/user/${user._id}`, payload);
+                if (response.data) {
+                    toast.success("Profile updated successfully!");
+                    const updatedUser = { ...user, ...payload };
+                    dispatch(updateCredentials({ user: updatedUser, token }));
+                }
+            } else {
+                toast.error("You are not logged in!");
+                return;
+            }
+
+            setPersonalInfo(nextPersonalInfo);
+            window.localStorage.setItem(
+                PERSONAL_STORAGE_KEY,
+                JSON.stringify(nextPersonalInfo)
+            );
+            closeEditor();
+        } catch (error: any) {
+            console.error("Failed to update profile", error);
+            toast.error(error.response?.data?.message || "Failed to update profile.");
+        }
     };
 
     const handleCompanySave = (nextCompanyInfo: CompanyInfo) => {

@@ -54,7 +54,7 @@ const SpecialCombosSection = () => {
   // New Dynamic Filter States (Matching SpecialOffers layout)
   const [selectedRating, setSelectedRating] = useState(0);
   const [showFilterView, setShowFilterView] = useState(false);
-  const [isCategoryListExpanded, setIsCategoryListExpanded] = useState(false);
+  const [isCategoryListExpanded, setIsCategoryListExpanded] = useState(true);
 
   // Price Range State
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
@@ -130,7 +130,7 @@ const SpecialCombosSection = () => {
   // 2. Fetch filtered combos whenever filters change
   useEffect(() => {
     const params = new URLSearchParams();
-    
+
     // We append the search parameters that our combos backend handles
     if (selectedCategoryId && selectedCategoryId !== "all") {
       params.append('category', selectedCategoryId);
@@ -145,7 +145,7 @@ const SpecialCombosSection = () => {
       params.append('minPrice', appliedPriceRange.min.toString());
       params.append('maxPrice', appliedPriceRange.max.toString());
     }
-    
+
     // Dispatch query to redux action
     dispatch(fetchCombos(params.toString()));
   }, [
@@ -172,7 +172,7 @@ const SpecialCombosSection = () => {
     return (
       <div className="space-y-3">
         {/* Premium Accordion Header "All Categories" matching SpecialOffers design */}
-        <div 
+        <div
           onClick={() => setIsCategoryListExpanded(!isCategoryListExpanded)}
           className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out select-none font-bold text-white shadow-md bg-gradient-to-r from-[#E47B25] to-[#B3520A] active:scale-[0.98]`}
         >
@@ -180,8 +180,8 @@ const SpecialCombosSection = () => {
             <Grid size={18} strokeWidth={2.5} />
             <span className="text-[14px] tracking-tight">All Categories</span>
           </div>
-          <ChevronDown 
-            size={18} 
+          <ChevronDown
+            size={18}
             className={`transition-transform duration-300 ${isCategoryListExpanded ? 'rotate-180' : ''}`}
             strokeWidth={3}
           />
@@ -200,8 +200,8 @@ const SpecialCombosSection = () => {
               const isExpanded = activeHoverCategoryId === catId || (selectedCategoryId === catId && hasSub);
 
               return (
-                <div 
-                  key={catId || idx} 
+                <div
+                  key={catId || idx}
                   className="group relative"
                   onMouseEnter={() => {
                     if (hasSub) setActiveHoverCategoryId(catId);
@@ -220,11 +220,10 @@ const SpecialCombosSection = () => {
                         setSelectedSubCategoryId(null);
                       }
                     }}
-                    className={`flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ease-out ${
-                      isSelected
+                    className={`flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ease-out ${isSelected
                         ? 'bg-orange-50/90 text-[#E47B25] font-extrabold shadow-sm'
                         : 'hover:bg-orange-50/40 text-gray-700 hover:text-[#E47B25]'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       {cat.icon && cat.icon !== "false" && cat.icon !== "null" && (
@@ -235,12 +234,11 @@ const SpecialCombosSection = () => {
                       <span className="text-[13px] font-bold tracking-tight">{cat.name}</span>
                     </div>
                     {hasSub && (
-                      <ChevronRight 
-                        size={14} 
-                        className={`transition-transform duration-200 ${
-                          isSelected ? 'text-[#E47B25]' : 'text-gray-400'
-                        } ${isExpanded ? 'rotate-90' : ''}`} 
-                        strokeWidth={2.5} 
+                      <ChevronRight
+                        size={14}
+                        className={`transition-transform duration-200 ${isSelected ? 'text-[#E47B25]' : 'text-gray-400'
+                          } ${isExpanded ? 'rotate-90' : ''}`}
+                        strokeWidth={2.5}
                       />
                     )}
                   </div>
@@ -261,11 +259,10 @@ const SpecialCombosSection = () => {
                               setSelectedCategoryId(catId);
                               setSelectedSubCategoryId(subId);
                             }}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-[12px] rounded-lg cursor-pointer transition-all duration-200 hover:translate-x-1 ${
-                              isSubSelected
+                            className={`flex items-center gap-2 px-3 py-1.5 text-[12px] rounded-lg cursor-pointer transition-all duration-200 hover:translate-x-1 ${isSubSelected
                                 ? 'text-[#E47B25] bg-orange-50/70 font-bold'
                                 : 'text-gray-500 hover:text-[#E47B25] hover:bg-orange-50/20'
-                            }`}
+                              }`}
                           >
                             <span className={`w-1 h-1 rounded-full shrink-0 ${isSubSelected ? 'bg-[#E47B25]' : 'bg-gray-300'}`} />
                             <span className="font-bold">{subName}</span>
@@ -409,188 +406,188 @@ const SpecialCombosSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10 animate-in fade-in duration-500">
             {/* Complex Sidebar */}
             <aside className="hidden md:block md:col-span-1 space-y-6">
-                <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden p-5 space-y-6">
-                  {renderCategoriesList()}
-                  
-                  {/* Price Filter */}
-                  <div className="pt-6 border-t border-gray-100">
-                    <div className="flex items-center gap-4 mb-6">
-                      <button className="text-[13px] font-bold text-gray-800 border-b-2 border-[#EE9C24] pb-1">Price Filter</button>
-                      <button className="text-[13px] font-bold text-gray-400 border-b-2 border-transparent pb-1 flex items-center gap-1">
-                        Color Filter
-                      </button>
-                    </div>
-                    <div className="px-2 space-y-6">
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full relative cursor-pointer" onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percentage = x / rect.width;
-                        setPriceRange(prev => ({ ...prev, max: Math.round(10000 * percentage) }));
-                      }}>
-                        <div
-                          className="absolute h-full bg-[#E47B25] rounded-full"
-                          style={{ left: '0%', right: `${100 - (priceRange.max / 10000) * 100}%` }}
-                        ></div>
-                        <div className="absolute left-0 -top-1.5 w-4 h-4 bg-white border-2 border-[#E47B25] rounded-full shadow-sm"></div>
-                        <div
-                          className="absolute -top-1.5 w-4 h-4 bg-white border-2 border-[#E47B25] rounded-full shadow-sm cursor-grab active:cursor-grabbing"
-                          style={{ left: `${(priceRange.max / 10000) * 100}%`, transform: 'translateX(-50%)' }}
-                        ></div>
-                      </div>
+              <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden p-5 space-y-6">
+                {renderCategoriesList()}
 
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center text-[13px] font-bold text-gray-800 border border-gray-100 transition-all">₹{priceRange.min}</div>
-                        <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center text-[13px] font-bold text-gray-800 border border-gray-100 transition-all">₹{priceRange.max}</div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => {
-                            setPriceRange({ min: 0, max: 10000 });
-                            setAppliedPriceRange(null);
-                          }}
-                          className="flex-1 py-2 text-[13px] font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          onClick={() => setAppliedPriceRange({ min: priceRange.min, max: priceRange.max })}
-                          className="flex-1 py-2 text-[13px] font-bold text-white bg-[#E47B25] rounded-lg shadow-sm shadow-orange-100 hover:opacity-90 transition-opacity"
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </div>
+                {/* Price Filter */}
+                <div className="pt-6 border-t border-gray-100">
+                  <div className="flex items-center gap-4 mb-6">
+                    <button className="text-[13px] font-bold text-gray-800 border-b-2 border-[#EE9C24] pb-1">Price Filter</button>
+                    <button className="text-[13px] font-bold text-gray-400 border-b-2 border-transparent pb-1 flex items-center gap-1">
+                      Color Filter
+                    </button>
                   </div>
-
-                  {/* Deals */}
-                  <div className="pt-6 border-t border-gray-100 space-y-4">
-                    <h4 className="text-[14px] font-bold text-gray-900 ">Deals</h4>
-                    <div className="space-y-3">
-                      {['Hot Deals', 'Deals', 'Deals'].map((brand, i) => (
-                        <div key={i} className="flex items-center justify-between group">
-                          <span className="text-[13px] font-bold text-gray-700">{brand}</span>
-                          <div
-                            onClick={() => toggleBrand(i)}
-                            className={`w-10 h-5 rounded-full p-1 cursor-pointer transition-all duration-300 relative ${activeBrandToggles.includes(i) ? 'bg-[#E47B25]' : 'bg-gray-200'}`}
-                          >
-                            <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-300 ${activeBrandToggles.includes(i) ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                          </div>
-                        </div>
-                      ))}
+                  <div className="px-2 space-y-6">
+                    <div className="h-1.5 w-full bg-gray-100 rounded-full relative cursor-pointer" onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const percentage = x / rect.width;
+                      setPriceRange(prev => ({ ...prev, max: Math.round(10000 * percentage) }));
+                    }}>
+                      <div
+                        className="absolute h-full bg-[#E47B25] rounded-full"
+                        style={{ left: '0%', right: `${100 - (priceRange.max / 10000) * 100}%` }}
+                      ></div>
+                      <div className="absolute left-0 -top-1.5 w-4 h-4 bg-white border-2 border-[#E47B25] rounded-full shadow-sm"></div>
+                      <div
+                        className="absolute -top-1.5 w-4 h-4 bg-white border-2 border-[#E47B25] rounded-full shadow-sm cursor-grab active:cursor-grabbing"
+                        style={{ left: `${(priceRange.max / 10000) * 100}%`, transform: 'translateX(-50%)' }}
+                      ></div>
                     </div>
-                  </div>
 
-                  {/* Brands Dynamic Radio List */}
-                  <div className="pt-6 border-t border-gray-100 space-y-4">
-                    <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">Brands</h4>
-                    <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 no-scrollbar">
-                      <div 
-                        className="flex items-center gap-3 cursor-pointer group" 
-                        onClick={() => setSelectedBrandId(null)}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center text-[13px] font-bold text-gray-800 border border-gray-100 transition-all">₹{priceRange.min}</div>
+                      <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center text-[13px] font-bold text-gray-800 border border-gray-100 transition-all">₹{priceRange.max}</div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setPriceRange({ min: 0, max: 10000 });
+                          setAppliedPriceRange(null);
+                        }}
+                        className="flex-1 py-2 text-[13px] font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${!selectedBrandId ? 'border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
-                          {!selectedBrandId && <div className="w-2.5 h-2.5 bg-[#E47B25] rounded-full animate-in zoom-in duration-300"></div>}
-                        </div>
-                        <span className={`text-[13px] font-bold transition-colors ${!selectedBrandId ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>
-                          All Brands
-                        </span>
-                      </div>
-
-                      {brandsList.map((brand, i) => {
-                        const isSelected = selectedBrandId === brand._id;
-                        return (
-                          <div 
-                            key={brand._id || i} 
-                            className="flex items-center gap-3 cursor-pointer group" 
-                            onClick={() => setSelectedBrandId(brand._id)}
-                          >
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
-                              {isSelected && <div className="w-2.5 h-2.5 bg-[#E47B25] rounded-full animate-in zoom-in duration-300"></div>}
-                            </div>
-                            <span className={`text-[13px] font-bold transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>
-                              {brand.brandName || brand.name}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Feature Checkboxes */}
-                  <div className="pt-6 border-t border-gray-100 space-y-4">
-                    <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">feature</h4>
-                    <div className="space-y-3">
-                      {['High Precision', 'Durable', 'Reliable'].map((feat, i) => (
-                        <div key={i} className="flex items-center gap-3 cursor-pointer group" onClick={() => toggleFeature(i)}>
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${selectedFeatures.includes(i) ? 'bg-[#E47B25] border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
-                            {selectedFeatures.includes(i) && <Check size={14} className="text-white" strokeWidth={4} />}
-                          </div>
-                          <span className={`text-[13px] font-bold transition-colors ${selectedFeatures.includes(i) ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="pt-6 border-t border-gray-100 space-y-4 pb-4">
-                    <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">Rating</h4>
-                    <div className="space-y-4">
-                      {[5, 4, 3, 2, 1].map((rating) => (
-                        <div key={rating} className="flex items-center gap-3 cursor-pointer group" onClick={() => setSelectedRating(selectedRating === rating ? 0 : rating)}>
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selectedRating === rating ? 'bg-[#E47B25] border-[#E47B25]' : 'border-gray-200'}`}>
-                            {selectedRating === rating && <Check size={14} className="text-white" strokeWidth={4} />}
-                          </div>
-                          <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={14} className={i < rating ? 'fill-[#FFC107] text-[#FFC107]' : 'text-gray-200'} />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => setAppliedPriceRange({ min: priceRange.min, max: priceRange.max })}
+                        className="flex-1 py-2 text-[13px] font-bold text-white bg-[#E47B25] rounded-lg shadow-sm shadow-orange-100 hover:opacity-90 transition-opacity"
+                      >
+                        Apply
+                      </button>
                     </div>
                   </div>
                 </div>
-              </aside>
+
+                {/* Deals */}
+                <div className="pt-6 border-t border-gray-100 space-y-4">
+                  <h4 className="text-[14px] font-bold text-gray-900 ">Deals</h4>
+                  <div className="space-y-3">
+                    {['Hot Deals', 'Deals', 'Deals'].map((brand, i) => (
+                      <div key={i} className="flex items-center justify-between group">
+                        <span className="text-[13px] font-bold text-gray-700">{brand}</span>
+                        <div
+                          onClick={() => toggleBrand(i)}
+                          className={`w-10 h-5 rounded-full p-1 cursor-pointer transition-all duration-300 relative ${activeBrandToggles.includes(i) ? 'bg-[#E47B25]' : 'bg-gray-200'}`}
+                        >
+                          <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-300 ${activeBrandToggles.includes(i) ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Brands Dynamic Radio List */}
+                <div className="pt-6 border-t border-gray-100 space-y-4">
+                  <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">Brands</h4>
+                  <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 no-scrollbar">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer group"
+                      onClick={() => setSelectedBrandId(null)}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${!selectedBrandId ? 'border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
+                        {!selectedBrandId && <div className="w-2.5 h-2.5 bg-[#E47B25] rounded-full animate-in zoom-in duration-300"></div>}
+                      </div>
+                      <span className={`text-[13px] font-bold transition-colors ${!selectedBrandId ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>
+                        All Brands
+                      </span>
+                    </div>
+
+                    {brandsList.map((brand, i) => {
+                      const isSelected = selectedBrandId === brand._id;
+                      return (
+                        <div
+                          key={brand._id || i}
+                          className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => setSelectedBrandId(brand._id)}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
+                            {isSelected && <div className="w-2.5 h-2.5 bg-[#E47B25] rounded-full animate-in zoom-in duration-300"></div>}
+                          </div>
+                          <span className={`text-[13px] font-bold transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>
+                            {brand.brandName || brand.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Feature Checkboxes */}
+                <div className="pt-6 border-t border-gray-100 space-y-4">
+                  <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">feature</h4>
+                  <div className="space-y-3">
+                    {['High Precision', 'Durable', 'Reliable'].map((feat, i) => (
+                      <div key={i} className="flex items-center gap-3 cursor-pointer group" onClick={() => toggleFeature(i)}>
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${selectedFeatures.includes(i) ? 'bg-[#E47B25] border-[#E47B25]' : 'border-gray-200 group-hover:border-gray-300'}`}>
+                          {selectedFeatures.includes(i) && <Check size={14} className="text-white" strokeWidth={4} />}
+                        </div>
+                        <span className={`text-[13px] font-bold transition-colors ${selectedFeatures.includes(i) ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-800'}`}>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rating */}
+                <div className="pt-6 border-t border-gray-100 space-y-4 pb-4">
+                  <h4 className="text-[14px] font-bold text-gray-900 uppercase tracking-wider">Rating</h4>
+                  <div className="space-y-4">
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <div key={rating} className="flex items-center gap-3 cursor-pointer group" onClick={() => setSelectedRating(selectedRating === rating ? 0 : rating)}>
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selectedRating === rating ? 'bg-[#E47B25] border-[#E47B25]' : 'border-gray-200'}`}>
+                          {selectedRating === rating && <Check size={14} className="text-white" strokeWidth={4} />}
+                        </div>
+                        <div className="flex gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={14} className={i < rating ? 'fill-[#FFC107] text-[#FFC107]' : 'text-gray-200'} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </aside>
 
             {/* Dynamic Combo Grid */}
             <div className="md:col-span-3 space-y-8">
 
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {loading ? (
-                    Array(6).fill(0).map((_, idx) => (
-                      <ProductCardSkeleton key={`skeleton-filtered-${idx}`} />
-                    ))
-                  ) : combos.length > 0 ? (
-                    combos.map((combo) => (
-                      <div key={combo._id} className="h-full animate-in fade-in zoom-in duration-300">
-                        <ProductCard product={{
-                          id: combo._id,
-                          name: combo.name,
-                          price: combo.comboPrice,
-                          originalPrice: combo.totalMrp,
-                          image: combo.icon || combo.images?.[0] || "/combo.png",
-                          images: combo.images || (combo.icon ? [combo.icon] : []),
-                          discount: combo.discountAmount ? `₹${combo.discountAmount} Off` : "50% Off",
-                          category: combo.categories?.[0]?.title || "Category",
-                          subcategory: combo.subCategories?.[0]?.title || "Sub category",
-                          ...combo,
-                          isCombo: true,
-                          isHot: true
-                        } as any} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 animate-in fade-in duration-300">
-                      <Tag size={40} className="text-gray-400 mb-3 text-[#E47B25] animate-bounce" />
-                      <h3 className="text-gray-800 font-bold text-lg mb-1">No Combos Found</h3>
-                      <p className="text-gray-500 text-sm max-w-xs">There are no combos matching the selected filters.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {loading ? (
+                  Array(6).fill(0).map((_, idx) => (
+                    <ProductCardSkeleton key={`skeleton-filtered-${idx}`} />
+                  ))
+                ) : combos.length > 0 ? (
+                  combos.map((combo) => (
+                    <div key={combo._id} className="h-full animate-in fade-in zoom-in duration-300">
+                      <ProductCard product={{
+                        id: combo._id,
+                        name: combo.name,
+                        price: combo.comboPrice,
+                        originalPrice: combo.totalMrp,
+                        image: combo.icon || combo.images?.[0] || "/combo.png",
+                        images: combo.images || (combo.icon ? [combo.icon] : []),
+                        discount: combo.discountAmount ? `₹${combo.discountAmount} Off` : "50% Off",
+                        category: combo.categories?.[0]?.title || "Category",
+                        subcategory: combo.subCategories?.[0]?.title || "Sub category",
+                        ...combo,
+                        isCombo: true,
+                        isHot: true
+                      } as any} />
                     </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 animate-in fade-in duration-300">
+                    <Tag size={40} className="text-gray-400 mb-3 text-[#E47B25] animate-bounce" />
+                    <h3 className="text-gray-800 font-bold text-lg mb-1">No Combos Found</h3>
+                    <p className="text-gray-500 text-sm max-w-xs">There are no combos matching the selected filters.</p>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
         ) : (
           /* --- DEFAULT VIEW --- */
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10">
@@ -736,7 +733,7 @@ const SpecialCombosSection = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <h3 className="text-[14px] font-bold text-gray-900 tracking-tight">Brands</h3>
                   <div className="space-y-4 max-h-[150px] overflow-y-auto pr-1 no-scrollbar">
@@ -797,7 +794,7 @@ const SpecialCombosSection = () => {
             </div>
 
             <div className="flex gap-4 mt-12">
-              <button 
+              <button
                 onClick={() => {
                   setSelectedRating(0);
                   setPriceRange({ min: 0, max: 10000 });
@@ -806,16 +803,16 @@ const SpecialCombosSection = () => {
                   setSelectedCategoryId(null);
                   setSelectedSubCategoryId(null);
                   setIsFilterDrawerOpen(false);
-                }} 
+                }}
                 className="flex-1 py-3.5 rounded-2xl border-2 border-gray-100 text-gray-400 font-bold text-[14px]"
               >
                 Reset
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setAppliedPriceRange({ min: priceRange.min, max: priceRange.max });
                   setIsFilterDrawerOpen(false);
-                }} 
+                }}
                 className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white font-bold text-[14px] shadow-lg shadow-orange-100"
               >
                 Apply

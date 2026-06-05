@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 // useDispatch imported above
 import { fetchAddresses, createAddress, getAddressById, updateAddress, deleteAddress } from '@/redux/slices/addressSlice';
@@ -80,6 +81,7 @@ const getItemImage = (item: any) => {
 };
 
 const CheckoutPage = () => {
+    const router = useRouter();
     const steps = ['Login', 'Contact', 'Delivery', 'Payment'];
     const { token } = useSelector((state: RootState) => state.auth);
     const { items: cartItems, summary } = useSelector((state: RootState) => state.cart);
@@ -414,9 +416,12 @@ const CheckoutPage = () => {
         if (currentStep > 0) {
             // Prevent going back to login if already logged in
             if (currentStep === 1 && token) {
+                router.back();
                 return;
             }
             setCurrentStep(currentStep - 1);
+        } else {
+            router.back();
         }
     };
 

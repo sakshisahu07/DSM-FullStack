@@ -16,7 +16,7 @@ const AtlNavbar = () => {
   ];
 
   return (
-    <nav className="w-full bg-white py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
+    <nav className="w-full bg-white py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-[100] border-b border-gray-200">
       <Link href="/" className="flex items-center">
         <Image src="/logo.png" alt="DSM ELECTRO" width={120} height={40} className="h-10 w-auto" />
       </Link>

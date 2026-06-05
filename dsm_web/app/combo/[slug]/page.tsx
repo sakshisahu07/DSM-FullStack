@@ -96,18 +96,21 @@ const ComboDetailPage = () => {
         { src: "/youtube1.png", alt: "YouTube" }
     ];
 
-    const handleBuyNow = () => {
-        const payload = {
-            itemType: 'combo',
-            itemId: combo._id,
-            quantity: quantity,
-            productDetails: {
-                name: combo.name,
-                image: images[0]
+    const handleBuyNow = async () => {
+        setBuyNowLoading(true);
+        try {
+            const action = await dispatch(addToCart({ comboId: combo._id, quantity }));
+            if (addToCart.fulfilled.match(action)) {
+                toast.success("Added to cart successfully!");
+                router.push('/checkout');
+            } else {
+                toast.error(action.payload as string || "Failed to add to cart");
             }
-        };
-        sessionStorage.setItem('buyNowData', JSON.stringify(payload));
-        router.push('/checkout');
+        } catch (error) {
+            toast.error("Failed to add to cart");
+        } finally {
+            setBuyNowLoading(false);
+        }
     };
 
     const handleReviewSubmit = () => {

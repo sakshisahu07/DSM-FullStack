@@ -9,6 +9,7 @@ import { fetchWallet, fetchTransactions } from '@/redux/slices/walletSlice';
 import { getPointsBalance } from '@/redux/slices/membershipSlice';
 
 import { BASE_URL } from '@/redux/slices/apiConfig';
+import { useRouter } from 'next/navigation';
 
 /* ─── Load Razorpay script ─── */
 function loadRazorpayScript(): Promise<boolean> {
@@ -101,6 +102,7 @@ function AddMoneyModal({
 
 /* ─── Page ─── */
 export default function PaymentsWalletPage() {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { balance: walletData, transactions, historyLoading } = useSelector((state: RootState) => state.wallet);
 
@@ -262,7 +264,7 @@ export default function PaymentsWalletPage() {
       hasLink: true,
       coinLine: true,
       btnLabel: 'Shopping',
-      onBtnClick: () => {},
+      onBtnClick: () => router.push('/'),
     },
     {
       icon: (
@@ -418,7 +420,10 @@ export default function PaymentsWalletPage() {
                               {item.hasLink && (
                                 <>
                                   {' | '}
-                                  <span className="text-[#E47B25] font-medium cursor-pointer hover:underline">
+                                  <span 
+                                    className="text-[#E47B25] font-medium cursor-pointer hover:underline"
+                                    onClick={item.onBtnClick}
+                                  >
                                     Go to Shopping
                                   </span>
                                 </>
@@ -658,7 +663,7 @@ export default function PaymentsWalletPage() {
                       <div className="space-y-1">
                         <p className="text-sm font-black text-gray-800">{item.title}</p>
                         <p className="text-[10px] font-medium text-gray-400 leading-relaxed pr-2">
-                          {item.desc} {item.hasLink && <span className="text-[#EE9C24] underline ml-1 cursor-pointer">Go to Shopping</span>}
+                          {item.desc} {item.hasLink && <span onClick={item.onBtnClick} className="text-[#EE9C24] underline ml-1 cursor-pointer">Go to Shopping</span>}
                         </p>
                       </div>
                     </div>
