@@ -1,6 +1,7 @@
 import express from "express";
 import AuthController from "../controllers/auth.controller.js";
 import { authUser, adminMiddleware } from "../middlewares/authMiddleware.js";
+import { upload, imageValidation } from "../middlewares/multerMiddleware.js";
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.post("/registerLoginUser", AuthController.registerAndLoginUser);
 router.post("/verify-otp", AuthController.verifyOtp);
 
 // UPDATE USER
-router.put("/user/:id", authUser, AuthController.updateUser);
+router.put("/user/:id", authUser, upload.single("image"), imageValidation, AuthController.updateUser);
 
 // DELETE USER
 router.delete("/user/:id", authUser, AuthController.deleteUser);

@@ -37,7 +37,7 @@ export default class AuthController {
         await user.save();
       } else {
         const userRole = await mongoose.model("Role").findOne({ name: "User" });
-        
+
         let referredById = null;
         if (referralCode) {
           const referrer = await userModel.findOne({ referralCode });
@@ -45,7 +45,7 @@ export default class AuthController {
             referredById = referrer._id;
           }
         }
-        
+
         const crypto = await import("crypto");
         const newReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
 
@@ -65,11 +65,11 @@ export default class AuthController {
             expiresAt: expiry,
           },
         });
-        
+
         if (referredById) {
           const AppReferralConfig = (await import("../model/appReferralConfig.model.js")).default;
           const WalletService = (await import("../services/wallteServices.js")).default;
-          
+
           const config = await AppReferralConfig.findOne();
           const rfrWallet = config?.isActive ? (config.referrerSignupWalletReward || 0) : 0;
           const refWallet = config?.isActive ? (config.referredSignupWalletReward || 0) : 0;
@@ -155,7 +155,16 @@ export default class AuthController {
     return handleApiRequest(req, res, async () => {
       const userId = req.params.id;
 
-      const updatedUser = await AuthService.updateUser(userId, req.body);
+      if (req.file) {
+        req.body.image = req.file.location || req.file.path;
+      }
+
+      const { error, value } = (await import("../validators/userValidation.js")).userValidationSchema.validate(req.body);
+      if (error) {
+        throw new ValidationError(error.details[0].message);
+      }
+
+      const updatedUser = await AuthService.updateUser(userId, value);
 
       return [{ data: updatedUser }, "User updated successfully", 200];
     });

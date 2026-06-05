@@ -23,7 +23,9 @@ export const userValidationSchema = Joi.object({
 
   fcmToken: Joi.string().trim().optional(),
 
+
   address: Joi.string().custom(objectId).optional(),
+  image: Joi.string().trim().allow(null, "").optional(),
   companyName: Joi.string().trim().allow(null, "").optional(),
   companyGstNo: Joi.string().trim().allow(null, "").optional(),
 });
