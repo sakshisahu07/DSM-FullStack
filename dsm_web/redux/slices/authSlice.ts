@@ -26,7 +26,7 @@ const initialState: AuthState = {
 
 export const registerLoginUser = createAsyncThunk(
   '/auth/registerLoginUser',
-  async (userData: { number: string; firstName?: string; lastName?: string; email?: string; referralCode?: string }, { rejectWithValue }) => {
+  async (userData: { number: string; firstName?: string; lastName?: string; email?: string; referralCode?: string; companyName?: string; companyGstNo?: string }, { rejectWithValue }) => {
     try {
       const response = await fetch(`${BASE_URL}/auth/registerLoginUser`, {
         method: 'POST',

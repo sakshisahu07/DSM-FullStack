@@ -57,6 +57,16 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    companyName: {
+      type: String,
+      trim: true,
+      required: false,
+    },
+    companyGstNo: {
+      type: String,
+      trim: true,
+      required: false,
+    },
 
     walletBalance: {
       type: Number,

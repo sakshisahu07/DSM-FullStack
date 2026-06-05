@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 // useDispatch imported above
 import { fetchAddresses, createAddress, getAddressById, updateAddress, deleteAddress } from '@/redux/slices/addressSlice';
 import { createOrder, verifyPayment, cancelOrder } from '@/redux/slices/orderSlice';
-import { clearCart } from '@/redux/slices/cartSlice';
+import { clearCart, fetchCart } from '@/redux/slices/cartSlice';
 import { getActiveCoupon, validateCoupon } from '@/redux/slices/membershipSlice';
 import toast from 'react-hot-toast';
 
@@ -173,6 +173,17 @@ const CheckoutPage = () => {
         }
     }, [token, dispatch]);
 
+    // Recalculate cart based on selected address's pincode
+    useEffect(() => {
+        if (addresses && addresses.length > 0 && addresses[selectedAddress]) {
+            const addr = addresses[selectedAddress];
+            const pincode = typeof addr.pincode === 'object' ? (addr.pincode?.code || addr.pincode?.name) : addr.pincode;
+            if (pincode) {
+                dispatch(fetchCart(pincode));
+            }
+        }
+    }, [selectedAddress, addresses, dispatch]);
+
     // Load Razorpay Script
     useEffect(() => {
         const loadScript = () => {
@@ -199,22 +210,23 @@ const CheckoutPage = () => {
         try {
             const addr = await dispatch(getAddressById(id)).unwrap();
             setContactData({
-                firstName: addr.firstName || '',
-                lastName: addr.lastName || '',
-                phone: addr.phone || '',
-                email: addr.email || '',
-                street: addr.street || '',
-                city: typeof addr.city === 'object' ? addr.city._id : (addr.city || ''),
-                state: typeof addr.state === 'object' ? addr.state._id : (addr.state || ''),
-                country: typeof addr.country === 'object' ? addr.country._id : (addr.country || ''),
-                pincode: typeof addr.pincode === 'object' ? addr.pincode.code : (addr.pincode || ''),
-                gstNumber: addr.gstNumber || '',
-                companyName: addr.companyName || '',
+                firstName: addr?.firstName || '',
+                lastName: addr?.lastName || '',
+                phone: addr?.phone || '',
+                email: addr?.email || '',
+                street: addr?.street || '',
+                city: (addr?.city && typeof addr.city === 'object') ? addr.city._id : (addr?.city || ''),
+                state: (addr?.state && typeof addr.state === 'object') ? addr.state._id : (addr?.state || ''),
+                country: (addr?.country && typeof addr.country === 'object') ? addr.country._id : (addr?.country || ''),
+                pincode: (addr?.pincode && typeof addr.pincode === 'object') ? addr.pincode.code : (addr?.pincode || ''),
+                gstNumber: addr?.gstNumber || '',
+                companyName: addr?.companyName || '',
             });
             setEditingAddressId(id);
             setIsAddingNewAddress(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) {
+            console.error("Error in handleEditAddress:", error);
             toast.error("Failed to fetch address details");
         }
     };

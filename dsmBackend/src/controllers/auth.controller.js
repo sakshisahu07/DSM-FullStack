@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.HASH_KEY || "secret123";
 export default class AuthController {
   static async registerAndLoginUser(req, res) {
     return handleApiRequest(req, res, async () => {
-      const { number, firstName, lastName, email, fcmToken, referralCode } = req.body;
+      const { number, firstName, lastName, email, fcmToken, referralCode, companyName, companyGstNo } = req.body;
 
       if (!number) {
         throw new ValidationError("Phone number is required");
@@ -32,6 +32,8 @@ export default class AuthController {
           expiresAt: expiry,
         };
         user.fcmToken = fcmToken || user.fcmToken;
+        if (companyName) user.companyName = companyName;
+        if (companyGstNo) user.companyGstNo = companyGstNo;
         await user.save();
       } else {
         const userRole = await mongoose.model("Role").findOne({ name: "User" });
@@ -53,6 +55,8 @@ export default class AuthController {
           email,
           number,
           fcmToken,
+          companyName,
+          companyGstNo,
           role: userRole?._id,
           referralCode: newReferralCode,
           referredBy: referredById,

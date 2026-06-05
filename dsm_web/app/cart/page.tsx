@@ -116,7 +116,7 @@ const CartPage = () => {
         }
         const fetchStates = async () => {
             try {
-                const res = await fetch(`${BASE_URL}/states/${selectedCountry}`);
+                const res = await fetch(`${BASE_URL}/states?countryId=${selectedCountry}&limit=100`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.data && Array.isArray(data.data.data)) {
