@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.HASH_KEY || "secret123";
 export default class AuthController {
   static async registerAndLoginUser(req, res) {
     return handleApiRequest(req, res, async () => {
-      const { number, firstName, lastName, email, fcmToken, referralCode } = req.body;
+      const { number, firstName, lastName, email, fcmToken, referralCode, companyName, companyGstNo } = req.body;
 
       if (!number) {
         throw new ValidationError("Phone number is required");
@@ -32,10 +32,12 @@ export default class AuthController {
           expiresAt: expiry,
         };
         user.fcmToken = fcmToken || user.fcmToken;
+        if (companyName) user.companyName = companyName;
+        if (companyGstNo) user.companyGstNo = companyGstNo;
         await user.save();
       } else {
         const userRole = await mongoose.model("Role").findOne({ name: "User" });
-        
+
         let referredById = null;
         if (referralCode) {
           const referrer = await userModel.findOne({ referralCode });
@@ -43,7 +45,7 @@ export default class AuthController {
             referredById = referrer._id;
           }
         }
-        
+
         const crypto = await import("crypto");
         const newReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
 
@@ -53,6 +55,8 @@ export default class AuthController {
           email,
           number,
           fcmToken,
+          companyName,
+          companyGstNo,
           role: userRole?._id,
           referralCode: newReferralCode,
           referredBy: referredById,
@@ -61,11 +65,11 @@ export default class AuthController {
             expiresAt: expiry,
           },
         });
-        
+
         if (referredById) {
           const AppReferralConfig = (await import("../model/appReferralConfig.model.js")).default;
           const WalletService = (await import("../services/wallteServices.js")).default;
-          
+
           const config = await AppReferralConfig.findOne();
           const rfrWallet = config?.isActive ? (config.referrerSignupWalletReward || 0) : 0;
           const refWallet = config?.isActive ? (config.referredSignupWalletReward || 0) : 0;
@@ -151,7 +155,16 @@ export default class AuthController {
     return handleApiRequest(req, res, async () => {
       const userId = req.params.id;
 
-      const updatedUser = await AuthService.updateUser(userId, req.body);
+      if (req.file) {
+        req.body.image = req.file.location || req.file.path;
+      }
+
+      const { error, value } = (await import("../validators/userValidation.js")).userValidationSchema.validate(req.body);
+      if (error) {
+        throw new ValidationError(error.details[0].message);
+      }
+
+      const updatedUser = await AuthService.updateUser(userId, value);
 
       return [{ data: updatedUser }, "User updated successfully", 200];
     });

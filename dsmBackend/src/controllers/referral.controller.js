@@ -1,5 +1,5 @@
 import { handleApiRequest, AppError } from "../utils/apiResponse.js";
-import ReferralService from "../services/referral.service.js";
+import ReferralService from "../services/ref  erral.service.js";
 
 export default class ReferralController {
   // GET /referral/link?productId=xxx  OR  ?comboId=xxx

@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    image: {
+      type: String,
+      default: "",
+    },
+
     password: {
       type: String,
     },
@@ -57,6 +62,15 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    companyName: {
+      type: String,
+      trim: true,
+
+    },
+    companyGstNo: {
+      type: String,
+      trim: true,
+    },
 
     walletBalance: {
       type: Number,
