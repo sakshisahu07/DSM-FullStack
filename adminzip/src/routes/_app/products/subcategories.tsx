@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -36,6 +37,7 @@ interface SubCategory {
   title: string;
   category: string | { _id: string; title: string };
   icon?: string;
+  disable?: boolean;
 }
 
 function SubcategoriesPage() {
@@ -75,11 +77,11 @@ function SubcategoriesPage() {
     fetchData();
   }, []);
 
-  const onCreate = () => { setEditing(null); setOpen(true); };
-  const onEdit = (s: SubCategory) => { setEditing(s); setOpen(true); };
-  const onDeleteClick = (id: string) => {
+  const onCreate = useCallback(() => { setEditing(null); setOpen(true); }, []);
+  const onEdit = useCallback((s: SubCategory) => { setEditing(s); setOpen(true); }, []);
+  const onDeleteClick = useCallback((id: string) => {
     setDeleteId(id);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (!deleteId) return;
@@ -97,6 +99,28 @@ function SubcategoriesPage() {
       }
     } catch (err) { toast.error("Delete failed"); }
   };
+
+  const onToggleDisable = useCallback(async (id: string, currentDisable: boolean | undefined) => {
+    try {
+      // Optimistic update
+      setItems(prev => prev.map(s => s._id === id ? { ...s, disable: !currentDisable } : s));
+      const res = await fetch(`${API_BASE}/sub-category/toggle/${id}`, {
+        method: "PATCH",
+        headers: getAuthHeaders()
+      });
+      const json = await res.json();
+      if (!json.success && !res.ok) {
+        // Revert on failure
+        setItems(prev => prev.map(s => s._id === id ? { ...s, disable: currentDisable } : s));
+        toast.error(json.message || "Failed to update status");
+      } else {
+        toast.success("Status updated");
+      }
+    } catch (err) {
+      setItems(prev => prev.map(s => s._id === id ? { ...s, disable: currentDisable } : s));
+      toast.error("Toggle failed");
+    }
+  }, []);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { title: string; subs: SubCategory[] }>();
@@ -134,18 +158,13 @@ function SubcategoriesPage() {
               </div>
               <div className="space-y-2">
                 {g.subs.map((s) => (
-                  <div key={s._id} className="flex items-center gap-2 p-2.5 rounded-md hover:bg-muted/50 border">
-                    <div className="h-8 w-8 rounded bg-muted overflow-hidden border shrink-0">
-                      {s.icon && <img src={s.icon} className="h-full w-full object-cover" />}
-                    </div>
-                    <Badge variant="secondary" className="text-sm py-1 px-3">
-                      {s.title}
-                    </Badge>
-                    <div className="ml-auto flex items-center gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDeleteClick(s._id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </div>
+                  <SubCategoryItem 
+                    key={s._id} 
+                    s={s} 
+                    onEdit={onEdit} 
+                    onDeleteClick={onDeleteClick} 
+                    onToggleDisable={onToggleDisable} 
+                  />
                 ))}
               </div>
             </Card>
@@ -174,6 +193,47 @@ function SubcategoriesPage() {
     </div>
   );
 }
+
+const SubCategoryItem = memo(({ s, onEdit, onDeleteClick, onToggleDisable }: {
+  s: SubCategory,
+  onEdit: (s: SubCategory) => void,
+  onDeleteClick: (id: string) => void,
+  onToggleDisable: (id: string, current: boolean | undefined) => Promise<void>
+}) => {
+  const [toggling, setToggling] = useState(false);
+
+  const handleToggle = async () => {
+    setToggling(true);
+    await onToggleDisable(s._id, s.disable);
+    setToggling(false);
+  };
+
+  return (
+    <div className="flex items-center gap-2 p-2.5 rounded-md hover:bg-muted/50 border">
+      <div className="h-8 w-8 rounded bg-muted overflow-hidden border shrink-0">
+        {s.icon && <img src={s.icon} className="h-full w-full object-cover" />}
+      </div>
+      <Badge variant="secondary" className="text-sm py-1 px-3">
+        {s.title}
+      </Badge>
+      {toggling && <Loader2 className="ml-2 h-3 w-3 animate-spin text-muted-foreground" />}
+      <Badge variant={s.disable ? "outline" : "default"} className="ml-2 text-[10px] uppercase">
+        {s.disable ? "Disabled" : "Active"}
+      </Badge>
+      <div className="ml-auto flex items-center gap-3">
+        <Switch 
+          disabled={toggling}
+          checked={!s.disable} 
+          onCheckedChange={handleToggle} 
+        />
+        <div className="flex items-center gap-1 border-l pl-3">
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDeleteClick(s._id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function DeleteConfirmationDialog({ open, onOpenChange, onConfirm, title, description }: {
   open: boolean;

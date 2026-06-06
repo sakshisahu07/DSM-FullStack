@@ -2,6 +2,8 @@
 
 import subCategoryModel from "../model/subCategory.model.js";
 import categoryModel from "../model/category.model.js";
+import productModel from "../model/product.model.js";
+import variantModel from "../model/variant.model.js";
 import { AppError } from "../utils/apiResponse.js";
 import mongoose from "mongoose";
 
@@ -20,7 +22,7 @@ export default class SubCategoryService {
       throw new AppError("SubCategory already exists in this category", 400);
     }
 
-    return await subCategoryModel.create(payload);XMLDocumen
+    return await subCategoryModel.create(payload);
   }
 
   // UPDATE
@@ -52,8 +54,8 @@ export default class SubCategoryService {
 
     // Cascade delete
     await Promise.all([
-      mongoose.model("product").deleteMany({ subCategoryId: id }),
-      mongoose.model("variant").deleteMany({ subCategory: id })
+      productModel.deleteMany({ subCategoryId: id }),
+      variantModel.deleteMany({ subCategory: id })
     ]);
 
     await subCategory.deleteOne();
@@ -116,12 +118,22 @@ export default class SubCategoryService {
     const updated = await subCategoryModel.findByIdAndUpdate(
       id,
       [{ $set: { disable: { $not: "$disable" } } }],
-      { new: true }
+      { new: true, updatePipeline: true }
     );
 
     if (!updated) {
       throw new AppError("SubCategory not found", 404);
     }
+
+    // Cascade toggle
+    const isDisabled = updated.disable;
+    const objectId = new mongoose.Types.ObjectId(id);
+    const idMatch = { $in: [id, objectId] };
+    
+    await Promise.all([
+      productModel.updateMany({ subCategoryId: idMatch }, { $set: { disable: isDisabled } }),
+      variantModel.updateMany({ subCategory: idMatch }, { $set: { disable: isDisabled } })
+    ]);
 
     return updated;
   }
