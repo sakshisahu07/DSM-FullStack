@@ -3,6 +3,7 @@
 import subCategoryModel from "../model/subCategory.model.js";
 import categoryModel from "../model/category.model.js";
 import { AppError } from "../utils/apiResponse.js";
+import mongoose from "mongoose";
 
 export default class SubCategoryService {
   // CREATE
@@ -48,6 +49,12 @@ export default class SubCategoryService {
     if (!subCategory) {
       throw new AppError("SubCategory not found", 404);
     }
+
+    // Cascade delete
+    await Promise.all([
+      mongoose.model("product").deleteMany({ subCategoryId: id }),
+      mongoose.model("variant").deleteMany({ subCategory: id })
+    ]);
 
     await subCategory.deleteOne();
     return true;

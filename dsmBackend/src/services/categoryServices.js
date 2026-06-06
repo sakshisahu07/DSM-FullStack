@@ -1,6 +1,7 @@
 import categoryModel from "../model/category.model.js";
 import subCategoryModel from "../model/subCategory.model.js";
 import { AppError } from "../utils/apiResponse.js";
+import mongoose from "mongoose";
 
 export default class CategoryService {
   // CREATE CATEGORY
@@ -30,6 +31,13 @@ export default class CategoryService {
     if (!category) {
       throw new AppError("Category not found", 404);
     }
+
+    // Cascade delete
+    await Promise.all([
+      subCategoryModel.deleteMany({ category: categoryId }),
+      mongoose.model("product").deleteMany({ categoryId: categoryId }),
+      mongoose.model("variant").deleteMany({ category: categoryId })
+    ]);
 
     await category.deleteOne();
 

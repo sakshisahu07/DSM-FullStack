@@ -86,7 +86,7 @@ function ProductsAll() {
           return {
             id: p._id,
             name: p.name,
-            sku: p.sku || `SKU-${p._id.slice(-4).toUpperCase()}`,
+            sku: p.sku || "",
             category: categoryName,
             brand: brandName,
             basePrice: p.price || 0,
@@ -368,13 +368,12 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
             mrp: mrp, 
             sellingPrice: sellingPrice,
             discount: discount, 
-            stock: v.stock ?? 0, 
-            sku: v.sku ?? "", 
+            stock: v.stock ?? 0,
             weight: v.weight?.value ?? v.weight ?? 0
           };
         }));
       } else {
-        setVariants([{ id: Date.now(), variant: "Default", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, sku: product?.sku ?? "", weight: 0 }]);
+        setVariants([{ id: Date.now(), variant: "Default", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, weight: 0 }]);
       }
       
       setIcon(null);
@@ -409,6 +408,7 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
   const handleSave = () => {
     const fd = new FormData();
     fd.append("name", name);
+    fd.append("sku", sku);
     fd.append("description", desc || "No description");
     if (categoryId) fd.append("categoryId", categoryId);
     if (subCategoryId) fd.append("subCategoryId", subCategoryId);
@@ -474,9 +474,15 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4 mt-5">
-            <div className="space-y-2">
-              <Label>Product Name *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Product Name *</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>SKU</Label>
+                <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Product SKU" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -553,7 +559,7 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
           <TabsContent value="variants" className="mt-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">Manage product variants (size, color, etc)</div>
-              <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setVariants([...variants, { id: Date.now(), variant: "", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, sku: "", weight: 0 }]); }}>
+              <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setVariants([...variants, { id: Date.now(), variant: "", mrp: 0, sellingPrice: 0, discount: 0, stock: 0, weight: 0 }]); }}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Add variant
               </Button>
             </div>
@@ -567,10 +573,6 @@ function ProductDrawer({ open, onOpenChange, product, onSave }: {
                   <div className="flex flex-col justify-end gap-1.5 col-span-2 md:col-span-1">
                     <Label className="text-xs whitespace-nowrap">Variant Name</Label>
                     <Input className="h-8" value={v.variant} onChange={e => { const nv = [...variants]; nv[idx].variant = e.target.value; setVariants(nv); }} placeholder="e.g. Red" />
-                  </div>
-                  <div className="flex flex-col justify-end gap-1.5">
-                    <Label className="text-xs whitespace-nowrap">SKU</Label>
-                    <Input className="h-8" value={v.sku} onChange={e => { const nv = [...variants]; nv[idx].sku = e.target.value; setVariants(nv); }} />
                   </div>
                   <div className="flex flex-col justify-end gap-1.5">
                     <Label className="text-xs whitespace-nowrap">MRP (₹)</Label>

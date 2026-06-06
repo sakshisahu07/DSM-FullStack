@@ -44,6 +44,7 @@ function SubcategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubCategory | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -76,17 +77,21 @@ function SubcategoriesPage() {
 
   const onCreate = () => { setEditing(null); setOpen(true); };
   const onEdit = (s: SubCategory) => { setEditing(s); setOpen(true); };
-  const onDelete = async (id: string) => {
-    if (!confirm("Delete sub-category?")) return;
+  const onDeleteClick = (id: string) => {
+    setDeleteId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      const res = await fetch(`${API_BASE}/sub-category/${id}`, { 
+      const res = await fetch(`${API_BASE}/sub-category/${deleteId}`, { 
         method: "DELETE", 
         headers: getAuthHeaders() 
       });
       const json = await res.json();
       if (json.success) {
         toast.success("Deleted");
-        setItems(p => p.filter(x => x._id !== id));
+        setItems(p => p.filter(x => x._id !== deleteId));
       } else {
         toast.error(json.message);
       }
@@ -138,7 +143,7 @@ function SubcategoriesPage() {
                     </Badge>
                     <div className="ml-auto flex items-center gap-1">
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDelete(s._id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDeleteClick(s._id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
                 ))}
@@ -158,7 +163,56 @@ function SubcategoriesPage() {
           setOpen(false);
         }}
       />
+
+      <DeleteConfirmationDialog
+        open={!!deleteId}
+        onOpenChange={(v) => !v && setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Subcategory"
+        description="Are you sure you want to delete this subcategory? All related products and variants will be deleted. This action cannot be undone."
+      />
     </div>
+  );
+}
+
+function DeleteConfirmationDialog({ open, onOpenChange, onConfirm, title, description }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onConfirm: () => void;
+  title: string;
+  description: string;
+}) {
+  const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (open) setInput("");
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2 text-sm text-muted-foreground">
+          <p>{description}</p>
+          <div className="space-y-1.5">
+            <Label className="text-foreground">Type <span className="font-bold">yes</span> to confirm</Label>
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="yes"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="destructive" disabled={input.toLowerCase() !== "yes"} onClick={() => { onConfirm(); onOpenChange(false); }}>
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
