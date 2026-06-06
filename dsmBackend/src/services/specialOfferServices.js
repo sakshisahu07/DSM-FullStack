@@ -602,6 +602,7 @@ export default class SpecialOfferService {
                 mrp: { $arrayElemAt: ["$variants.mrp", 0] },
                 price: { $arrayElemAt: ["$variants.finalPrice", 0] },
                 discount: { $arrayElemAt: ["$variants.discount", 0] },
+                stock: { $arrayElemAt: ["$variants.stock", 0] },
               }
             }
           ]

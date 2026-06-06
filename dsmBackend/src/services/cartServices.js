@@ -41,7 +41,7 @@ export default class CartService {
 
           if (!combo || combo.disable) throw new Error("Combo not available");
 
-          if (!combo.stock || combo.stock < quantity)
+          if (combo.stock != null && combo.stock < quantity)
             throw new Error("Insufficient combo stock");
 
           // ✅ UPDATED (multi-affiliate aware)
@@ -87,7 +87,7 @@ export default class CartService {
           if (!variant || variant.disable)
             throw new Error("Variant not available");
 
-          if (!variant.stock || variant.stock < quantity)
+          if (variant.stock != null && variant.stock < quantity)
             throw new Error("Insufficient stock");
 
           const product = await productModel
@@ -250,12 +250,12 @@ export default class CartService {
       const combo = await comboModel.findById(item.comboId);
       if (!combo || combo.disable)
         throw new AppError("Combo not available", 400);
-      if (combo.stock < quantity) throw new AppError("Stock exceeded", 400);
+      if (combo.stock != null && combo.stock < quantity) throw new AppError("Stock exceeded", 400);
     } else {
       const variant = await variantModel.findById(item.variantId);
       if (!variant || variant.disable)
         throw new AppError("Variant not available", 400);
-      if (variant.stock < quantity) throw new AppError("Stock exceeded", 400);
+      if (variant.stock != null && variant.stock < quantity) throw new AppError("Stock exceeded", 400);
     }
 
     item.quantity = quantity;

@@ -53,13 +53,13 @@ export const fetchProducts = createAsyncThunk(
       }
 
       const cleanBaseUrl = BASE_URL?.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
-      
+
       let url = params ? `${cleanBaseUrl}/products?${params}` : `${cleanBaseUrl}/products`;
       let response = await fetch(url, { headers });
       let data = await response.json();
 
       if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch products');
-      
+
       // Handle various response structures
       let rawProducts = [];
       if (Array.isArray(data.data)) {
@@ -72,7 +72,7 @@ export const fetchProducts = createAsyncThunk(
         return rawProducts.map((item: any) => {
           const p = item.product || item;
           const v = (item.variants && item.variants[0]) || (p.variants && p.variants[0]) || {};
-          
+
           return {
             ...p,
             _id: p._id,
@@ -92,7 +92,7 @@ export const fetchProducts = createAsyncThunk(
           };
         });
       }
-      
+
       return [];
     } catch (error: any) {
       return rejectWithValue(error.message);
@@ -159,7 +159,7 @@ export const fetchRelatedProducts = createAsyncThunk(
       return rawProducts.map((item: any) => {
         const p = item.product || item;
         const v = (item.variants && item.variants[0]) || (p.variants && p.variants[0]) || {};
-        
+
         return {
           ...p,
           _id: p._id,

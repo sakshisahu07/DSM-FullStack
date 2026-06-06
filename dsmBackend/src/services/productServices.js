@@ -566,6 +566,7 @@ export default class ProductService {
           finalPrice: "$variant.finalPrice",
           discount: "$variant.discount",
           discountAmount: "$variant.discountAmount",
+          stock: "$variant.stock",
         },
       },
 
@@ -853,6 +854,7 @@ export default class ProductService {
           finalPrice: "$variant.finalPrice",
           discount: "$variant.discount",
           discountAmount: "$variant.discountAmount",
+          stock: "$variant.stock",
         },
       },
       {
@@ -1068,6 +1070,7 @@ export default class ProductService {
           finalPrice: "$variant.finalPrice",
           discount: "$variant.discount",
           discountAmount: "$variant.discountAmount",
+          stock: "$variant.stock",
         },
       },
       {
@@ -1207,6 +1210,7 @@ export default class ProductService {
           finalPrice: "$variant.finalPrice",
           discount: "$variant.discount",
           discountAmount: "$variant.discountAmount",
+          stock: "$variant.stock",
         },
       },
 
@@ -1424,6 +1428,7 @@ export default class ProductService {
           finalPrice: "$variant.finalPrice",
           discount: "$variant.discount",
           discountAmount: "$variant.discountAmount",
+          stock: "$variant.stock",
         },
       },
 
@@ -1533,7 +1538,7 @@ export default class ProductService {
             {
               $project: {
                 _id: 1, mrp: 1, finalPrice: 1,
-                discount: 1, discountAmount: 1,
+                discount: 1, discountAmount: 1, stock: 1,
               },
             },
           ],

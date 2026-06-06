@@ -58,6 +58,7 @@ async function fetchDealItems(productIds = [], variantIds = [], discountValue = 
         mrp,
         price,
         discount,
+        stock: v.stock,
       });
     }
   }
@@ -117,6 +118,7 @@ async function fetchDealItems(productIds = [], variantIds = [], discountValue = 
         mrp,
         price,
         discount,
+        stock: v.stock,
       });
     }
   }
@@ -209,6 +211,7 @@ async function fetchDealsByFlag(flagName, categoryId = null, subCategoryId = nul
       mrp,
       price,
       discount,
+      stock: v.stock,
     });
   }
 
@@ -348,6 +351,7 @@ export default class HomeService {
           mrp: { $arrayElemAt: ["$variants.mrp", 0] },
           price: { $arrayElemAt: ["$variants.finalPrice", 0] },
           discount: { $arrayElemAt: ["$variants.discount", 0] },
+          stock: { $arrayElemAt: ["$variants.stock", 0] },
         }
       }
     ];
@@ -370,6 +374,7 @@ export default class HomeService {
           mrp: { $arrayElemAt: ["$variants.mrp", 0] },
           price: { $arrayElemAt: ["$variants.finalPrice", 0] },
           discount: { $arrayElemAt: ["$variants.discount", 0] },
+          stock: { $arrayElemAt: ["$variants.stock", 0] },
         }
       }
     ];
@@ -393,6 +398,7 @@ export default class HomeService {
           mrp: { $arrayElemAt: ["$variants.mrp", 0] },
           price: { $arrayElemAt: ["$variants.finalPrice", 0] },
           discount: { $arrayElemAt: ["$variants.discount", 0] },
+          stock: { $arrayElemAt: ["$variants.stock", 0] },
         }
       }
     ];

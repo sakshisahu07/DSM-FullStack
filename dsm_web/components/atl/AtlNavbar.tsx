@@ -43,7 +43,7 @@ const AtlNavbar = () => {
       <div className="md:hidden">
         <Link
           href="/atl-kits/inquiry"
-          className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          className="bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white px-4 py-2 rounded-lg font-medium text-sm shadow-md"
         >
           Enquiry
         </Link>

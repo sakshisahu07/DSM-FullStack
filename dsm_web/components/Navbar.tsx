@@ -274,8 +274,8 @@ const Navbar = () => {
   const isProfileRoute = pathname.startsWith('/profile') || pathname === '/notifications' || pathname === '/view-invoices' || pathname === '/my-wishlist' || pathname === '/my-orders' || pathname === '/track-order' || pathname === '/affiliate-dashboard' || pathname === '/refer-earn' || pathname === '/payments-wallet' || pathname.startsWith('/membership');
 
   return (
-    <nav className={`w-full flex-col font-sans relative ${isBulkInquiryPage ? 'hidden lg:flex' : isAtlKitsRoute ? 'hidden' : (isProfileRoute || isBlogListingRoute || isVideoGalleryRoute || isProjectRoute || isCareerRoute || isCustomHeaderPage || isCareerDetailRoute || isProductDetailRoute || isComboDetailRoute || pathname === '/special-offers' || pathname === '/special-combos' || pathname === '/cart') ? 'hidden md:flex' : 'flex'}`}>
-      {(!isCustomHeaderPage && !isBlogListingRoute && !isVideoGalleryRoute && !isProjectRoute && !isCareerRoute && !isAtlKitsRoute && !isCareerDetailRoute && !isProductDetailRoute && !isComboDetailRoute && pathname !== '/special-combos') && (
+    <nav className={`w-full flex-col font-sans relative ${isBulkInquiryPage ? 'hidden lg:flex' : isAtlKitsRoute ? 'hidden' : (isProfileRoute || isBlogListingRoute || isVideoGalleryRoute || isProjectRoute || isCareerRoute || isCustomHeaderPage || isCareerDetailRoute || isProductDetailRoute || isComboDetailRoute || pathname === '/special-offers' || pathname === '/special-combos' || pathname === '/cart' || pathname === '/checkout') ? 'hidden md:flex' : 'flex'}`}>
+      {(!isCustomHeaderPage && !isBlogListingRoute && !isVideoGalleryRoute && !isProjectRoute && !isCareerRoute && !isAtlKitsRoute && !isCareerDetailRoute && !isProductDetailRoute && !isComboDetailRoute && pathname !== '/special-combos' && pathname !== '/checkout') && (
         <div className="flex flex-col md:hidden w-full bg-white">
           <div className="flex items-center justify-between px-4 py-3 gap-2">
             <Link href="/" className="shrink-0">
