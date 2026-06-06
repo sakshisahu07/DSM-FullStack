@@ -172,7 +172,7 @@ const HeroSection = ({
                     className="flex flex-col items-center group cursor-pointer"
                     onClick={() => handleCategoryClick(cat.id, cat.name)}
                   >
-                    <div className={`w-[50px] h-[50px] md:w-20 md:h-20 rounded-full flex items-center justify-center mb-1 md:mb-3 overflow-hidden transition-all duration-300 ${cat.id === selectedCategoryId ? 'bg-[#E47B25]/20 border-2 border-[#E47B25] scale-105 shadow-md' : 'bg-[#FDF4EE]'}`}>
+                    <div className={` md:w-20 md:h-20 rounded-full flex items-center justify-center mb-1 md:mb-3 overflow-hidden transition-all duration-300 ${cat.id === selectedCategoryId ? 'bg-[#E47B25]/20 border-2 border-[#E47B25] scale-105 shadow-md' : 'bg-[#FDF4EE]'}`}>
                       <Image
                         src={cat.icon}
                         alt={cat.name}

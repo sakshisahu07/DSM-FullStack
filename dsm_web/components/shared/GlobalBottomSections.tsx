@@ -26,7 +26,7 @@ export default function GlobalBottomSections() {
         <section className={`bg-white ${(isCustomHeaderPage || isProfileRoute || isBlogListingRoute || isVideoGalleryRoute || isProjectRoute || isCareerRoute || isCartRoute || isCheckoutRoute || isBlogDetailRoute || isProjectDetailRoute || isCareerDetailRoute) ? 'hidden md:block' : ''}`}>
             <div className="mb-12 md:mb-0">
                 <RelatedProducts />
-                <div className="mt-10 md:mt-16" />
+                <div className="mt-0 md:mt-16" />
                 <FeatureHighlights />
             </div>
         </section>
