@@ -170,8 +170,10 @@ const ProductDetailPage = () => {
                 : "",
             price: rawVariant.finalPrice || rawProduct.price || 0,
             images: rawProduct.images && rawProduct.images.length > 0
-                ? rawProduct.images
-                : (rawProduct.icon ? [rawProduct.icon] : ["/bt.png"]),
+                ? rawProduct.images.map((img: any) => typeof img === 'object' ? img.url : img).filter(Boolean)
+                : (rawProduct.image 
+                    ? [typeof rawProduct.image === 'object' ? rawProduct.image.url : rawProduct.image] 
+                    : (rawProduct.icon ? [typeof rawProduct.icon === 'object' ? rawProduct.icon.url : rawProduct.icon] : ["/bt.png"])),
             features: rawProduct.keyFeatures?.map((s: any) => ({
                 label: s.title,
                 desc: Array.isArray(s.points) ? s.points.join(", ") : s.points

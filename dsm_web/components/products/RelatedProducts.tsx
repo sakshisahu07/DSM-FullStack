@@ -73,7 +73,7 @@ export default function RelatedProducts({ categoryId: initialCategoryId, subCate
     }
 
     return (
-        <section className="px-4 md:px-14 pt-4 md:pt-6 pb-8 md:pb-0 bg-white">
+        <section className="px-4 md:px-14 pt-4 md:pt-6 pb-2 md:pb-0 bg-white">
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex items-center justify-between mb-6 md:mb-10">
                     <div className="relative">
