@@ -21,6 +21,7 @@ const variantSchema = Joi.object({
 export const createProductWithVariantSchema = Joi.object({
   name: Joi.string().trim().required(),
 
+  sku: Joi.string().trim().allow("").optional(),
   slug: Joi.string().trim().lowercase().optional(),
 
   categoryId: Joi.string().length(24).hex().required(),
