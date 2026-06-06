@@ -235,6 +235,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
         if (json.success && isMounted) {
           const offers = json.data?.specialOffers || json.data?.products || (Array.isArray(json.data) ? json.data : []);
           const mapped = offers.map((p: any) => ({
+            ...p,
             id: p._id,
             variantId: p.variantId || p._id,
             name: p.name || p.title || 'Product',
@@ -394,9 +395,9 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
   };
 
   return (
-    <div className="w-full bg-[#FFFFFF] min-h-screen">
+    <div className="w-full bg-[#FFFFFF]">
       {/* Container */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-14 py-4 md:py-8">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-14 pt-4 md:pt-8 pb-0">
 
         {/* Mobile Header (Image 1) */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#E47B25] to-[#B3520A] px-4 py-4 flex items-center justify-between shadow-md">
@@ -716,7 +717,7 @@ const SpecialOffersSection = ({ loading = false }: { loading?: boolean }) => {
           <>
 
             {/* Main Content: Sidebar + Flowing Grid */}
-            <div className="block w-full clear-both pb-10">
+            <div className="block w-full clear-both">
               <div className="-mx-1.5 md:-mx-3 lg:-mx-4">
                 
                 {/* Sidebar - Floated left on desktop */}

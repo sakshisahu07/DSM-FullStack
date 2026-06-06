@@ -60,17 +60,7 @@ export default function BulkInquiryPage() {
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  useEffect(() => {
-    if (isOtpMode && loadingProgress < 100) {
-      const interval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev >= 100) return 100;
-          return prev + 5;
-        });
-      }, 50);
-      return () => clearInterval(interval);
-    }
-  }, [isOtpMode, loadingProgress]);
+
 
   useEffect(() => {
     if (isOtpMode && resendTimer > 0) {
@@ -136,7 +126,6 @@ export default function BulkInquiryPage() {
 
       if (registerLoginUser.fulfilled.match(resultAction)) {
         setIsOtpMode(true);
-        setLoadingProgress(0);
         setResendTimer(30);
       }
     } catch (err) {
@@ -315,15 +304,6 @@ export default function BulkInquiryPage() {
               {/* OTP Section (Conditionally Rendered) */}
               {isOtpMode && (
                 <div className="flex flex-col items-center animate-in fade-in fill-mode-both duration-500 py-2">
-                  <h3 className="font-semibold text-gray-800 text-[1.1rem] mb-2 tracking-wide">OTP Sending</h3>
-
-                  {/* Progress Bar */}
-                  <div className="w-[85%] mx-auto h-2 bg-gray-200 rounded-full mb-8 relative overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 h-full bg-[#EE9C24] rounded-full transition-all duration-300"
-                      style={{ width: `${loadingProgress}%` }}
-                    ></div>
-                  </div>
 
                   <h4 className="font-medium text-gray-800 mb-4 tracking-wide text-lg">Enter OTP</h4>
                   {otpInfo && (
@@ -623,7 +603,7 @@ export default function BulkInquiryPage() {
                   {/* First Name */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">First Name</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">First Name</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm focus-within:border-[#EE9C24] transition-all">
                       <input
@@ -631,7 +611,7 @@ export default function BulkInquiryPage() {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         placeholder="Enter Your Number"
-                        className="w-full outline-none text-[#333333] font-black text-xs bg-transparent placeholder:text-gray-300"
+                        className="w-full outline-none text-[#333333] font-medium text-xs bg-transparent placeholder:text-gray-300"
                       />
                       <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />
                     </div>
@@ -640,7 +620,7 @@ export default function BulkInquiryPage() {
                   {/* Last Name */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">Last Name</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">Last Name</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm focus-within:border-[#EE9C24] transition-all">
                       <input
@@ -648,7 +628,7 @@ export default function BulkInquiryPage() {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         placeholder="Enter Your Number"
-                        className="w-full outline-none text-[#333333] font-black text-xs bg-transparent placeholder:text-gray-300"
+                        className="w-full outline-none text-[#333333] font-medium text-xs bg-transparent placeholder:text-gray-300"
                       />
                       <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />
                     </div>
@@ -658,7 +638,7 @@ export default function BulkInquiryPage() {
                 {/* Phone Number */}
                 <div className="relative group">
                   <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                    <span className="text-[10px] font-black text-gray-400 ">Phone Number</span>
+                    <span className="text-[10px] font-medium text-gray-700 ">Phone Number</span>
                   </div>
                   <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm focus-within:border-[#EE9C24] transition-all">
                     <div className="flex items-center gap-1 flex-1">
@@ -669,7 +649,7 @@ export default function BulkInquiryPage() {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="+91 123 456789"
-                        className="w-full outline-none text-[#333333] font-black text-xs bg-transparent placeholder:text-gray-600"
+                        className="w-full outline-none text-[#333333] font-medium text-xs bg-transparent placeholder:text-gray-600"
                       />
                     </div>
                     <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />
@@ -685,26 +665,20 @@ export default function BulkInquiryPage() {
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </div>
-                  <span className="text-[11px] font-black text-gray-800">Keep me login</span>
+                  <span className="text-[11px] font-medium text-gray-800">Keep me login</span>
                 </div>
 
                 {/* OTP Flow (Mobile) */}
                 {isOtpMode && (
                   <div className="space-y-6 pt-2 pb-4">
-                    <div className="text-center space-y-1">
-                      <h3 className="text-[13px] font-black text-gray-800">OTP Sending</h3>
-                      <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#E47B25] transition-all duration-300" style={{ width: `${loadingProgress}%` }}></div>
-                      </div>
-                    </div>
 
                     <div className="text-center space-y-4">
-                      <span className="text-[13px] font-black text-gray-800">Enter OTP</span>
+                      <span className="text-[13px] font-medium text-gray-800">Enter OTP</span>
                       <div className="flex gap-4 justify-center">
                         {[0, 1, 2, 3].map((idx) => (
                           <div key={idx} className="w-12 h-14 border-2 border-[#E47B25]/30 rounded-xl flex items-center justify-center bg-white shadow-sm focus-within:border-[#E47B25] transition-all">
                             <input
-                              className="w-full text-center outline-none font-black text-lg text-gray-800 bg-transparent"
+                              className="w-full text-center outline-none font-medium text-lg text-gray-800 bg-transparent"
                               type="text"
                               maxLength={1}
                               value={otp[idx]}
@@ -713,7 +687,7 @@ export default function BulkInquiryPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="text-[11px] font-black text-gray-400">
+                      <div className="text-[11px] font-medium text-gray-400">
                         OTP Resend In {resendTimer} Sec <button className="text-[#EE9C24] ml-1">Resend</button>
                       </div>
                     </div>
@@ -724,7 +698,7 @@ export default function BulkInquiryPage() {
                   {/* Country */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">Country</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">Country</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
                       <select
@@ -741,7 +715,7 @@ export default function BulkInquiryPage() {
                           const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
                           dispatch(fetchStates({ token: token || localToken, countryId: cId }));
                         }}
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6"
+                        className="w-full outline-none text-[#333333] font-medium text-[11px] bg-transparent appearance-none pr-6"
                       >
                         <option value="">Select country</option>
                         {countries.map((c: any) => (
@@ -755,7 +729,7 @@ export default function BulkInquiryPage() {
                   {/* State */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">State</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">State</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
                       <select
@@ -771,7 +745,7 @@ export default function BulkInquiryPage() {
                           const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
                           dispatch(fetchCities({ token: token || localToken, stateId: sId }));
                         }}
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
+                        className="w-full outline-none text-[#333333] font-medium text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
                       >
                         <option value="">Select state</option>
                         {states.map((s: any) => (
@@ -787,7 +761,7 @@ export default function BulkInquiryPage() {
                   {/* City */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">City</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">City</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24] relative">
                       <select
@@ -799,7 +773,7 @@ export default function BulkInquiryPage() {
                           const cName = cities.find((c: any) => c._id === cId)?.name || "";
                           setCity(cName);
                         }}
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
+                        className="w-full outline-none text-[#333333] font-medium text-[11px] bg-transparent appearance-none pr-6 disabled:opacity-50"
                       >
                         <option value="">Select city</option>
                         {cities.map((c: any) => (
@@ -813,7 +787,7 @@ export default function BulkInquiryPage() {
                   {/* Zipcode */}
                   <div className="relative group">
                     <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                      <span className="text-[10px] font-black text-gray-400 ">Zipcode</span>
+                      <span className="text-[10px] font-medium text-gray-700 ">Zipcode</span>
                     </div>
                     <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24]">
                       <input
@@ -821,7 +795,7 @@ export default function BulkInquiryPage() {
                         value={zipCode}
                         onChange={(e) => setZipCode(e.target.value)}
                         placeholder="Enter Zipcode"
-                        className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent placeholder:text-gray-300"
+                        className="w-full outline-none text-[#333333] font-medium text-[11px] bg-transparent placeholder:text-gray-300"
                       />
                       <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40" />
                     </div>
@@ -831,13 +805,13 @@ export default function BulkInquiryPage() {
                 {/* Select Product */}
                 <div className="relative group">
                   <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                    <span className="text-[10px] font-black text-gray-400 ">Select Product</span>
+                    <span className="text-[10px] font-medium text-gray-700 ">Select Product</span>
                   </div>
                   <div
                     className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-sm transition-all focus-within:border-[#EE9C24]"
                     onClick={() => setShowProductDropdown(!showProductDropdown)}
                   >
-                    <span className={`text-[11px] font-black ${selectedProducts.length > 0 ? 'text-gray-800' : 'text-gray-300'}`}>
+                    <span className={`text-[11px] font-medium ${selectedProducts.length > 0 ? 'text-gray-800' : 'text-gray-300'}`}>
                       {selectedProducts.length > 0 ? selectedProducts[0].name : 'Select a Product'}
                     </span>
                     <Search size={16} className="text-gray-400" />
@@ -847,7 +821,7 @@ export default function BulkInquiryPage() {
                   {showProductDropdown && (
                     <div className="absolute top-[110%] left-0 w-full bg-white rounded-3xl shadow-xl border border-gray-100 z-50 overflow-hidden">
                       <div className="p-4 border-b border-gray-50">
-                        <span className="text-xs font-black text-[#EE9C24]">Select Product</span>
+                        <span className="text-xs font-medium text-[#EE9C24]">Select Product</span>
                       </div>
                       <div className="max-h-60 overflow-y-auto">
                         {filteredProducts.map((p) => (
@@ -861,8 +835,8 @@ export default function BulkInquiryPage() {
                           >
                             <Image src={p.image} alt="" width={30} height={30} className="object-contain" />
                             <div className="flex-1">
-                              <p className="text-[11px] font-black text-gray-800">{p.name}</p>
-                              <p className="text-[9px] text-gray-400 font-bold ">Category: {p.category}</p>
+                              <p className="text-[11px] font-medium text-gray-800">{p.name}</p>
+                              <p className="text-[9px] text-gray-400 font-medium ">Category: {p.category}</p>
                             </div>
                           </div>
                         ))}
@@ -874,7 +848,7 @@ export default function BulkInquiryPage() {
                 {/* Message */}
                 <div className="relative group">
                   <div className="absolute -top-[10px] left-4 z-10 bg-white px-2">
-                    <span className="text-[10px] font-black text-gray-400 ">Message</span>
+                    <span className="text-[10px] font-medium text-gray-700 ">Message</span>
                   </div>
                   <div className="w-full bg-white border border-[#EE9C24]/30 rounded-2xl px-4 py-3.5 flex items-start justify-between shadow-sm transition-all focus-within:border-[#EE9C24]">
                     <textarea
@@ -882,7 +856,7 @@ export default function BulkInquiryPage() {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Enter Your Message"
-                      className="w-full outline-none text-[#333333] font-black text-[11px] bg-transparent placeholder:text-gray-300 resize-none"
+                      className="w-full outline-none text-[#333333] font-medium text-[11px] bg-transparent placeholder:text-gray-300 resize-none"
                     />
                     <Image src="/editicon.png" alt="edit" width={14} height={14} className="opacity-40 mt-1" />
                   </div>
@@ -896,21 +870,21 @@ export default function BulkInquiryPage() {
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </div>
-                  <span className="text-[11px] font-black text-gray-800">Save this information for next time</span>
+                  <span className="text-[11px] font-medium text-gray-800">Save this information for next time</span>
                 </div>
 
                 {/* Bottom Buttons */}
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <button
                     type="button"
-                    className="w-full py-4 border-2 border-[#EE9C24] text-[#EE9C24] font-black text-[13px] rounded-3xl  transition-all cursor-pointer"
+                    className="w-full py-4 border-2 border-[#EE9C24] text-[#EE9C24] font-medium text-[13px] rounded-3xl  transition-all cursor-pointer"
                   >
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="w-full py-4 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white font-black text-[13px] rounded-3xl shadow-lg shadow-orange-200 active:scale-95 transition-all"
+                    className="w-full py-4 bg-gradient-to-r from-[#EE9C24] to-[#B8420E] text-white font-medium text-[13px] rounded-3xl shadow-lg shadow-orange-200 active:scale-95 transition-all"
                   >
                     Submit
                   </button>

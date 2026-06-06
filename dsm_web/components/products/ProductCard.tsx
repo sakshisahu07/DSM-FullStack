@@ -32,6 +32,8 @@ interface Product {
   isTrending?: boolean;
   isSpecialOffer?: boolean;
   isFlashSale?: boolean;
+  stock?: number;
+  quantity?: number;
 }
 
 const ProductCard = ({ product }: { product: Product }) => {
@@ -56,6 +58,10 @@ const ProductCard = ({ product }: { product: Product }) => {
   const description = product.description || "";
   const originalPrice = product.originalPrice || product.oldPrice || product.price;
   const rating = product.rating ?? productObj.avgRating ?? 0;
+  
+  const stockInfo = productObj.stock ?? productObj.variants?.[0]?.stock ?? productObj.variant?.stock ?? product.stock ?? product.quantity;
+  const isOutOfStock = stockInfo === 0 || stockInfo === '0' || Number(stockInfo) <= 0;
+  console.log("Product:", product.name, "stockInfo:", stockInfo, "raw stock:", productObj.stock, "variant stock:", productObj.variant?.stock);
 
   const [isHovered, setIsHovered] = React.useState(false);
   const [timeLeftStr, setTimeLeftStr] = React.useState(product.timeLeft);
@@ -219,9 +225,11 @@ const ProductCard = ({ product }: { product: Product }) => {
           </span>
         </div>
 
-        <p className="hidden md:block text-[10px] lg:text-[13px] text-[#000000] w-full lg:w-[80%] line-clamp-2 font-medium leading-relaxed">
-          {description}
-        </p>
+        <div className="hidden md:block w-full lg:w-[80%]">
+          <p className="text-[10px] lg:text-[13px] text-[#000000] line-clamp-2 font-medium leading-relaxed">
+            {description}
+          </p>
+        </div>
 
         <div className="flex items-end justify-between pt-1 md:pt-2 mt-auto gap-1">
           <div className="flex flex-col min-w-0">
@@ -233,30 +241,36 @@ const ProductCard = ({ product }: { product: Product }) => {
               )}
             </div>
           </div>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              try {
-                const action = isCombo
-                  ? await dispatch(addToCart({ comboId: vId, quantity: 1 }))
-                  : await dispatch(addToCart({ variantId: vId, quantity: 1 }));
+          {isOutOfStock ? (
+            <div className="bg-gray-100 text-red-500 px-2 py-1.5 md:px-2 md:py-1.5 lg:px-4 lg:py-2 rounded-[4px] lg:rounded-lg flex items-center justify-center gap-1 lg:gap-2 text-[8px] md:text-[8px] lg:text-xs font-bold shadow-sm whitespace-nowrap shrink-0 border border-red-200">
+              <span className="whitespace-nowrap">Out of stock</span>
+            </div>
+          ) : (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const action = isCombo
+                    ? await dispatch(addToCart({ comboId: vId, quantity: 1 }))
+                    : await dispatch(addToCart({ variantId: vId, quantity: 1 }));
 
-                if (addToCart.fulfilled.match(action)) {
-                  toast.success("Added to cart successfully!");
-                  router.push('/cart');
-                } else {
-                  const errorMsg = action.payload as string || "Failed to add to cart";
-                  toast.error(errorMsg);
+                  if (addToCart.fulfilled.match(action)) {
+                    toast.success("Added to cart successfully!");
+                    router.push('/cart');
+                  } else {
+                    const errorMsg = action.payload as string || "Failed to add to cart";
+                    toast.error(errorMsg);
+                  }
+                } catch (err) {
+                  toast.error("Failed to add to cart");
                 }
-              } catch (err) {
-                toast.error("Failed to add to cart");
-              }
-            }}
-            className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white px-2 py-1.5 md:px-2 md:py-1.5 lg:px-4 lg:py-2 rounded-[4px] lg:rounded-lg flex items-center justify-center gap-1 lg:gap-2 text-[8px] md:text-[8px] lg:text-xs font-bold hover:shadow-lg transition-all active:scale-95 group/btn shadow-sm whitespace-nowrap shrink-0"
-          >
-            <ShoppingCart size={12} className="w-3 h-3 md:w-3 md:h-3 lg:w-4 lg:h-4 shrink-0" />
-            <span className="whitespace-nowrap">Add to cart</span>
-          </button>
+              }}
+              className="bg-gradient-to-r from-[#E47B25] to-[#B3520A] text-white px-2 py-1.5 md:px-2 md:py-1.5 lg:px-4 lg:py-2 rounded-[4px] lg:rounded-lg flex items-center justify-center gap-1 lg:gap-2 text-[8px] md:text-[8px] lg:text-xs font-bold hover:shadow-lg transition-all active:scale-95 group/btn shadow-sm whitespace-nowrap shrink-0"
+            >
+              <ShoppingCart size={12} className="w-3 h-3 md:w-3 md:h-3 lg:w-4 lg:h-4 shrink-0" />
+              <span className="whitespace-nowrap">Add to cart</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

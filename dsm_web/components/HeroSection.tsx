@@ -44,22 +44,15 @@ const HeroSection = ({
   // Map dynamic categories to the format expected by the UI
   const categories = categoriesList.length > 0 ? categoriesList.map(c => ({
     id: c._id,
-    name: c.title,
+    name: c.title || c.name,
     items: '0 Items', // Static for now as API doesn't provide counts
-    icon: (c.icon && c.icon !== 'false' && c.icon !== 'null') ? c.icon : '/navImg.png'
-  })) : [
-    { id: '1', name: 'Communication', items: '100 Items', icon: '/navImg.png' },
-    { id: '2', name: 'Arduino', items: '150 Items', icon: '/navImg.png' },
-    { id: '3', name: 'Raspberry Pi', items: '120 Items', icon: '/navImg.png' },
-    { id: '4', name: 'Motors', items: '130 Items', icon: '/navImg.png' },
-    { id: '5', name: 'Sensors', items: '105 Items', icon: '/navImg.png' },
-    { id: '6', name: 'Robot Parts', items: '130 Items', icon: '/navImg.png' },
-    { id: '7', name: 'Robot Parts', items: '125 Items', icon: '/navImg.png' },
-    { id: '8', name: 'Development Boards', items: '120 Items', icon: '/navImg.png' },
-    { id: '9', name: 'Programmers', items: '125 Items', icon: '/navImg.png' },
-  ];
+    icon: (c.icon && c.icon !== 'false' && c.icon !== 'null') ? c.icon : '/navImg.png',
+    subcategories: c.subcategories || [],
+    description: c.description || `Explore ${c.title || c.name}`
+  })) : [];
 
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [activeMegaCategory, setActiveMegaCategory] = useState<any>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
   const [banners, setBanners] = useState<any[]>([]);
 
@@ -119,9 +112,14 @@ const HeroSection = ({
   }, []);
 
   const handleCategoryClick = (catId: string, catName: string) => {
-    if (catName === 'Communication') {
+    const fullCat = categories.find(c => c.id === catId);
+    if (fullCat && fullCat.subcategories && fullCat.subcategories.length > 0) {
+      setActiveMegaCategory(fullCat);
       setIsMegaMenuOpen(true);
+    } else {
+      setIsMegaMenuOpen(false);
     }
+
     if (onCategorySelect) {
       if (selectedCategoryId === catId) {
         onCategorySelect(null); // Clear filter if clicked again
@@ -145,8 +143,8 @@ const HeroSection = ({
           <Link href="/allproduct" className="text-[#E47B25] font-semibold text-[15px] hover:underline transition-all">View All</Link>
         </div>
 
-        {/* Categories Swiper (Mobile & Desktop) */}
-        <div className="relative mb-4 md:mb-0">
+        {/* Mobile Categories Swiper */}
+        <div className="relative mb-4 md:hidden block">
           <Swiper
             modules={[Autoplay]}
             autoplay={{
@@ -158,8 +156,6 @@ const HeroSection = ({
             breakpoints={{
               480: { slidesPerView: 5.5, spaceBetween: 12 },
               640: { slidesPerView: 6.5, spaceBetween: 16 },
-              1024: { slidesPerView: 8.5, spaceBetween: 16 },
-              1280: { slidesPerView: 9, spaceBetween: 16 },
             }}
             className="category-swiper"
           >
@@ -171,7 +167,7 @@ const HeroSection = ({
               ))
             ) : (
               categories.map((cat, idx) => (
-                <SwiperSlide key={idx}>
+                <SwiperSlide key={idx} className="!flex justify-center">
                   <div 
                     className="flex flex-col items-center group cursor-pointer"
                     onClick={() => handleCategoryClick(cat.id, cat.name)}
@@ -196,8 +192,41 @@ const HeroSection = ({
           </Swiper>
         </div>
 
+        {/* Desktop Categories Flex */}
+        <div className="hidden md:flex justify-between items-start w-full gap-4 overflow-x-auto no-scrollbar pb-2">
+          {categoriesLoading ? (
+            Array(8).fill(0).map((_, idx) => (
+              <div key={`desktop-skeleton-${idx}`} className="shrink-0 w-[100px] lg:w-[120px]">
+                <CategorySkeleton />
+              </div>
+            ))
+          ) : (
+            categories.map((cat, idx) => (
+              <div 
+                key={`desktop-${idx}`}
+                className="flex flex-col items-center group cursor-pointer shrink-0 w-[100px] lg:w-[120px]"
+                onClick={() => handleCategoryClick(cat.id, cat.name)}
+              >
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-3 overflow-hidden transition-all duration-300 ${cat.id === selectedCategoryId ? 'bg-[#E47B25]/20 border-2 border-[#E47B25] scale-105 shadow-md' : 'bg-[#FDF4EE]'}`}>
+                  <Image
+                    src={cat.icon}
+                    alt={cat.name}
+                    width={80}
+                    height={80}
+                    className="object-cover transition-opacity w-[80px] h-[80px] rounded-full"
+                  />
+                </div>
+                <div className="flex flex-col items-center w-full px-1">
+                  <span className={`text-[11px] lg:text-[12px] font-bold text-center leading-tight transition-colors duration-300 ${cat.id === selectedCategoryId ? 'text-[#E47B25]' : 'text-gray-800'}`}>{cat.name}</span>
+                  <span className="text-[8px] text-gray-400 mt-1 whitespace-nowrap">{cat.items}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Mega Menu Modal */}
-        {isMegaMenuOpen && (
+        {isMegaMenuOpen && activeMegaCategory && (
           <div 
             ref={megaMenuRef}
             className="absolute top-[80%] left-1/2 -translate-x-1/2 w-[95%]  bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[100] border border-gray-100 p-6 md:p-10 flex flex-col md:flex-row gap-8 animate-in fade-in zoom-in-95 duration-300"
@@ -206,41 +235,43 @@ const HeroSection = ({
             <div className="absolute -top-2 left-[5%] w-4 h-4 bg-white rotate-45 border-l border-t border-gray-100" />
 
             <div className="flex-1">
-              <h3 className="text-gray-400 text-xs font-bold  mb-6">Communication</h3>
+              <h3 className="text-gray-400 text-xs font-bold  mb-6">{activeMegaCategory.name}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-4 ">
-                {[...Array(5)].map((_, i) => (
-                  <div 
-                    key={i} 
+                {activeMegaCategory.subcategories.map((sub: any, i: number) => (
+                  <Link 
+                    href={`/allproduct?subcategory=${sub._id}`}
+                    key={sub._id || i} 
                     className={`p-4 rounded-2xl flex items-center gap-4 transition-all group/item cursor-pointer ${i === 0 ? 'bg-gradient-to-r from-[#DE7420] to-[#C25C13] shadow-lg' : 'hover-bg-gradient-to-r from-[#DE7420] to-[#C25C13]'}`}
+                    onClick={() => setIsMegaMenuOpen(false)}
                   >
                     <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-2 shrink-0 shadow-sm ">
-                      <Image src="/bluetooth.png" alt="Bluetooth" width={40} height={40} className="object-contain" />
+                      <Image src={sub.icon && sub.icon !== 'false' && sub.icon !== 'null' ? sub.icon : '/bluetooth.png'} alt={sub.title || sub.name || "Subcategory"} width={40} height={40} className="object-contain" />
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-[15px] ${i === 0 ? 'text-white' : 'text-[#2F2F2F] group-hover/item:text-[#DE7420] hover-bg-gradient-to-r from-[#DE7420] to-[#C25C13]'}`}>Bluetooth Module</span>
-                      <span className={`text-[11px] leading-tight ${i === 0 ? 'text-white/80' : 'text-[#4F4F4F]'}`}>Wireless module for Bluetooth communication</span>
+                      <span className={`text-[15px] ${i === 0 ? 'text-white' : 'text-[#2F2F2F] group-hover/item:text-[#DE7420] hover-bg-gradient-to-r from-[#DE7420] to-[#C25C13]'}`}>{sub.title || sub.name}</span>
+                      <span className={`text-[11px] leading-tight ${i === 0 ? 'text-white/80' : 'text-[#4F4F4F]'}`}>{sub.description || `Explore ${sub.title || sub.name} products`}</span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
 
             {/* Explore Column */}
-            <div className="hidden md:flex w-[300px]  pl-8 flex-col">
+            <div className="hidden md:flex w-[300px]  pl-8 flex-col border-l border-gray-100">
               <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6 text-right">Explore</h3>
-              <div className=" ">
+              <div className="flex items-center justify-center bg-gray-50 rounded-xl p-4 mb-4">
                 <Image 
-                  src="/bluetooth1.png" 
-                  alt="Bluetooth" 
-                  width={280} 
-                  height={180} 
-                  className="object-contain " 
+                  src={activeMegaCategory.icon} 
+                  alt={activeMegaCategory.name} 
+                  width={200} 
+                  height={140} 
+                  className="object-contain hover:scale-105 transition-transform duration-300" 
                 />
               </div>
               <div className="space-y-1">
-                <h4 className=" text-lg text-[#2F2F2F]">Bluetooth</h4>
-                <p className="text-[11px] text-gray-400 leading-relaxed">Wireless module for Bluetooth communication</p>
-                <Link href="/allproduct" className="inline-flex items-center gap-2 text-[#DE7420] font-bold text-sm mt-3 hover:gap-3 transition-all">
+                <h4 className=" text-lg text-[#2F2F2F]">{activeMegaCategory.name}</h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed">{activeMegaCategory.description}</p>
+                <Link href={`/allproduct?category=${activeMegaCategory.id}`} onClick={() => setIsMegaMenuOpen(false)} className="inline-flex items-center gap-2 text-[#DE7420] font-bold text-sm mt-3 hover:gap-3 transition-all">
                   Shop Now <ChevronRight size={16} />
                 </Link>
               </div>

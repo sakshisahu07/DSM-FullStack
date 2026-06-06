@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/redux/store';
 import { registerLoginUser, verifyOtp } from '@/redux/slices/authSlice';
 
-const LoginPage = () => {
+const LoginContent = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/';
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error, otpInfo } = useSelector((state: RootState) => state.auth);
 
@@ -20,22 +22,7 @@ const LoginPage = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
-  // Handle step transitions for demo
-  useEffect(() => {
-    if (step === 2) {
-      const interval = setInterval(() => {
-        setLoadingProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setStep(3), 500);
-            return 100;
-          }
-          return prev + 5;
-        });
-      }, 50);
-      return () => clearInterval(interval);
-    }
-  }, [step]);
+
 
   useEffect(() => {
     if (step === 3 || step === 4) {
@@ -57,7 +44,7 @@ const LoginPage = () => {
           }));
 
           if (registerLoginUser.fulfilled.match(resultAction)) {
-            setStep(2);
+            setStep(3);
           }
         } catch (err) {
           console.error("Login failed:", err);
@@ -80,7 +67,7 @@ const LoginPage = () => {
         alert("Please enter a valid 4-digit OTP.");
       }
     } else if (step === 4) {
-      router.push('/');
+      router.push(redirectPath);
     }
   };
 
@@ -176,18 +163,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* STEP 2: OTP SENDING */}
-        {step === 2 && (
-          <div className="w-full flex flex-col items-center mb-10 overflow-hidden">
-            <span className="text-[#333] font-bold text-sm md:text-base mb-6">OTP Sending</span>
-            <div className="w-full h-[6px] bg-[#E8E8E8] rounded-full relative overflow-hidden">
-              <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#E47B25] to-[#B3520A] transition-all duration-100 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* STEP 3 & 4: ENTER OTP */}
         {(step === 3 || step === 4) && (
@@ -273,6 +249,14 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const LoginPage = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 };
 

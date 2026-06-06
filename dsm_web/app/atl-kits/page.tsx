@@ -22,7 +22,7 @@ export default function AtlKitsPage() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-orange-100 border-t-[#EE9C24] rounded-full animate-spin"></div>
-           <p className="text-xs font-black text-gray-400 ">Loading ATL Solutions...</p>
+           <p className="text-xs font-bold text-gray-400 ">Loading ATL Solutions...</p>
         </div>
       </div>
     );
@@ -31,7 +31,7 @@ export default function AtlKitsPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-400 font-bold">Failed to load content. Please try again later.</p>
+        <p className="text-gray-400 font-medium">Failed to load content. Please try again later.</p>
       </div>
     );
   }
@@ -52,17 +52,17 @@ export default function AtlKitsPage() {
             {/* About ATL Mobile */}
             <div className="px-5 py-10">
                <div className="flex flex-col items-center text-center mb-8">
-                  <h2 className="text-[22px] font-black text-gray-800 mb-4 tracking-tighter">
+                  <h2 className="text-[22px] font-bold text-gray-800 mb-4 tracking-tighter">
                      About <span className="text-[#EE9C24]">{heading}</span>
                   </h2>
                   <div className="h-1.5 w-16 bg-[#EE9C24] rounded-full" />
                </div>
-               <p className="text-[13px] font-bold text-gray-400 leading-relaxed text-center mb-10 px-2 opacity-80">
+               <p className="text-[13px] font-medium text-gray-400 leading-relaxed text-center mb-10 px-2 opacity-80">
                   {description}
                </p>
 
                <div className="flex flex-col items-center text-center mb-8">
-                  <h2 className="text-[22px] font-black text-gray-800 mb-4 tracking-tighter">
+                  <h2 className="text-[22px] font-bold text-gray-800 mb-4 tracking-tighter">
                     {subTitle.split(' ').map((word, i, arr) => (
                       <React.Fragment key={i}>
                         {i === arr.length - 1 ? <span className="text-[#EE9C24]">{word}</span> : word + ' '}
@@ -71,7 +71,7 @@ export default function AtlKitsPage() {
                   </h2>
                   <div className="h-1.5 w-16 bg-[#EE9C24] rounded-full" />
                </div>
-               <p className="text-[13px] font-bold text-gray-400 leading-relaxed text-center mb-12 px-2 opacity-80">
+               <p className="text-[13px] font-medium text-gray-400 leading-relaxed text-center mb-12 px-2 opacity-80">
                   {subDescription}
                </p>
 
@@ -82,8 +82,8 @@ export default function AtlKitsPage() {
                         <div className="absolute -top-12 w-24 h-24 flex items-center justify-center">
                            <Image src={card.icon?.url && card.icon.url !== 'false' ? card.icon.url : '/placeholder.png'} alt="icon" width={100} height={100} className="w-full h-full object-contain" />
                         </div>
-                        <h3 className="text-[16px] font-black text-gray-800 mb-3">{card.title}</h3>
-                        <p className="text-[11px] font-bold text-gray-400 leading-relaxed opacity-90">{card.description}</p>
+                        <h3 className="text-[16px] font-bold text-gray-800 mb-3">{card.title}</h3>
+                        <p className="text-[11px] font-medium text-gray-400 leading-relaxed opacity-90">{card.description}</p>
                      </div>
                   ))}
                </div>
@@ -93,7 +93,7 @@ export default function AtlKitsPage() {
             {setProcess && setProcess.length > 0 && (
                <div className="px-5 py-12 bg-[#FAF9F6]">
                   <div className="relative mb-12 flex justify-center">
-                     <h2 className="text-[20px] font-black text-gray-800 relative z-10 text-center pl-6">
+                     <h2 className="text-[20px] font-bold text-gray-800 relative z-10 text-center pl-6">
                         <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-[#EE9C24] to-[#B8420E] rounded-full z-[-1]" />
                         {processHeading || "ATL Implementation Process"}
                      </h2>
@@ -104,8 +104,8 @@ export default function AtlKitsPage() {
                         <div key={step._id} className="flex gap-4">
                            <div className="mt-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#EE9C24]" /></div>
                            <div className="flex flex-col">
-                              <h3 className="text-[14px] font-black text-[#EE9C24] case  mb-1">{step.heading}</h3>
-                              <p className="text-[11px] font-bold text-gray-400  pr-2">{step.description}</p>
+                              <h3 className="text-[14px] font-bold text-[#EE9C24] case  mb-1">{step.heading}</h3>
+                              <p className="text-[11px] font-medium text-gray-400  pr-2">{step.description}</p>
                            </div>
                         </div>
                      ))}
@@ -115,7 +115,7 @@ export default function AtlKitsPage() {
 
             {/* Setup Details Mobile */}
             <div className="px-5 py-16">
-               <h2 className="text-[22px] font-black text-gray-800 mb-10 ">
+               <h2 className="text-[22px] font-bold text-gray-800 mb-10 ">
                   {setupHeading ? (
                      setupHeading.split(' ').map((word: string, i: number, arr: string[]) => (
                         <React.Fragment key={i}>
@@ -134,8 +134,8 @@ export default function AtlKitsPage() {
                            <Image src={item.setupIcon?.url && item.setupIcon.url !== 'false' ? item.setupIcon.url : '/placeholder.png'} alt="i" width={32} height={32} className="object-contain p-1" />
                         </div>
                         <div className="flex flex-col">
-                           <h3 className="text-[14px] font-black text-gray-800 mb-1">{item.title}</h3>
-                           <p className="text-[11px] font-bold text-gray-400 leading-relaxed opacity-80">{item.description}</p>
+                           <h3 className="text-[14px] font-bold text-gray-800 mb-1">{item.title}</h3>
+                           <p className="text-[11px] font-medium text-gray-400 leading-relaxed opacity-80">{item.description}</p>
                         </div>
                      </div>
                   ))}
@@ -153,18 +153,18 @@ export default function AtlKitsPage() {
         </div>
 
         {/* 2. About ATL Section */}
-        <div id="about-atl" className="px-16 py-20 bg-white">
+        <div id="about-atl" className="px-16 pt-12 bg-white">
           <div className="flex flex-col items-center justify-center mb-10">
-            <h2 className="text-center text-4xl font-black text-gray-800 mb-6 ">About <span className="text-[#EE9C24]">{heading}</span></h2>
+            <h2 className="text-center text-4xl font-bold text-gray-800 mb-6 ">About <span className="text-[#EE9C24]">{heading}</span></h2>
             <div className="h-[4px] w-24 bg-[#EE9C24] rounded-full"></div>
           </div>
           
-          <p className="text-center text-[#333333] font-bold leading-[1.8] text-[1.28rem] mb-16 max-w-5xl mx-auto opacity-80  px-10">
+          <p className="text-center text-[#333333] font-medium leading-[1.8] text-[1.28rem] mb-16  opacity-80  px-10">
              {description}
           </p>
 
           <div className="flex flex-col items-center justify-center mb-10">
-            <h2 className="text-center text-4xl font-black text-gray-800 mb-6 ">
+            <h2 className="text-center text-4xl font-bold text-gray-800 mb-6 ">
                 {subTitle.split(' ').map((word, i, arr) => (
                     <React.Fragment key={i}>
                         {i === arr.length - 1 ? <span className="text-[#EE9C24]">{word}</span> : word + ' '}
@@ -174,7 +174,7 @@ export default function AtlKitsPage() {
             <div className="h-[4px] w-24 bg-[#EE9C24] rounded-full"></div>
           </div>
           
-          <p className="text-center text-[#333333] font-medium leading-[1.8] text-[1.28rem] mb-32 max-w-5xl mx-auto opacity-80 px-10">
+          <p className="text-center text-[#333333] font-medium leading-[1.8] text-[1.28rem] mb-32 opacity-80 px-10">
              {subDescription}
           </p>
 
@@ -184,8 +184,8 @@ export default function AtlKitsPage() {
                 <div className="absolute -top-16 w-32 h-32 flex items-center justify-center">
                   <Image src={card.icon?.url && card.icon.url !== 'false' ? card.icon.url : '/placeholder.png'} alt="ATL Icon" width={200} height={200} className="w-full h-full object-contain" />
                 </div>
-                <h3 className="text-[1.6rem] font-black text-[#333333] mb-6 mt-4">{card.title}</h3>
-                <p className="text-[#333333] font-medium text-[1.1rem] opacity-80">{card.description}</p>
+                <h3 className="text-[1.6rem] font-medium text-[#333333] mb-6 mt-4">{card.title}</h3>
+                <p className="text-[#333333]  text-[1.1rem] opacity-80">{card.description}</p>
               </div>
             ))}
           </div>
@@ -196,7 +196,7 @@ export default function AtlKitsPage() {
             <div id="process" className="py-24 px-16 bg-white">
             <div className="grid grid-cols-2 gap-20 items-center">
                 <div>
-                <h2 className="text-[2.2rem] font-black text-[#333333] mb-16 relative z-10 pl-6 ">
+                <h2 className="text-[2.2rem] font-bold text-[#333333] mb-16 relative z-10 pl-6 ">
                     <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-[#EE9C24] to-[#B8420E] rounded-full z-[-1]"></div>
                     {processHeading ? (
                         <>
@@ -214,7 +214,7 @@ export default function AtlKitsPage() {
                 <div className="space-y-12">
                     {setProcess.map((step) => (
                         <div key={step._id}>
-                            <h3 className="text-[#EE9C24] text-[1.5rem] font-black  mb-2">{step.heading}</h3>
+                            <h3 className="text-[#EE9C24] text-[1.5rem] font-bold  mb-2">{step.heading}</h3>
                             <p className="text-[#333333] font-medium text-[1.18rem] opacity-80">
                                 {step.description}
                             </p>
@@ -235,10 +235,10 @@ export default function AtlKitsPage() {
         )}
 
         {/* 4. Included Section */}
-        <div id="lab-setup" className="py-24 px-16  rounded-[80px_80px_0_0]">
+        <div id="lab-setup" className="py-14 px-16  rounded-[80px_80px_0_0]">
            <div className="grid grid-cols-[1.2fr_0.8fr] gap-20">
               <div>
-                 <h2 className="text-5xl font-black text-gray-800 mb-16 ">
+                 <h2 className="text-5xl font-bold text-gray-800 mb-16 ">
                     {setupHeading ? (
                         setupHeading.split(' ').map((word: string, i: number, arr: string[]) => (
                            <React.Fragment key={i}>
@@ -256,8 +256,8 @@ export default function AtlKitsPage() {
                              <Image src={item.setupIcon?.url && item.setupIcon.url !== 'false' ? item.setupIcon.url : '/placeholder.png'} alt="i" width={48} height={48} className="object-contain" />
                           </div>
                           <div>
-                             <h3 className="text-2xl font-black text-gray-800 mb-3 ">{item.title}</h3>
-                             <p className="text-[#333333] font-bold text-[1.1rem] opacity-80 ">{item.description}</p>
+                             <h3 className="text-2xl font-bold text-gray-800 mb-3 ">{item.title}</h3>
+                             <p className="text-[#333333] font-medium text-[1.1rem] opacity-80 ">{item.description}</p>
                           </div>
                        </div>
                     ))}

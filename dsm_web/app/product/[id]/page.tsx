@@ -669,11 +669,11 @@ const ProductDetailPage = () => {
                                                     <span className="text-gray-500 font-medium tracking-wide">Rating {review.rating}</span>
                                                     <div className="flex gap-0.5 text-[#FFC107]">
                                                         {[...Array(5)].map((_, i) => (
-                                                            <Star 
-                                                                key={i} 
-                                                                size={18} 
-                                                                fill={i < Math.floor(review.rating) ? "currentColor" : "currentColor"} 
-                                                                className={i >= review.rating ? "text-gray-300" : ""} 
+                                                            <Star
+                                                                key={i}
+                                                                size={18}
+                                                                fill={i < Math.floor(review.rating) ? "currentColor" : "currentColor"}
+                                                                className={i >= review.rating ? "text-gray-300" : ""}
                                                             />
                                                         ))}
                                                     </div>
