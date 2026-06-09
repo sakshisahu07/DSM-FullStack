@@ -115,6 +115,11 @@ const orderSchema = new Schema(
       default: 0,
     },
 
+    adminChargeAmount: {
+      type: Number,
+      default: 0,
+    },
+
     shippingMode: {
       type: String,
       enum: ["air", "road"],

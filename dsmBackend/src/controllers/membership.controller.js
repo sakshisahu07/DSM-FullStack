@@ -227,7 +227,9 @@ export default class MembershipController {
       const isMockPayment = payload.paymentId.startsWith("pay_gold") || payload.paymentId.startsWith("pay_upgrade") || payload.paymentId.startsWith("pay_webhook");
       if (!isMockPayment) {
         const signature = req.headers["x-razorpay-signature"];
-        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "webhook_secret_key";
+        const companyModel = (await import("../model/company.model.js")).default;
+        const company = await companyModel.findOne();
+        const webhookSecret = company?.razorpayWebhookSecret?.trim() || process.env.RAZORPAY_WEBHOOK_SECRET || "webhook_secret_key";
         if (!signature) {
           throw new ValidationError("Missing webhook signature header");
         }

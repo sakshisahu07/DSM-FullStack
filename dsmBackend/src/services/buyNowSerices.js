@@ -8,7 +8,8 @@ import transactionModel from "../model/transaction.model.js";
 import addressModel from "../model/address.model.js";
 import walletModel from "../model/wallet.model.js";
 import redisClient from "../config/redis.js";
-import { razorpay } from "../config/razorpay.js";
+import { getRazorpayInstance } from "../config/razorpay.js";
+import companyModel from "../model/company.model.js";
 import { AppError } from "../utils/apiResponse.js";
 import WalletService from "../services/wallteServices.js";
 import ReferralService from "../services/referralServices.js";
@@ -170,7 +171,11 @@ export default class BuyNowService {
       // ── 6. Wallet PREVIEW (pure math, no DB writes, no orderId needed) ───
       //    Calculates walletDiscount + onlineAmount so we can store them on
       //    the order doc. Actual deduction happens in step 9 with real orderId.
-      const rawTotal     = productTotal + finalShippingCharge;
+      const company = await companyModel.findOne();
+      const adminChargePercent = company?.adminCharge || 0;
+      const adminChargeAmount = (productTotal * adminChargePercent) / 100;
+
+      const rawTotal     = productTotal + finalShippingCharge + adminChargeAmount;
       let walletDiscount = 0;
       let onlineAmount   = 0;
 
@@ -204,6 +209,7 @@ export default class BuyNowService {
             orderTotal:     grandTotal,
             shippingCharge: finalShippingCharge,
             shippingMode,
+            adminChargeAmount,
             walletDiscount,
             onlineAmount,
             walletOption:   paymentMethod === "WALLET" ? walletOption : null,
@@ -238,8 +244,9 @@ export default class BuyNowService {
       const needsRazorpay = paymentMethod === "ONLINE" || isPartialWallet;
 
       if (needsRazorpay) {
+        const rzp = await getRazorpayInstance();
         const chargeAmount = isPartialWallet ? onlineAmount : grandTotal;
-        razorpayOrder = await razorpay.orders.create({
+        razorpayOrder = await rzp.orders.create({
           amount:   Math.round(chargeAmount * 100),
           currency: "INR",
           receipt:  `buynow_${order._id}`,
@@ -290,13 +297,14 @@ export default class BuyNowService {
         order,
         transaction,
         razorpayOrderId: razorpayOrder?.id ?? null,
-        razorpayKey:     needsRazorpay ? process.env.RAZORPAY_KEY_ID : undefined,
+        razorpayKey:     needsRazorpay ? company?.razorpayKeyId || process.env.RAZORPAY_KEY_ID : undefined,
         breakdown: {
           productTotal,
           shippingCharge:         finalShippingCharge,
           originalShippingCharge: shippingCharge,
           freeDeliveryApplied,
           shippingMode,
+          adminChargeAmount,
           walletDiscount,
           onlineAmount,
           grandTotal,
@@ -322,9 +330,12 @@ export default class BuyNowService {
         orderId,
       } = data;
 
+      const company = await companyModel.findOne();
+      const key_secret = company?.razorpayKeySecret?.trim() || process.env.RAZORPAY_KEY_SECRET;
+
       // ── Verify Razorpay signature ────────────────────────────────────────
       const expected = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .createHmac("sha256", key_secret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
 

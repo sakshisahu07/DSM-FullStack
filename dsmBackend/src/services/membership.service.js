@@ -11,7 +11,7 @@ import redisClient from "../config/redis.js";
 import { AppError, ValidationError } from "../utils/apiResponse.js";
 import logger from "../utils/logger.js";
 import mongoose from "mongoose";
-import { razorpay } from "../config/razorpay.js";
+import { getRazorpayInstance } from "../config/razorpay.js";
 import WalletService from "./wallteServices.js";
 import Invoice from "../model/invoice.model.js";
 
@@ -242,8 +242,9 @@ export default class MembershipService {
     } else {
       // Securely verify payment with Razorpay (bypass mock payment IDs in test runs)
       const isMockPayment = paymentId.startsWith("pay_gold") || paymentId.startsWith("pay_upgrade") || paymentId.startsWith("pay_webhook") || paymentId.startsWith("pay_test") || paymentId.startsWith("pay_mock");
-      if (!isMockPayment) {
+      if (!isMockPayment && paymentMethod !== "WALLET") {
         try {
+          const razorpay = await getRazorpayInstance();
           const paymentInfo = await razorpay.payments.fetch(paymentId);
           if (!paymentInfo || (paymentInfo.status !== "captured" && paymentInfo.status !== "authorized")) {
             throw new ValidationError("Payment verification failed: payment not captured.");
@@ -326,8 +327,10 @@ export default class MembershipService {
     });
 
     // 7. Clear Redis caches
-    await this.clearUserMembershipCache(userId);
-    await this.clearAdminStatsCache();
+    await Promise.all([
+      this.clearUserMembershipCache(userId),
+      this.clearAdminStatsCache(),
+    ]);
 
     return {
       membership: userMembership,
@@ -451,7 +454,8 @@ export default class MembershipService {
     const isMockPayment = paymentId.startsWith("pay_gold") || paymentId.startsWith("pay_upgrade") || paymentId.startsWith("pay_webhook");
     if (!isMockPayment) {
       try {
-        const paymentInfo = await razorpay.payments.fetch(paymentId);
+          const razorpay = await getRazorpayInstance();
+          const paymentInfo = await razorpay.payments.fetch(paymentId);
         if (!paymentInfo || (paymentInfo.status !== "captured" && paymentInfo.status !== "authorized")) {
           throw new ValidationError("Payment verification failed: payment not captured.");
         }

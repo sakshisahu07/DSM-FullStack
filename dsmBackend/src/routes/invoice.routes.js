@@ -9,4 +9,4 @@ router.get("/invoice/order/:orderId", authUser, InvoiceController.getInvoiceByOr
 router.get("/invoice/all", authUser, InvoiceController.getAllInvoices);
 router.patch("/invoice/:id", authUser, adminMiddleware, InvoiceController.updateInvoice);
 
-export default router;
+export default router; 

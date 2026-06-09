@@ -34,4 +34,4 @@ const appReferralConfigSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("appReferralConfig", appReferralConfigSchema);
+  export default mongoose.model("appReferralConfig", appReferralConfigSchema);

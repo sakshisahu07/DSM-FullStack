@@ -16,7 +16,11 @@ const BODY_FIELDS = [
   "term_condition", "privacy_policy", "return_policy", "refund_policy",
   "shippingAndDelivery", "theme_color", "font_style",
   "productDeliveryFee", "minDelAmount", "adminCharge",
+  "razorpayKeyId", "razorpayKeySecret", "razorpayWebhookSecret",
 ];
+
+// These are boolean toggle fields — need special parsing since multer turns everything into strings
+const BOOLEAN_FIELDS = ["isRazorpayEnabled", "isCodEnabled", "isWalletEnabled"];
 
 export default class CompanyService {
 
@@ -46,6 +50,18 @@ export default class CompanyService {
     for (const field of BODY_FIELDS) {
       if (typeof body[field] !== "undefined") {
         update[field] = body[field];
+      }
+    }
+
+    // boolean toggle fields — multer sends them as strings ("true"/"false") or actual booleans
+    for (const field of BOOLEAN_FIELDS) {
+      if (typeof body[field] !== "undefined") {
+        const val = body[field];
+        if (typeof val === "boolean") {
+          update[field] = val;
+        } else if (typeof val === "string") {
+          update[field] = val === "true" || val === "1";
+        }
       }
     }
 

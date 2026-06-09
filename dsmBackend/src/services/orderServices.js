@@ -8,7 +8,8 @@ import transactionModel from "../model/transaction.model.js";
 import addressModel from "../model/address.model.js";
 import userModel from "../model/user.model.js";
 import redisClient from "../config/redis.js";
-import { razorpay } from "../config/razorpay.js";
+import { getRazorpayInstance } from "../config/razorpay.js";
+import companyModel from "../model/company.model.js";
 import { AppError } from "../utils/apiResponse.js";
 import WalletService from "../services/wallteServices.js";
 import ReferralService from "../services/referralServices.js";
@@ -128,7 +129,11 @@ export default class OrderService {
         }
       }
 
-      const grandTotal = total + shippingCharge - couponDiscount;
+      const company = await companyModel.findOne();
+      const adminChargePercent = company?.adminCharge || 0;
+      const adminChargeAmount = (total * adminChargePercent) / 100;
+
+      const grandTotal = total + shippingCharge + adminChargeAmount - couponDiscount;
 
       // ── 4. Resolve referral (unchanged) ─────────────────────
       let referral = null;
@@ -155,6 +160,7 @@ export default class OrderService {
             orderTotal: grandTotal,
             shippingCharge,
             shippingMode,
+            adminChargeAmount,
             paymentMethod,
             paymentStatus: "UNPAID",
             referralToken: refToken ?? null,
@@ -285,13 +291,14 @@ export default class OrderService {
           await createdOrder.save({ session });
 
           // Create Razorpay order for leftover remainder
+          const rzp = await getRazorpayInstance();
           const options = {
             amount: Math.round(walletRes.onlineAmount * 100),
             currency: "INR",
             receipt: `receipt_${createdOrder._id}`.substring(0, 40),
           };
 
-          const razorpayOrder = await razorpay.orders.create(options);
+          const razorpayOrder = await rzp.orders.create(options);
 
           // Create a PENDING transaction
           await transactionModel.create(
@@ -315,13 +322,14 @@ export default class OrderService {
         }
       } else if (paymentMethod === "ONLINE") {
         // Create Razorpay Order
+        const rzp = await getRazorpayInstance();
         const options = {
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           receipt: `receipt_${createdOrder._id}`.substring(0, 40),
         };
         
-        const razorpayOrder = await razorpay.orders.create(options);
+        const razorpayOrder = await rzp.orders.create(options);
         
         // Create a PENDING transaction
         await transactionModel.create(
@@ -377,12 +385,15 @@ export default class OrderService {
         orderId,
       } = data;
 
-      if (!process.env.RAZORPAY_KEY_SECRET) {
+      const company = await companyModel.findOne();
+      const key_secret = company?.razorpayKeySecret?.trim() || process.env.RAZORPAY_KEY_SECRET;
+
+      if (!key_secret) {
         throw new AppError("Razorpay key secret is not configured on the server", 500);
       }
 
       const expected = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .createHmac("sha256", key_secret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
 

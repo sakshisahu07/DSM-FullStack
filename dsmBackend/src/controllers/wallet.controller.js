@@ -1,6 +1,7 @@
 import { handleApiRequest, AppError } from "../utils/apiResponse.js";
 import WalletService from "../services/wallteServices.js";
-import { razorpay } from "../config/razorpay.js";
+import { getRazorpayInstance } from "../config/razorpay.js";
+import companyModel from "../model/company.model.js";
 
 export default class WalletController {
   // GET /wallet  — current user's wallet
@@ -23,12 +24,16 @@ export default class WalletController {
         receipt: `top_${String(req.user._id).slice(-8)}_${Date.now()}`,
       };
 
+      const razorpay = await getRazorpayInstance();
       const razorpayOrder = await razorpay.orders.create(options);
+
+      const company = await companyModel.findOne();
+      const razorpayKeyId = company?.razorpayKeyId?.trim() || process.env.RAZORPAY_KEY_ID || '';
 
       const responseData = {
         razorpayOrderId: razorpayOrder.id,
         amount: Number(amount),
-        razorpayKey: process.env.RAZORPAY_KEY_ID || '',
+        razorpayKey: razorpayKeyId,
       };
 
       return [{ data: responseData }, "Razorpay top-up order created"];
@@ -44,13 +49,16 @@ export default class WalletController {
         throw new AppError("Missing required parameters for payment verification", 400);
       }
 
-      if (!process.env.RAZORPAY_KEY_SECRET) {
+      const company = await companyModel.findOne();
+      const razorpayKeySecret = company?.razorpayKeySecret?.trim() || process.env.RAZORPAY_KEY_SECRET || '';
+
+      if (!razorpayKeySecret) {
         throw new AppError("Razorpay key secret is not configured on the server", 500);
       }
 
       const crypto = await import("crypto");
       const expected = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .createHmac("sha256", razorpayKeySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
 
@@ -59,6 +67,7 @@ export default class WalletController {
       }
 
       // Securely fetch order details from Razorpay to verify the amount
+      const razorpay = await getRazorpayInstance();
       const rpOrder = await razorpay.orders.fetch(razorpay_order_id);
       const amountInRs = rpOrder.amount / 100;
 
