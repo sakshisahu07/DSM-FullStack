@@ -12,12 +12,6 @@ import type { LucideIcon } from "lucide-react";
 import { FormDialog, type FormField } from "@/components/form-dialog";
 import { apiFetch } from "@/lib/api";
 
-const API_BASE = "https://api.dsmelectro.com/api/v1";
-
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("dsm_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export const Route = createFileRoute("/_app/settings/payments")({
   component: PaymentsPage,
@@ -51,12 +45,7 @@ const defaultSlabs: WeightSlab[] = [
   { minWeight: 5, maxWeight: 10, charge: 150 },
 ];
 
-const gateways: { name: string; icon: LucideIcon; desc: string; fee: string; enabled: boolean }[] = [
-  { name: "UPI (Razorpay)", icon: Smartphone, desc: "BHIM, GPay, PhonePe, Paytm UPI", fee: "0% (intra-bank)", enabled: true },
-  { name: "Cards", icon: CreditCard, desc: "Visa, Mastercard, RuPay, Amex", fee: "2% + ₹2", enabled: true },
-  { name: "Wallets", icon: Wallet, desc: "Paytm, MobiKwik, Amazon Pay", fee: "1.5%", enabled: true },
-  { name: "Cash on Delivery", icon: Banknote, desc: "COD up to ₹10,000", fee: "₹40 / order", enabled: false },
-];
+
 
 function PaymentsPage() {
   const [loading, setLoading] = useState(true);
@@ -85,7 +74,7 @@ function PaymentsPage() {
 
   const fetchPayments = async () => {
     try {
-      const res = await fetch(`${API_BASE}/company`, { headers: getAuthHeaders() });
+      const res = await apiFetch("/company");
       const json = await res.json();
       if (json.success) {
         setData(json.data);
@@ -126,13 +115,22 @@ function PaymentsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const res = await fetch(`${API_BASE}/company`, {
+
+      // Use FormData because the /company PUT route uses multer (file-upload middleware)
+      // Sending JSON breaks boolean parsing — multer needs multipart/form-data
+      const formData = new FormData();
+      formData.append("adminCharge", String(data?.adminCharge ?? 0));
+      formData.append("isRazorpayEnabled", String(data?.isRazorpayEnabled ?? true));
+      formData.append("isCodEnabled", String(data?.isCodEnabled ?? true));
+      formData.append("isWalletEnabled", String(data?.isWalletEnabled ?? true));
+      formData.append("razorpayKeyId", data?.razorpayKeyId ?? "");
+      formData.append("razorpayKeySecret", data?.razorpayKeySecret ?? "");
+      formData.append("razorpayWebhookSecret", data?.razorpayWebhookSecret ?? "");
+
+      // apiFetch auto-removes Content-Type for FormData and uses correct base URL
+      const res = await apiFetch("/company", {
         method: "PUT",
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: formData,
       });
       const json = await res.json();
       if (json.success) {
@@ -270,7 +268,7 @@ function PaymentsPage() {
   ];
 
   const updateField = (key: string, value: any) => {
-    setData((prev: any) => ({ ...prev, [key]: Number(value) }));
+    setData((prev: any) => ({ ...prev, [key]: value }));
   };
 
   if (loading) {
@@ -307,7 +305,7 @@ function PaymentsPage() {
                 <Input
                   type="number"
                   value={data?.adminCharge || 0}
-                  onChange={(e) => updateField("adminCharge", e.target.value)}
+                  onChange={(e) => updateField("adminCharge", Number(e.target.value))}
                 />
               </div>
               <div className="space-y-1.5">
@@ -331,32 +329,68 @@ function PaymentsPage() {
           <Card className="p-6 space-y-4">
             <h3 className="font-semibold">Razorpay credentials</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Key ID" defaultValue="rzp_live_abc123def456" />
-              <Field label="Key Secret" defaultValue="••••••••••••••••" type="password" />
-              <Field label="Webhook Secret" defaultValue="••••••••" type="password" />
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Key ID</Label>
+                <Input
+                  type="text"
+                  value={data?.razorpayKeyId || ""}
+                  onChange={(e) => updateField("razorpayKeyId", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Key Secret</Label>
+                <Input
+                  type="password"
+                  value={data?.razorpayKeySecret || ""}
+                  onChange={(e) => updateField("razorpayKeySecret", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Webhook Secret</Label>
+                <Input
+                  type="password"
+                  value={data?.razorpayWebhookSecret || ""}
+                  onChange={(e) => updateField("razorpayWebhookSecret", e.target.value)}
+                />
+              </div>
             </div>
           </Card>
         </div>
 
         <div className="space-y-3">
           <h3 className="font-semibold px-1">Payment Gateways</h3>
-          {gateways.map((g) => (
-            <Card key={g.name} className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary grid place-items-center">
-                <g.icon className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">{g.name}</div>
-                <div className="text-xs text-muted-foreground">{g.desc}</div>
-              </div>
-              <div className="text-right mr-2">
-                <div className="text-sm font-medium">{g.fee}</div>
-                <div className="text-[11px] text-muted-foreground">fee</div>
-              </div>
-              <Switch defaultChecked={g.enabled} />
-            </Card>
-          ))}
+          <Card className="p-5 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary grid place-items-center">
+              <Smartphone className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold">Razorpay (Online)</div>
+              <div className="text-xs text-muted-foreground">UPI, Cards, Netbanking</div>
+            </div>
+            <Switch checked={data?.isRazorpayEnabled ?? true} onCheckedChange={(val) => updateField("isRazorpayEnabled", val)} />
+          </Card>
+          <Card className="p-5 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary grid place-items-center">
+              <Banknote className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold">Cash on Delivery</div>
+              <div className="text-xs text-muted-foreground">Pay on delivery</div>
+            </div>
+            <Switch checked={data?.isCodEnabled ?? true} onCheckedChange={(val) => updateField("isCodEnabled", val)} />
+          </Card>
+          <Card className="p-5 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary grid place-items-center">
+              <Wallet className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold">Wallet</div>
+              <div className="text-xs text-muted-foreground">Internal Wallet / Coins</div>
+            </div>
+            <Switch checked={data?.isWalletEnabled ?? true} onCheckedChange={(val) => updateField("isWalletEnabled", val)} />
+          </Card>
         </div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -570,11 +604,3 @@ function PaymentsPage() {
   );
 }
 
-function Field({ label, defaultValue, type = "text" }: { label: string; defaultValue?: string; type?: string }) {
-  return (
-    <div>
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
-      <Input className="mt-1.5 font-mono" defaultValue={defaultValue} type={type} />
-    </div>
-  );
-}

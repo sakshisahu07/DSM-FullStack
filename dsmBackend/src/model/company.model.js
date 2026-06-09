@@ -63,6 +63,16 @@ const companySchema = new mongoose.Schema(
     minDelAmount:       { type: Number, default: 0 },
     adminCharge:        { type: Number, default: 0 },
 
+    // Razorpay Credentials
+    razorpayKeyId:         { type: String, default: "" },
+    razorpayKeySecret:     { type: String, default: "" },
+    razorpayWebhookSecret: { type: String, default: "" },
+
+    // Payment Toggles
+    isRazorpayEnabled:     { type: Boolean, default: true },
+    isCodEnabled:          { type: Boolean, default: true },
+    isWalletEnabled:       { type: Boolean, default: true },
+
     // Onboarding
     ONBOARDING_DATA: [
       {

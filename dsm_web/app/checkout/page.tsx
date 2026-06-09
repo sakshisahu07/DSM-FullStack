@@ -37,7 +37,10 @@ import {
     ArrowLeft,
     Minus,
     Plus,
-    Trash2
+    Trash2,
+    Smartphone,
+    Banknote,
+    Wallet as WalletIcon
 } from 'lucide-react';
 
 const getItemImage = (item: any) => {
@@ -113,9 +116,28 @@ const CheckoutPage = () => {
     const [saveAddress, setSaveAddress] = useState(true);
     const [loginPhone, setLoginPhone] = useState("");
 
+    const [companyConfig, setCompanyConfig] = useState<any>(null);
+
     // Dynamic Country & State lookup states
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCompanyConfig = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://api.dsmelectro.com/api/v1'}/company`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.data) {
+                        setCompanyConfig(data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching company config:", err);
+            }
+        };
+        fetchCompanyConfig();
+    }, []);
 
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://api.dsmelectro.com/api/v1';
 
@@ -512,6 +534,7 @@ const CheckoutPage = () => {
                 setIsAddingNewAddress={setIsAddingNewAddress}
                 handleEditAddress={handleEditAddress}
                 handleDeleteAddress={handleDeleteAddress}
+                companyConfig={companyConfig}
             />
 
             {/* Desktop View */}
@@ -1063,103 +1086,76 @@ const CheckoutPage = () => {
 
                                         {/* Payment Methods */}
                                         <div className="space-y-4 w-full">
-                                            {/* UPI Card */}
+                                            {/* UPI / Razorpay Card */}
+                                            {(companyConfig?.isRazorpayEnabled ?? true) && (
                                             <div
                                                 onClick={() => setSelectedPayment('upi')}
-                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'upi' ? 'border-[#F8F7F8] bg-white' : 'border-transparent '
-                                                    }`}
+                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'upi' ? 'border-[#F8F7F8] bg-white' : 'border-transparent '}`}
                                             >
                                                 <div className="flex items-center gap-2 md:gap-4">
-                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'upi' ? 'border-black' : 'border-gray-200'
-                                                        }`}>
+                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'upi' ? 'border-black' : 'border-gray-200'}`}>
                                                         {selectedPayment === 'upi' && <div className="w-3 h-3 rounded-full bg-[#111]" />}
                                                     </div>
-                                                    <div className="">
-                                                        <Image src="/upi.png" alt="Logo" width={32} height={32} className="md:w-[40px] md:h-[40px]" />
+                                                    <div className="w-10 h-10 rounded-xl bg-[#EE9C24]/15 flex items-center justify-center">
+                                                        <Smartphone className="text-[#EE9C24]" size={22} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-[#0D0C0D] text-sm">UPI | Wallets | EMI | Amazon Pay</h4>
-                                                        <p className="text-[#333333] text-[12px] mt-1">Offer : Get Extra 10% discount on UPI Payment</p>
+                                                        <h4 className="text-[#0D0C0D] text-sm font-semibold">Razorpay (Online)</h4>
+                                                        <p className="text-[#333333] text-[12px] mt-1">UPI, Cards, Netbanking</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 flex-shrink-0">
                                                     <Image src="/payment.png" alt="Logo" width={40} height={40} className="md:w-[50px] md:h-[50px]" />
                                                 </div>
                                             </div>
+                                            )}
 
-                                            {/* Cards Card */}
-                                            <div
-                                                onClick={() => setSelectedPayment('cards')}
-                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'cards' ? 'border-[#F8F7F8] bg-white' : 'border-transparent b'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-2 md:gap-4">
-                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'cards' ? 'border-black' : 'border-gray-200'
-                                                        }`}>
-                                                        {selectedPayment === 'cards' && <div className="w-3 h-3 rounded-full bg-[#111]" />}
-                                                    </div>
-                                                    <div>
-                                                        <Image src="/upi2.png" alt="Logo" width={40} height={40} />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-[#0D0C0D] text-sm">Net Banking | Credit | Debit Card</h4>
-                                                        <p className="text-[#333333] text-[12px] mt-1">Offer : Get Extra 10% discount on UPI Payment</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Fee</p>
-                                                    <p className="text-[#0D0C0D]  text-md">₹150</p>
-                                                </div>
-                                            </div>
+
 
                                             {/* COD Card */}
+                                            {(companyConfig?.isCodEnabled ?? true) && (
                                             <div
                                                 onClick={() => setSelectedPayment('cod')}
-                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'cod' ? 'border-[#F8F7F8] bg-white' : 'border-transparent 0'
-                                                    }`}
+                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'cod' ? 'border-[#F8F7F8] bg-white' : 'border-transparent 0'}`}
                                             >
                                                 <div className="flex items-center gap-2 md:gap-4">
-                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'cod' ? 'border-black' : 'border-gray-200'
-                                                        }`}>
+                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'cod' ? 'border-black' : 'border-gray-200'}`}>
                                                         {selectedPayment === 'cod' && <div className="w-3 h-3 rounded-full bg-[#111]" />}
                                                     </div>
-                                                    <div >
-                                                        <Image src="/upi3.png" alt="Logo" width={40} height={40} />
+                                                    <div className="w-10 h-10 rounded-xl bg-[#EE9C24]/15 flex items-center justify-center">
+                                                        <Banknote className="text-[#EE9C24]" size={22} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-[#0D0C0D] text-sm">Cash On Delivery</h4>
-                                                        <p className="text-[#333333] text-[12px] mt-1">Offer : No Discount Available for this Option</p>
+                                                        <h4 className="text-[#0D0C0D] text-sm font-semibold">Cash on Delivery</h4>
+                                                        <p className="text-[#333333] text-[12px] mt-1">Pay on delivery</p>
                                                     </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Fee</p>
-                                                    <p className="text-[#0D0C0D]  text-md">₹150</p>
                                                 </div>
                                             </div>
+                                            )}
 
                                             {/* DSM Wallet Card */}
+                                            {(companyConfig?.isWalletEnabled ?? true) && (
                                             <div
                                                 onClick={() => setSelectedPayment('wallet')}
-                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'wallet' ? 'border-[#F8F7F8] bg-white' : 'border-transparent '
-                                                    }`}
+                                                className={`flex items-center justify-between p-4 md:p-6 rounded-2xl w-full md:rounded-[30px] border-2 cursor-pointer transition-all ${selectedPayment === 'wallet' ? 'border-[#F8F7F8] bg-white' : 'border-transparent '}`}
                                             >
                                                 <div className="flex items-center gap-2 md:gap-4">
-                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'wallet' ? 'border-black' : 'border-gray-200'
-                                                        }`}>
+                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPayment === 'wallet' ? 'border-black' : 'border-gray-200'}`}>
                                                         {selectedPayment === 'wallet' && <div className="w-3 h-3 rounded-full bg-[#111]" />}
                                                     </div>
-                                                    <div >
-                                                        <Image src="/upi3.png" alt="Logo" width={40} height={40} />
+                                                    <div className="w-10 h-10 rounded-xl bg-[#EE9C24]/15 flex items-center justify-center">
+                                                        <WalletIcon className="text-[#EE9C24]" size={22} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-[#0D0C0D] text-sm">DSM Wallet</h4>
-                                                        <p className="text-[#333333] text-[12px] mt-1">Offer : Get Extra 15% discount on UPI Payment</p>
+                                                        <h4 className="text-[#0D0C0D] text-sm font-semibold">Wallet</h4>
+                                                        <p className="text-[#333333] text-[12px] mt-1">Internal Wallet / Coins</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex-shrink-0">
                                                     <Image src="/logo.png" alt="Logo" width={80} height={24} className="h-auto w-[80px] md:w-[140px]" />
                                                 </div>
                                             </div>
+                                            )}
                                         </div>
 
                                         {/* Bottom Buttons */}
@@ -1387,7 +1383,8 @@ const MobileCheckoutView = ({
     isAddingNewAddress,
     setIsAddingNewAddress,
     handleEditAddress,
-    handleDeleteAddress
+    handleDeleteAddress,
+    companyConfig
 }: {
     currentStep: number;
     setCurrentStep: (step: number) => void;
@@ -1423,6 +1420,7 @@ const MobileCheckoutView = ({
     setLoginPhone?: any;
     countries: any[];
     states: any[];
+    companyConfig?: any;
     isAddingNewAddress: boolean;
     setIsAddingNewAddress: (val: boolean) => void;
     handleEditAddress: (id: string) => void;
@@ -1939,30 +1937,27 @@ const MobileCheckoutView = ({
                         </div>
 
                         {/* Payment Methods */}
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {[
-                                { id: 'upi', title: 'UPI | Wallets | EMI', subtitle: 'Extra 10% discount on UPI', icon: '/upi.png' },
-                                { id: 'cards', title: 'Net Banking | Cards', subtitle: 'Extra 10% discount on Cards', icon: '/upi2.png' },
-                                { id: 'cod', title: 'Cash On Delivery', subtitle: 'No Discount Available', icon: '/upi3.png' },
-                                { id: 'wallet', title: 'DSM Wallet', subtitle: 'Extra 15% discount on Wallet', icon: '/logo.png', isLogo: true }
-                            ].map((method) => (
+                                { id: 'upi',    title: 'Razorpay (Online)', subtitle: 'UPI, Cards, Netbanking',  Icon: Smartphone, enabled: companyConfig?.isRazorpayEnabled ?? true },
+                                { id: 'cod',    title: 'Cash on Delivery',  subtitle: 'Pay on delivery',         Icon: Banknote,   enabled: companyConfig?.isCodEnabled ?? true },
+                                { id: 'wallet', title: 'Wallet',            subtitle: 'Internal Wallet / Coins', Icon: WalletIcon, enabled: companyConfig?.isWalletEnabled ?? true },
+                            ].filter(m => m.enabled).map((method) => (
                                 <div
                                     key={method.id}
                                     onClick={() => setSelectedPayment(method.id as any)}
-                                    className={`bg-white rounded-[2rem] p-5 flex items-center justify-between border-2 transition-all ${selectedPayment === method.id ? 'border-[#EE9C24] shadow-md' : 'border-transparent'
-                                        }`}
+                                    className={`bg-white rounded-[1.5rem] p-4 flex items-center justify-between border-2 transition-all ${selectedPayment === method.id ? 'border-[#EE9C24] shadow-md' : 'border-transparent'}`}
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedPayment === method.id ? 'border-gray-800' : 'border-gray-200'
-                                            }`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedPayment === method.id ? 'border-gray-800' : 'border-gray-200'}`}>
                                             {selectedPayment === method.id && <div className="w-2.5 h-2.5 rounded-full bg-gray-800" />}
                                         </div>
-                                        <div className={`w-10 h-10 bg-[#F8F9FA] rounded-xl flex items-center justify-center p-2 overflow-hidden`}>
-                                            <Image src={method.icon} alt={method.id} width={40} height={40} className={method.isLogo ? 'w-full h-auto' : 'object-contain'} />
+                                        <div className="w-10 h-10 rounded-xl bg-[#EE9C24]/15 flex items-center justify-center">
+                                            <method.Icon className="text-[#EE9C24]" size={20} />
                                         </div>
                                         <div className="min-w-0">
-                                            <h4 className="text-[11px] font-black text-gray-800 truncate">{method.title}</h4>
-                                            <p className="text-[8px] font-bold text-[#EE9C24] uppercase tracking-tighter mt-0.5">{method.subtitle}</p>
+                                            <h4 className="text-[12px] font-bold text-gray-800 truncate">{method.title}</h4>
+                                            <p className="text-[9px] font-semibold text-gray-400 mt-0.5">{method.subtitle}</p>
                                         </div>
                                     </div>
                                     <ChevronRight className="text-gray-300" size={16} />

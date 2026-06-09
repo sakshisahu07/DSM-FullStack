@@ -4,6 +4,7 @@ import productModel from "../model/product.model.js";
 import variantModel from "../model/variant.model.js";
 import { AppError } from "../utils/apiResponse.js";
 import mongoose from "mongoose";
+import redisClient from "../config/redis.js";
 
 export default class CategoryService {
   // CREATE CATEGORY
@@ -42,6 +43,17 @@ export default class CategoryService {
     ]);
 
     await category.deleteOne();
+
+    try {
+      const keys = await redisClient.keys("products:*");
+      const homeKeys = await redisClient.keys("home:data:*");
+      const uniqueKeys = [...new Set([...(keys || []), ...(homeKeys || [])])];
+      if (uniqueKeys.length > 0) {
+        await redisClient.del(...uniqueKeys);
+      }
+    } catch (err) {
+      // ignore offline redis or execution errors
+    }
 
     return true;
   }
